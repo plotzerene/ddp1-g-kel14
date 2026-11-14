@@ -1,0 +1,288 @@
+{#
+  visualizer/studio_pov.html — peta 2D interaktif (kiri) + POV 3D first-person (kanan).
+
+  Template ini hanya kerangka. Semua angka (kamera, halangan, suara, skor) diisi
+  JavaScript dari JSON `/visualizer/api/pov`:
+    static/js/visualizer_app.js   state & UI
+    static/js/map_2d_picker.js    peta kursi / stadion + sub-position picker
+    static/js/pov_3d_three.js     scene Three.js, video, audio
+#}
+{% extends "base.html" %}
+{% set step = "visualizer" %}
+{% block title %}{{ venue.name }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/visualizer.css') }}">
+<script type="importmap">
+  {"imports": {"three": "{{ url_for('static', filename='js/vendor/three.module.min.js') }}"}}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container viz" id="viz-app">
+
+  <header class="viz-head">
+    <div class="viz-head__text">
+      <p class="eyebrow" id="viz-eyebrow">{{ event.title if event else "Visualizer" }}</p>
+      <h1 id="viz-title">{{ venue.name }}</h1>
+      <p class="viz-head__tagline" id="viz-tagline">{{ venue.tagline }}</p>
+    </div>
+
+    <div class="venue-tabs" role="tablist" aria-label="Pilih studio atau venue">
+      {% for v in venues %}
+      <button class="venue-tab" type="button" role="tab" id="tab-{{ v.venue_id }}" data-venue="{{ v.venue_id }}"
+              aria-selected="{{ 'true' if v.venue_id == venue.venue_id else 'false' }}"
+              aria-controls="viz-grid" tabindex="{{ '0' if v.venue_id == venue.venue_id else '-1' }}">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-{{ 'film' if v.kind.value == 'cinema' else 'music' }}"/></svg>
+        <span class="venue-tab__label">{{ v.short_label }}</span>
+        <span class="venue-tab__price num">{{ v.price_from | rupiah }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </header>
+
+  <div class="viz-grid" id="viz-grid" role="tabpanel" aria-labelledby="tab-{{ venue.venue_id }}">
+
+    <!-- ============ KIRI: peta 2D + pengaturan ============ -->
+    <div class="viz-left">
+
+      <section class="panel glass" aria-labelledby="map-title">
+        <header class="panel__head">
+          <div>
+            <h2 id="map-title">Pilih Kursi</h2>
+            <p class="panel__hint" id="map-hint">Klik kursi untuk melihat POV-nya.</p>
+          </div>
+          <button class="btn" type="button" id="btn-heatmap" aria-pressed="false">
+            <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>
+            Heatmap skor
+          </button>
+        </header>
+        <div class="map-wrap" id="map2d">
+          <div class="map-skeleton" aria-hidden="true"></div>
+        </div>
+        <div class="map-legend" id="map-legend"></div>
+      </section>
+
+      <section class="panel glass glass--3 picker" id="picker" aria-labelledby="picker-title" hidden></section>
+
+      <section class="panel glass" aria-labelledby="body-title">
+        <header class="panel__head">
+          <div>
+            <h2 id="body-title">Tinggi badan</h2>
+            <p class="panel__hint">Geser slider untuk menyesuaikan pandangan dengan tinggi badanmu.</p>
+          </div>
+          <svg class="icon icon--lg panel__icon" aria-hidden="true"><use href="#i-ruler"/></svg>
+        </header>
+
+        <div class="slider-field">
+          <div class="slider-field__top">
+            <label for="range-body">Tinggi Badan Kamu</label>
+            <output class="num" id="out-body" for="range-body">170 cm</output>
+          </div>
+          <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170"
+                 aria-describedby="eye-note">
+          <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
+        </div>
+
+        <div class="slider-field">
+          <div class="slider-field__top">
+            <label for="range-front">Tinggi Penonton di Depan</label>
+            <output class="num" id="out-front" for="range-front">170 cm</output>
+          </div>
+          <input class="range" type="range" id="range-front" min="145" max="195" step="1" value="170">
+          <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
+        </div>
+
+        <p class="eye-note" id="eye-note" aria-live="polite"></p>
+      </section>
+
+      <section class="panel glass" aria-labelledby="reco-title">
+        <header class="panel__head">
+          <div>
+            <h2 id="reco-title">Rekomendasi Kursi Otomatis</h2>
+            <p class="panel__hint" id="reco-hint">Pilih preferensi, lalu 3 kursi terbaik ditandai di peta.</p>
+          </div>
+          <svg class="icon icon--lg panel__icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
+        </header>
+
+        <div class="preset-list" id="preset-list" role="radiogroup" aria-label="Preferensi rekomendasi"></div>
+        <p class="panel__hint" id="preset-desc"></p>
+
+        <button class="btn btn--secondary btn--block" type="button" id="btn-recommend">
+          <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
+          <span>Cari 3 kursi terbaik</span>
+        </button>
+
+        <div class="reco-results" id="reco-results" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- ============ KANAN: POV 3D + data ============ -->
+    <div class="viz-right">
+
+      <section class="viewport glass" id="viewport" aria-label="Pandangan 3D dari posisi terpilih">
+        <div class="viewport__stage" id="viewport-stage" data-compare="off">
+          <div class="viewport__canvas" id="canvas-host">
+            <canvas id="pov-canvas" tabindex="0"
+                    aria-label="Pandangan 3D. Seret atau gunakan tombol panah untuk melihat sekeliling."></canvas>
+
+            <div class="hud hud--tl glass glass--2">
+              <span class="hud__title" id="hud-seat">Memuat…</span>
+              <span class="hud__sub num" id="hud-sub"></span>
+            </div>
+
+            <div class="hud hud--tr">
+              <div class="score-pill glass glass--2" id="hud-score" title="Sightline Score">
+                <strong class="num" id="hud-score-value">–</strong>
+                <span id="hud-score-grade">skor</span>
+              </div>
+            </div>
+
+            <p class="hud hud--hint glass glass--2" id="hud-hint">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg>
+              Seret untuk melihat sekeliling
+            </p>
+
+            <div class="viewport__veil" id="veil" role="status">
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="veil-text">Memuat venue…</span>
+            </div>
+          </div>
+
+          <figure class="compare" id="compare" hidden>
+            <img id="compare-img" alt="" decoding="async">
+            <div class="compare__missing" id="compare-missing" hidden>
+              <svg class="icon icon--lg" aria-hidden="true"><use href="#i-image"/></svg>
+              <p id="compare-missing-text"></p>
+            </div>
+            <figcaption class="compare__bar glass glass--2">
+              <button class="btn btn--icon btn--ghost" type="button" id="compare-prev" aria-label="Foto sebelumnya">
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+              </button>
+              <span id="compare-caption"></span>
+              <button class="btn btn--icon btn--ghost" type="button" id="compare-next" aria-label="Foto berikutnya">
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+              </button>
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="deck" role="toolbar" aria-label="Kontrol pandangan dan media">
+          <div class="deck__group">
+            <span class="eyebrow">Arah pandang</span>
+            <div class="deck__row" id="target-buttons"></div>
+          </div>
+
+          <div class="deck__group">
+            <span class="eyebrow">Lensa</span>
+            <div class="segmented" id="lens-buttons" role="group" aria-label="Lensa kamera"></div>
+          </div>
+
+          <div class="deck__group">
+            <span class="eyebrow">Video & suara</span>
+            <div class="deck__row">
+              <button class="btn btn--icon" type="button" id="btn-play" aria-label="Putar video">
+                <svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+              <button class="btn btn--icon" type="button" id="btn-mute" aria-label="Nyalakan suara" aria-pressed="false">
+                <svg class="icon" aria-hidden="true"><use href="#i-mute"/></svg>
+              </button>
+              <label class="visually-hidden" for="range-volume">Volume</label>
+              <input class="range range--volume" type="range" id="range-volume" min="0" max="100" value="70">
+            </div>
+            <p class="deck__note" id="media-note"></p>
+          </div>
+
+          <div class="deck__group deck__group--end">
+            <span class="eyebrow">Tampilan</span>
+            <div class="deck__row">
+              <button class="btn" type="button" id="btn-compare" aria-pressed="false">
+                <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>
+                Bandingkan dengan Foto Asli
+              </button>
+              <div class="segmented" id="compare-mode" role="group" aria-label="Mode pembanding foto" hidden>
+                <button class="segmented__btn" type="button" data-mode="pip" aria-pressed="true">Sisipan</button>
+                <button class="segmented__btn" type="button" data-mode="split" aria-pressed="false">Berdampingan</button>
+              </div>
+              <button class="btn" type="button" id="btn-4dx" aria-pressed="false" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-wind"/></svg>
+                Simulasi Efek 4DX
+              </button>
+              <button class="btn btn--icon" type="button" id="btn-fullscreen" aria-label="Layar penuh">
+                <svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {# Seat Insight: cincin skor (kiri) + 5 bar (kanan). Angkanya diisi updateInsight() di visualizer_app.js. #}
+      <section class="insight glass" aria-labelledby="insight-title">
+        <h2 id="insight-title">Seat Insight</h2>
+        <div class="insight__body">
+          <div class="insight__score">
+            <div class="score-ring">
+              <svg viewBox="0 0 116 116" aria-hidden="true">
+                <circle class="score-ring__track" cx="58" cy="58" r="50"/>
+                <circle class="score-ring__bar" id="score-ring" cx="58" cy="58" r="50"
+                        pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+              </svg>
+              <div class="score-ring__text">
+                <strong class="num" id="score-value">–</strong>
+                <span id="score-grade"></span>
+              </div>
+            </div>
+            {# Hanya konser: baterai vertikal = bagian pandangan yang bebas halangan. #}
+            <div class="battery" id="battery" role="img" hidden>
+              <span class="battery__cell"><span class="battery__fill" id="battery-fill"></span></span>
+              <span class="battery__label" id="battery-label"></span>
+            </div>
+          </div>
+          <ul class="bars" id="bars">
+            {% for key, label in [("screen", "Cakupan Layar"), ("neck", "Kenyamanan Leher"),
+                                  ("off_axis", "Posisi Persis di Tengah"), ("obstruction", "Bebas Halangan"),
+                                  ("acoustic", "Musik")] %}
+            <li data-key="{{ key }}">
+              <span>{{ label }}</span>
+              <span class="bars__track"><span class="bars__fill"></span></span>
+              <span class="bars__num num">–</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <details class="spec">
+          <summary>Lihat Spesifikasi Teknis</summary>
+          <dl class="num" id="spec-list"></dl>
+        </details>
+      </section>
+
+      <div class="cta-bar glass glass--2">
+        <div class="cta-bar__info">
+          <span class="cta-bar__seat" id="cta-seat">Belum ada posisi dipilih</span>
+          <strong class="cta-bar__price num" id="cta-price"></strong>
+        </div>
+        <div class="cta-bar__actions">
+          <button class="btn btn--primary" type="button" id="btn-cart" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg>
+            <span id="btn-cart-label">Tambah Kursi ke Keranjang</span>
+          </button>
+          <a class="btn" id="btn-checkout" href="{{ url_for('checkout.index') }}" aria-disabled="true">
+            <span id="btn-checkout-label">Lanjut ke Checkout</span>
+            <span class="badge-count num" id="checkout-count" hidden>0</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="map-tooltip glass glass--3" id="map-tooltip" role="tooltip" hidden></div>
+<script type="application/json" id="viz-bootstrap">{{ bootstrap | tojson }}</script>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/visualizer_app.js') }}"></script>
+{% endblock %}

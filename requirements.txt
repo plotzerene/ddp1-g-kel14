@@ -1,0 +1,3 @@
+# Satu-satunya dependensi pihak ketiga. Perhitungan 3D/akustik memakai modul
+# standar Python (math, dataclasses, abc, enum), jadi NumPy tidak diperlukan.
+Flask>=3.0,<4

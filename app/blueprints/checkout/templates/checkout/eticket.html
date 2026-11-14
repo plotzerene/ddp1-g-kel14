@@ -1,0 +1,76 @@
+{#
+  checkout/eticket.html — FOLDER TEAMMATE 2 (starter).
+  `order` = pesanan terakhir di session; `tickets` = [{item, code, matrix}].
+  `matrix` hanyalah pola dekoratif dari hash kode tiket, BUKAN QR yang bisa dipindai.
+#}
+{% extends "base.html" %}
+{% set step = "checkout" %}
+{% block title %}E-Ticket {{ order.code }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container checkout">
+  <header class="checkout__head eticket-head">
+    <span class="chip chip--success">
+      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
+      Pembayaran berhasil (simulasi)
+    </span>
+    <h1>E-Ticket kamu sudah siap</h1>
+    <p>
+      Kode pesanan <strong class="num">{{ order.code }}</strong> · {{ order.paid_at }} ·
+      {{ order.method }} · atas nama {{ order.buyer.name }} ({{ order.buyer.email }})
+    </p>
+    <div class="eticket-actions">
+      <button class="btn btn--primary" type="button" onclick="window.print()">
+        Cetak / simpan PDF
+      </button>
+      <a class="btn" href="{{ url_for('landing.index') }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        Pesan acara lain
+      </a>
+    </div>
+  </header>
+
+  <ul class="eticket-list">
+    {% for ticket in tickets %}
+    {% set item = ticket.item %}
+    <li class="eticket glass">
+      <div class="eticket__info">
+        <span class="chip chip--accent">{{ item.category }}</span>
+        <h2>{{ item.seat_label }}</h2>
+        <p class="eticket__venue">{{ item.venue_name }}</p>
+        <dl class="pov-meta">
+          <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} · {{ item.pov.grade }}</dd></div>
+          <div><dt>Jarak</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
+          <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
+          <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
+        </dl>
+        <p class="eticket__price num">{{ item.price | rupiah }}</p>
+      </div>
+
+      <div class="eticket__code">
+        {% set size = ticket.matrix | length %}
+        <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="Kode visual tiket {{ ticket.code }}" shape-rendering="crispEdges">
+          <rect width="{{ size }}" height="{{ size }}" fill="#F8FAFC"/>
+          {% for row in ticket.matrix %}{% set y = loop.index0 %}{% for cell in row %}{% if cell %}<rect x="{{ loop.index0 }}" y="{{ y }}" width="1" height="1" fill="#0F0F23"/>{% endif %}{% endfor %}{% endfor %}
+        </svg>
+        <span class="num">{{ ticket.code }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <section class="summary glass eticket-summary" aria-labelledby="paid-title">
+    <h2 id="paid-title">Rincian pembayaran</h2>
+    <dl class="totals">
+      <div><dt>Subtotal tiket</dt><dd class="num">{{ order.totals.subtotal | rupiah }}</dd></div>
+      {% if order.totals.tax %}<div><dt>Pajak konser 15%</dt><dd class="num">{{ order.totals.tax | rupiah }}</dd></div>{% endif %}
+      {% if order.totals.convenience %}<div><dt>Convenience fee 5%</dt><dd class="num">{{ order.totals.convenience | rupiah }}</dd></div>{% endif %}
+      {% if order.totals.admin %}<div><dt>Biaya admin bioskop</dt><dd class="num">{{ order.totals.admin | rupiah }}</dd></div>{% endif %}
+      <div class="totals__grand"><dt>Total dibayar</dt><dd class="num">{{ order.totals.total | rupiah }}</dd></div>
+    </dl>
+  </section>
+</div>
+{% endblock %}

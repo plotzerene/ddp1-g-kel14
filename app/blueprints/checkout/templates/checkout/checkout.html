@@ -1,0 +1,139 @@
+{#
+  checkout/checkout.html — FOLDER TEAMMATE 2 (starter yang sudah berfungsi).
+  `items` = list CartItem dari shared_state.Cart; `totals` dari compute_totals().
+#}
+{% extends "base.html" %}
+{% set step = "checkout" %}
+{% block title %}Checkout{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container checkout">
+  <header class="checkout__head">
+    <p class="eyebrow">Langkah 3 dari 3</p>
+    <h1>Checkout</h1>
+  </header>
+
+  {% if not items %}
+  <section class="empty-state glass" aria-labelledby="empty-title">
+    <svg class="icon icon--lg" aria-hidden="true"><use href="#i-cart"/></svg>
+    <h2 id="empty-title">Keranjangmu masih kosong</h2>
+    <p>Pilih kursi atau area di visualizer, lihat POV-nya, lalu tekan "Tambah ke Keranjang".</p>
+    <a class="btn btn--primary" href="{{ url_for('visualizer.index') }}">
+      <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+      Pilih Posisi &amp; Lihat POV 3D
+    </a>
+  </section>
+  {% else %}
+  <div class="checkout__grid">
+    <section aria-labelledby="tickets-title">
+      <div class="checkout__section-head">
+        <h2 id="tickets-title">Tiket pilihanmu <span class="num">({{ items | length }})</span></h2>
+        <form method="post" action="{{ url_for('checkout.clear') }}">
+          <button class="btn btn--ghost" type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+            Kosongkan
+          </button>
+        </form>
+      </div>
+
+      <ul class="ticket-list">
+        {% for item in items %}
+        <li class="ticket-row glass">
+          <div class="ticket-row__main">
+            <span class="chip chip--info">{{ item.category }}</span>
+            <h3>{{ item.seat_label }}</h3>
+            <p class="ticket-row__venue">{{ item.venue_name }}</p>
+          </div>
+
+          <dl class="pov-meta" aria-label="Data POV dari visualizer">
+            <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} · {{ item.pov.grade }}</dd></div>
+            <div><dt>Jarak ke layar/panggung</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
+            <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
+            <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
+            <div><dt>Tinggi badan simulasi</dt><dd class="num">{{ item.pov.body_height_cm | round | int }} cm</dd></div>
+          </dl>
+
+          <div class="ticket-row__side">
+            <strong class="num">{{ item.price | rupiah }}</strong>
+            <form method="post" action="{{ url_for('checkout.remove', index=loop.index0) }}">
+              <button class="btn btn--danger" type="submit" aria-label="Hapus {{ item.seat_label }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+                Hapus
+              </button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <a class="btn" href="{{ url_for('visualizer.index') }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        Tambah tiket lain
+      </a>
+    </section>
+
+    <aside class="summary glass" aria-labelledby="summary-title">
+      <h2 id="summary-title">Ringkasan pembayaran</h2>
+      <dl class="totals">
+        <div><dt>Subtotal tiket</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
+        {% if totals.tax %}<div><dt>Pajak konser 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
+        {% if totals.convenience %}<div><dt>Convenience fee 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
+        {% if totals.admin %}<div><dt>Biaya admin bioskop</dt><dd class="num">{{ totals.admin | rupiah }}</dd></div>{% endif %}
+        <div class="totals__grand"><dt>Total</dt><dd class="num">{{ totals.total | rupiah }}</dd></div>
+      </dl>
+
+      <form class="buyer-form" method="post" action="{{ url_for('checkout.pay') }}" novalidate>
+        {% if errors %}
+        <p class="form-alert" role="alert">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          Periksa lagi {{ errors | length }} isian di bawah.
+        </p>
+        {% endif %}
+
+        <div class="field">
+          <label class="field__label" for="name">Nama pemesan <span aria-hidden="true">*</span></label>
+          <input class="input" id="name" name="name" type="text" autocomplete="name" required
+                 value="{{ values.name | default('') }}"
+                 {% if errors.name %}aria-invalid="true" aria-describedby="name-error" autofocus{% endif %}>
+          {% if errors.name %}<p class="field__error" id="name-error">{{ errors.name }}</p>{% endif %}
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="email">Email untuk e-ticket <span aria-hidden="true">*</span></label>
+          <input class="input" id="email" name="email" type="email" autocomplete="email" required
+                 value="{{ values.email | default('') }}" aria-describedby="email-hint{% if errors.email %} email-error{% endif %}"
+                 {% if errors.email %}aria-invalid="true"{% if not errors.name %} autofocus{% endif %}{% endif %}>
+          <p class="field__hint" id="email-hint">E-ticket ditampilkan setelah pembayaran (simulasi, tidak ada email terkirim).</p>
+          {% if errors.email %}<p class="field__error" id="email-error">{{ errors.email }}</p>{% endif %}
+        </div>
+
+        <fieldset class="field method-field">
+          <legend class="field__label">Metode pembayaran <span aria-hidden="true">*</span></legend>
+          <div class="method-grid">
+            {% for key, label in methods.items() %}
+            <label class="method">
+              <input type="radio" name="method" value="{{ key }}" required {% if values.method == key %}checked{% endif %}>
+              <span>
+                <svg class="icon" aria-hidden="true"><use href="#i-card"/></svg>
+                {{ label }}
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if errors.method %}<p class="field__error" role="alert">{{ errors.method }}</p>{% endif %}
+        </fieldset>
+
+        <button class="btn btn--primary btn--block" type="submit">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+          Bayar {{ totals.total | rupiah }}
+        </button>
+        <p class="field__hint">Ini simulasi untuk tugas kuliah: tidak ada uang yang ditagih.</p>
+      </form>
+    </aside>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

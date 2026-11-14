@@ -1,0 +1,1209 @@
+{
+  "project": "titiket.com",
+  "design_system": {
+    "theme": "XXI Light & Loket.com Clean White",
+    "principles_applied": [
+      "Squash & Stretch (VA Copied Micro-Toast scale 0.95 -> 1.05 -> 1.0 in 120ms)",
+      "Anticipation Wind-up (Coming Soon Bell SVG +/-12deg hover rotation)",
+      "Staging Focus & Hick's Law (Single active VA instruction in 06_Payment_Instruction)",
+      "Moving in Arcs & Snappy Timing (Now Playing ↗ icon arc + shimmer sweep 150ms cubic-bezier)",
+      "Exaggerated Feedback (Dynamic Error X shake +/-3px + center-out path draw; pulsing red F7 conflict seat outline)",
+      "Fitts's Law & Bigger Hit Areas (>=48px Salin Nomor, Ganti Metode, Pilih Ulang Kursi; >=52px Saya Sudah Membayar)",
+      "Doherty Threshold (10s auto verification badge, instant copy feedback)"
+    ],
+    "palette": {
+      "background": "#FFFFFF",
+      "surface_subtle": "#F8FAFC",
+      "surface_teal_tint": "#E6F4F5",
+      "surface_teal_soft": "#F0F9FA",
+      "surface_gold_tint": "#FEF8E7",
+      "surface_success_tint": "#ECFDF5",
+      "surface_danger_tint": "#FEF2F2",
+      "backdrop_modal": "rgba(0, 0, 0, 0.5) / #00000080",
+      "brand_teal_primary": "#006875",
+      "brand_teal_dark": "#004E58",
+      "connector_blue": "#0EA5E9",
+      "accent_gold": "#C59B27",
+      "accent_gold_dark": "#8A6A12",
+      "success": "#059669",
+      "text_primary": "#0F172A",
+      "text_secondary": "#334155",
+      "text_muted": "#475569",
+      "text_subtle": "#64748B",
+      "border_default": "#E2E8F0",
+      "border_input": "#CBD5E1",
+      "danger": "#DC2626"
+    },
+    "typography": {
+      "font_family": "Inter",
+      "observed_styles": [
+        {
+          "family": "Inter",
+          "size": 13.0,
+          "style": "SemiBold",
+          "count": 21
+        },
+        {
+          "family": "Inter",
+          "size": 13.0,
+          "style": "Bold",
+          "count": 15
+        },
+        {
+          "family": "Inter",
+          "size": 12.0,
+          "style": "Regular",
+          "count": 10
+        },
+        {
+          "family": "Inter",
+          "size": 12.0,
+          "style": "SemiBold",
+          "count": 9
+        },
+        {
+          "family": "Inter",
+          "size": 15.0,
+          "style": "Bold",
+          "count": 7
+        },
+        {
+          "family": "Inter",
+          "size": 12.0,
+          "style": "Bold",
+          "count": 6
+        },
+        {
+          "family": "Inter",
+          "size": 18.0,
+          "style": "Bold",
+          "count": 3
+        },
+        {
+          "family": "Inter",
+          "size": 11.0,
+          "style": "Bold",
+          "count": 3
+        },
+        {
+          "family": "Inter",
+          "size": 24.0,
+          "style": "Bold",
+          "count": 3
+        },
+        {
+          "family": "Inter",
+          "size": 12.0,
+          "style": "Medium",
+          "count": 3
+        },
+        {
+          "family": "Inter",
+          "size": 13.0,
+          "style": "Regular",
+          "count": 2
+        },
+        {
+          "family": "Inter",
+          "size": 32.0,
+          "style": "Bold",
+          "count": 1
+        }
+      ]
+    },
+    "corner_radii_observed": {
+      "999.0": 87,
+      "14.0": 44,
+      "16.0": 30,
+      "10.0": 24,
+      "6.0": 16,
+      "12.0": 8,
+      "8.0": 2,
+      "[4.0, 4.0, 16.0, 16.0]": 1
+    },
+    "layout_grid": {
+      "desktop_artboard_width": 1440,
+      "horizontal_page_padding": 48,
+      "section_gap_default": 24,
+      "card_gap_default": 16
+    }
+  },
+  "assets": {
+    "payment_logos_dir": "/Users/evanskano/Documents/KULIAH/DDP 1 G/TUGAS PEMROGRAMAN/reference_assets/payment_logos",
+    "payment_logos_static_dir": "/Users/evanskano/Documents/KULIAH/DDP 1 G/TUGAS PEMROGRAMAN/app/static/reference_assets/payment_logos",
+    "payment_logos": [
+      "alfamart.png",
+      "alfamidi.png",
+      "bca.png",
+      "bni.png",
+      "bri.png",
+      "dana.png",
+      "gopay.png",
+      "indomaret.png",
+      "mandiri.png",
+      "ovo.png",
+      "qris.png",
+      "shopeepay.png"
+    ],
+    "svg_sprite_file": "/Users/evanskano/Documents/KULIAH/DDP 1 G/TUGAS PEMROGRAMAN/app/templates/_icons.html",
+    "makara_ui_logo": "/Users/evanskano/Documents/KULIAH/DDP 1 G/TUGAS PEMROGRAMAN/reference_assets/makara_ui.png",
+    "makara_ui_figcraft_hash": "ae03d6f97df78ef61e51975ed5103a99721c640727918e691cd8b2b32bbcc026"
+  },
+  "icon_system": {
+    "family": "Monochrome Outline SVG (Uniform Line Kit)",
+    "bounding_boxes_px": [
+      20,
+      24
+    ],
+    "stroke_width_px": 1.75,
+    "stroke_cap": "round",
+    "stroke_join": "round",
+    "fill_rule": "fill: none (zero #D9D9D9 filled artifacts across all artboards)",
+    "colors": {
+      "neutral_slate": "#64748B",
+      "neutral_on_dark_hero": "#94A3B8",
+      "active_primary": "#006875",
+      "inverse_on_primary_cta": "#FFFFFF"
+    }
+  },
+  "animation_tokens": {
+    "hover_poster": "transform: translateY(-4px); transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);",
+    "shimmer_card": "background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); animation: shimmer 1.5s infinite;",
+    "modal_popup": "scale transition dari 0.95 ke 1.00 (Squash & Stretch) selama 150ms",
+    "parallax_intro_spec": {
+      "concept": "3D Multi-Layer Parallax Experience (Cinema Grand Entrance & Immersion)",
+      "tech_stack_hint": "CSS 3D Transform (translate3d/perspective) / Framer Motion useScroll+useTransform / GSAP ScrollTrigger",
+      "mouse_move_delta": {
+        "layer_1_doorway_frame": {
+          "z_index": 40,
+          "figcraft_node_id": 3103,
+          "translate_factor": 0.02,
+          "logo_badge": {"node_id": 3149, "style": "glassmorphism_dark", "background": "rgba(255, 255, 255, 0.08)", "border": "1px solid rgba(255, 255, 255, 0.15)", "border_radius": "999px", "padding": "8px 16px"},
+          "behavior": "lambat / hampir statis sebagai bingkai mengintip dengan logo Glassmorphism Gelap"
+        },
+        "layer_2_audience_silhouette": {
+          "z_index": 30,
+          "figcraft_node_id": 3096,
+          "silhouette_node_id": 3153,
+          "silhouette_asset": "reference_assets/person_silhouette_clean.png",
+          "source_asset": "reference_assets/images/person but not siluet.jpeg",
+          "silhouette_fill_hex": "#0B0F17",
+          "translate_factor": 0.05,
+          "behavior": "aset PNG siluet penonton menghadap layar di depan teks masif (center-bottom depth-sandwich)"
+        },
+        "layer_3_massive_typography": {"z_index": 20, "figcraft_node_id": 3091, "translate_factor": 0.08, "behavior": "sandwich text FEEL THE MOMENTS di belakang siluet dan di depan layar"},
+        "layer_4_screen_and_projector_glow": {"z_index": 10, "figcraft_node_id": 3076, "translate_factor": 0.12, "behavior": "bergerak paling lebar menciptakan kedalaman paralaks"}
+      },
+      "scroll_or_click_transition": {
+        "triggers": ["scroll_down", "click:Btn_Mulai_Eksplorasi (node 3100)"],
+        "target_frame": "00B_Intro_Zoom_Auth_Gate",
+        "target_artboard_id": 3115,
+        "animation": {
+          "type": "Dolly Zoom-in",
+          "duration_ms": 450,
+          "easing": "cubic-bezier(0.16, 1, 0.3, 1)",
+          "layer_1_2_exit": "scale: 1.4, opacity: 0 (melewati bingkai pintu)",
+          "layer_3_exit": "scale: 1.85, opacity: 0.07 (melewati viewport ke pinggir layar)",
+          "auth_gate_card_enter": "scale: 0.94 -> 1.0, opacity: 0 -> 1"
+        }
+      },
+      "guest_continue_transition": {
+        "trigger": "click:Link_Lanjut_Tamu (node 3137)",
+        "action": "push_route",
+        "route": "/",
+        "target_frame": "01_Home",
+        "target_artboard_id": 3,
+        "transition": "fade-in 300ms ease-out"
+      }
+    },
+    "auth_register_spec": {
+      "route": "/auth/register",
+      "frame": "00C_Auth_Register",
+      "artboard_id": 3154,
+      "modal_card": {
+        "node_id": 3158,
+        "background": "#FFFFFF",
+        "width_px": 480,
+        "padding_px": 40,
+        "border_radius_px": 16,
+        "overlay_backdrop": "#02060D"
+      },
+      "form_tokens": {
+        "input_height_px": 40,
+        "input_padding_px": "0 14px",
+        "input_radius_px": 10,
+        "input_border_default": "1.25px solid #CBD5E1",
+        "input_background_default": "#FFFFFF",
+        "input_border_focus_active": "1.5px solid #006875",
+        "input_border_error": "1.5px solid #EF4444",
+        "input_background_error": "#FEF2F2",
+        "error_helper_color": "#EF4444",
+        "phone_prefix_chip": {"text": "+62", "width_px": 56, "background": "#F8FAFC", "border_right": "1px solid #E2E8F0"},
+        "password_toggle_icon": {"node_id": 3192, "size_px": 20, "stroke_px": 1.75, "color": "#64748B"},
+        "checkbox_active": {"size_px": 18, "radius_px": 5, "fill": "#006875"},
+        "cta_primary_height_px": 48,
+        "cta_primary_fill": "#006875",
+        "social_google_height_px": 44,
+        "social_google_border": "1.25px solid #CBD5E1"
+      }
+    },
+    "theme_toggle": {
+      "component": "Theme_Toggle_Button",
+      "dimensions_px": {"width": 40, "height": 40, "corner_radius": 999},
+      "transition": "dissolve 150ms easeOut (FigCraft prototype wiring; web spec: rotate 90deg + scale 0.9 -> 1.0, attribute data-theme=\"dark\" on <html>)",
+      "paired_screens_count": 19,
+      "coverage_note": "Semua 19 pasangan layar pasca-parallax (38 artboard) serta 1 komponen master (644) memiliki Theme_Toggle_Button dua arah; 00_Cinematic_Parallax_Intro (3075) sengaja bernuansa bioskop gelap dan 09_Project_Architecture_Team_Briefing (5500) adalah papan presentasi tim DDP 1",
+      "light_mode": {
+        "icon_name": "Icon_Theme_Moon_SVG",
+        "button_fill": "#F8FAFC",
+        "button_stroke": "#E2E8F0",
+        "icon_color": "#64748B",
+        "stroke_px": 1.75,
+        "svg_viewbox": "0 0 24 24",
+        "svg_path": "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
+        "node_ids": [3219, 3222, 3225, 3228, 3231, 3232, 3233, 3234, 3235, 3236, 3237, 3252, 3255, 3258, 3261, 3621, 5454, 5468, 5482, 5813]
+      },
+      "dark_mode": {
+        "icon_name": "Icon_Theme_Sun_SVG",
+        "canvas_fill": "#0B0F17",
+        "card_fill": "#161F30",
+        "surface_elevated": "#1E293B",
+        "border_color": "#334155",
+        "button_fill": "#161F30",
+        "button_stroke": "#334155",
+        "icon_color": "#FBBF24",
+        "stroke_px": 1.75,
+        "svg_viewbox": "0 0 24 24",
+        "svg_primitives": "circle(cx=12,cy=12,r=4) + 8 radial rays (N,S,W,E,NW,NE,SW,SE)",
+        "node_ids": [3283, 3368, 3799, 3925, 4101, 4420, 4581, 4771, 4973, 5120, 5457, 5471, 5485, 5816, 5850, 5991, 6132, 6273, 6414]
+      },
+      "screen_pairs": [
+        {"screen": "00B_Intro_Zoom_Auth_Gate", "light_artboard_id": 3115, "dark_artboard_id": 3682, "light_toggle_id": 5454, "dark_toggle_id": 5457},
+        {"screen": "00C_Auth_Register", "light_artboard_id": 3154, "dark_artboard_id": 3707, "light_toggle_id": 5468, "dark_toggle_id": 5471},
+        {"screen": "00D_Modal_Login", "light_artboard_id": 3618, "dark_artboard_id": 3280, "light_toggle_id": 3621, "dark_toggle_id": 3283},
+        {"screen": "Modal_Forgot_Password", "light_artboard_id": 5697, "dark_artboard_id": 5757, "light_toggle_id": 5813, "dark_toggle_id": 5816},
+        {"screen": "01_Home", "light_artboard_id": 3, "dark_artboard_id": 3351, "light_toggle_id": 3219, "dark_toggle_id": 3368},
+        {"screen": "02A_Detail_Movie_01_SORE", "light_artboard_id": 700, "dark_artboard_id": 3779, "light_toggle_id": 3232, "dark_toggle_id": 3799, "master_toggle_id": 3231},
+        {"screen": "02A_Detail_Movie_02_JatuhCinta", "light_artboard_id": 756, "dark_artboard_id": 5827, "light_toggle_id": 3233, "dark_toggle_id": 5850},
+        {"screen": "02A_Detail_Movie_03_BoBoiBoy", "light_artboard_id": 812, "dark_artboard_id": 5968, "light_toggle_id": 3234, "dark_toggle_id": 5991},
+        {"screen": "02A_Detail_Movie_04_EjenAli2", "light_artboard_id": 868, "dark_artboard_id": 6109, "light_toggle_id": 3235, "dark_toggle_id": 6132},
+        {"screen": "02A_Detail_Movie_05_LaLaLand", "light_artboard_id": 924, "dark_artboard_id": 6250, "light_toggle_id": 3236, "dark_toggle_id": 6273},
+        {"screen": "02A_Detail_Movie_06_Endgame", "light_artboard_id": 980, "dark_artboard_id": 6391, "light_toggle_id": 3237, "dark_toggle_id": 6414},
+        {"screen": "02B_Detail_Schedule_Location", "light_artboard_id": 2173, "dark_artboard_id": 3906, "light_toggle_id": 3255, "dark_toggle_id": 3925},
+        {"screen": "03_Cinema_Seat_POV", "light_artboard_id": 122, "dark_artboard_id": 4082, "light_toggle_id": 3222, "dark_toggle_id": 4101},
+        {"screen": "04_Concert_Spot_POV", "light_artboard_id": 376, "dark_artboard_id": 4401, "light_toggle_id": 3225, "dark_toggle_id": 4420},
+        {"screen": "04B_Concert_Syarat_Ketentuan", "light_artboard_id": 1836, "dark_artboard_id": 4562, "light_toggle_id": 3252, "dark_toggle_id": 4581},
+        {"screen": "05_Checkout", "light_artboard_id": 484, "dark_artboard_id": 4752, "light_toggle_id": 3228, "dark_toggle_id": 4771},
+        {"screen": "06_Payment_Instruction", "light_artboard_id": 2346, "dark_artboard_id": 4954, "light_toggle_id": 3258, "dark_toggle_id": 4973},
+        {"screen": "07_Ticket_Success", "light_artboard_id": 2482, "dark_artboard_id": 5101, "light_toggle_id": 3261, "dark_toggle_id": 5120},
+        {"screen": "08_Modals_System", "light_artboard_id": 2601, "dark_artboard_id": 5223, "light_toggle_id": 5482, "dark_toggle_id": 5485}
+      ]
+    },
+    "auth_providers": {
+      "sso_ui": {
+        "label": "Masuk dengan SSO UI",
+        "protocol": "CAS / OIDC Universitas Indonesia (sso.ui.ac.id)",
+        "callback_route": "/auth/callback/ui",
+        "claim_mapping": {"user_flag": "verified_student", "email_domain": "@ui.ac.id"},
+        "discount_rule": "Diskon Khusus Mahasiswa UI 15% untuk tiket Cinema XXI & Konser (otomatis aktif saat email @ui.ac.id terverifikasi)",
+        "logo_asset": "reference_assets/makara_ui.png",
+        "logo_size_px": 24,
+        "button_height_px": 46,
+        "button_radius_px": 10,
+        "light_style": {"fill": "#FFFFFF", "border": "1px solid #FACC15", "badge_fill": "rgba(254, 212, 2, 0.16)", "badge_text": "#854D0E"},
+        "dark_style": {"fill": "#161F30", "border": "1px solid #334155", "badge_fill": "#2A2210", "badge_border": "#FACC15", "badge_text": "#FACC15"},
+        "figcraft_node_ids": [3264, 3323, 3616]
+      },
+      "google_oauth": {
+        "label": "Lanjutkan dengan Google",
+        "protocol": "Google OAuth 2.0",
+        "button_height_px": 44,
+        "button_radius_px": 10,
+        "figcraft_node_ids": [3205, 3334]
+      },
+      "apple_sign_in": {
+        "label": "Lanjutkan dengan Apple ID",
+        "protocol": "Sign in with Apple (OIDC)",
+        "icon_style": {"monochrome_light": "#0F172A", "monochrome_dark": "#FFFFFF"},
+        "button_height_px": 44,
+        "button_radius_px": 10,
+        "figcraft_node_ids": [3275, 3341]
+      }
+    }
+  },
+  "navigation_routing_matrix": [
+    {
+      "trigger": "Tombol \"Daftar Akun Baru\" (Auth Gate)",
+      "route": "/auth/register",
+      "target_frame": "00C_Auth_Register",
+      "target_artboard_id": 3154,
+      "figcraft_proto_wired": true
+    },
+    {
+      "trigger": "Link \"Lupa kata sandi?\"",
+      "route": "/auth/forgot-password",
+      "api_endpoints": ["POST /auth/forgot-password", "POST /auth/reset-password"],
+      "target_frame": "Modal_Forgot_Password",
+      "target_artboard_id": 5697,
+      "figcraft_proto_wired": true
+    },
+    {
+      "trigger": "Tab [Deskripsi]",
+      "route": "/event/coldplay/overview",
+      "target_frame": "04_Concert_Detail (Overview Tab State)",
+      "interaction_type": "tab_route"
+    },
+    {
+      "trigger": "Tab [Tiket & Spot 3D]",
+      "route": "/event/coldplay/tickets",
+      "target_frame": "04_Concert_Spot_POV (Ref: 03_Concert_Stage_POV)",
+      "target_artboard_id": 376,
+      "figcraft_proto_wired": true
+    },
+    {
+      "trigger": "Tab [Syarat & Ketentuan]",
+      "route": "/event/coldplay/terms",
+      "target_frame": "04B_Concert_Syarat_Ketentuan",
+      "target_artboard_id": 1836
+    },
+    {
+      "trigger": "Tombol \"Pilih Tiket & Spot →\"",
+      "route": "/event/coldplay/tickets",
+      "target_frame": "04_Concert_Spot_POV (Ref: 03_Concert_Stage_POV)",
+      "target_artboard_id": 376,
+      "figcraft_proto_wired": true
+    },
+    {
+      "trigger": "Tombol \"Kembali ke Daftar Acara\" (Header)",
+      "route": "/",
+      "target_frame": "01_Home",
+      "target_artboard_id": 3,
+      "figcraft_proto_wired": true
+    },
+    {
+      "trigger": "Tombol \"Beli Tiket\" pada Kategori",
+      "action": "Buka Bottom Sheet / Drawer detail spot",
+      "target_pattern": "drawer_spot_detail"
+    }
+  ],
+  "complete_interaction_registry": [
+    {
+      "element": "Btn_Kembali",
+      "figcraft_nodes": [
+        {"id": 2891, "frame": "04B_Concert_Syarat_Ketentuan", "label": "Kembali ke Daftar Acara", "proto_dest": 3},
+        {"id": 2553, "frame": "07_Ticket_Success", "label": "Kembali ke Beranda", "proto_dest": 3}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/",
+      "description": "Kembali ke halaman sebelumnya / beranda (01_Home)"
+    },
+    {
+      "element": "Chip_Tanggal",
+      "figcraft_nodes": [
+        {"id": 2260, "frame": "02B_Detail_Schedule_Location", "name": "Date_Chips_Row", "children": [2261, 2263, 2265, 2267]}
+      ],
+      "interaction_kind": "State",
+      "destination": "filter_jadwal_aktif",
+      "description": "Filter jadwal aktif tanpa reload halaman"
+    },
+    {
+      "element": "Slot_Jam_Tayang",
+      "figcraft_nodes": [
+        {"id": 2281, "frame": "02B_Detail_Schedule_Location", "name": "Time_Slot_1200_Active"},
+        {"id": 2344, "frame": "02B_Detail_Schedule_Location", "name": "Btn_Lanjut_Kursi", "proto_dest": 122}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/booking/cinema/:id/seats",
+      "description": "Membawa parameter studio & jam tayang menuju 03_Cinema_Seat_POV"
+    },
+    {
+      "element": "Tab_Deskripsi/Tiket/Syarat",
+      "figcraft_nodes": [
+        {"id": 1223, "frame": "02_Master_Detail_Movie", "name": "Detail Navigation Tabs"},
+        {"id": 2201, "frame": "02B_Detail_Schedule_Location", "name": "Detail Navigation Tabs"},
+        {"id": 1571, "frame": "04_Concert_Spot_POV", "name": "Detail Navigation Tabs", "proto_dest": 1836},
+        {"id": 2807, "frame": "04B_Concert_Syarat_Ketentuan", "name": "Detail_Tabs_Nav", "proto_dest": 376}
+      ],
+      "interaction_kind": "State",
+      "destination": "tab_switcher_internal",
+      "description": "Tab switcher internal pada frame detail (/overview, /tickets, /terms)"
+    },
+    {
+      "element": "Btn_Salin_VA",
+      "figcraft_nodes": [
+        {"id": 2394, "frame": "06_Payment_Instruction", "label": "Salin Nomor"},
+        {"id": 2736, "frame": "08_Modals_System", "name": "Modal_D_VA_Copied_Toast"}
+      ],
+      "interaction_kind": "Action",
+      "destination": "clipboard_copy + Modal_D_VA_Copied_Toast",
+      "description": "Salin nomor VA ke clipboard dan memicu Micro-Toast copied + state tombol tersalin (node 2739, 2744)"
+    },
+    {
+      "element": "Btn_Ganti_Metode",
+      "figcraft_nodes": [
+        {"id": 2436, "frame": "06_Payment_Instruction", "label": "Ganti Metode Pembayaran", "proto_dest": 484}
+      ],
+      "interaction_kind": "Action",
+      "destination": "05_Checkout",
+      "description": "Buka Accordion / halaman pemilih metode bayar dengan kursi tersimpan (Seat_Retention_Note: 2662)"
+    },
+    {
+      "element": "Btn_Batal_Transaksi",
+      "figcraft_nodes": [
+        {"id": 3073, "frame": "06_Payment_Instruction", "label": "Batalkan Transaksi", "proto_dest": 2601},
+        {"id": 2725, "frame": "08_Modals_System", "name": "Modal_C_Cancel_Transaction"}
+      ],
+      "interaction_kind": "Action",
+      "destination": "Modal_C_Cancel_Transaction",
+      "description": "Buka modal konfirmasi pembatalan transaksi (Dialog_Cancel_Card 2728, Btn_Ya_Batalkan 2734)"
+    },
+    {
+      "element": "Btn_Unduh_PDF",
+      "figcraft_nodes": [
+        {"id": 2549, "frame": "07_Ticket_Success", "label": "Unduh E-Tiket (PDF)"}
+      ],
+      "interaction_kind": "Action",
+      "destination": "download_eticket_pdf",
+      "description": "Generate & unduh file E-Tiket (PDF) dari Frame_ETicket_Success"
+    },
+    {
+      "element": "Btn_Mulai_Eksplorasi",
+      "figcraft_nodes": [
+        {"id": 3100, "frame": "00_Cinematic_Parallax_Intro", "label": "Mulai Eksplorasi ↓", "proto_dest": 3115}
+      ],
+      "interaction_kind": "Transition",
+      "destination": "00B_Intro_Zoom_Auth_Gate",
+      "description": "Picu transisi Dolly Zoom-in (Layer 1 & 2 scale 1.4 opacity 0) ke Auth Gate"
+    },
+    {
+      "element": "Btn_Masuk_Member",
+      "figcraft_nodes": [
+        {"id": 3128, "frame": "00B_Intro_Zoom_Auth_Gate", "label": "Masuk Akun Member", "proto_dest": 3}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/login -> /",
+      "description": "Masuk akun member untuk promo & poin reservasi lalu lanjut ke 01_Home"
+    },
+    {
+      "element": "Btn_Daftar_Akun_Baru",
+      "figcraft_nodes": [
+        {"id": 3131, "frame": "00B_Intro_Zoom_Auth_Gate", "label": "Daftar Akun Baru", "proto_dest": 3154}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/auth/register",
+      "description": "Buka frame modal pendaftaran akun 00C_Auth_Register"
+    },
+    {
+      "element": "Link_Lanjut_Tamu",
+      "figcraft_nodes": [
+        {"id": 3137, "frame": "00B_Intro_Zoom_Auth_Gate", "label": "Lanjut Eksplorasi sebagai Tamu →", "proto_dest": 3}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/",
+      "description": "Push route ke 01_Home dengan transisi fade-in 300ms tanpa login"
+    },
+    {
+      "element": "Btn_Close_Register",
+      "figcraft_nodes": [
+        {"id": 3159, "frame": "00C_Auth_Register", "label": "Tutup Modal Register (X)", "proto_dest": 3115}
+      ],
+      "interaction_kind": "Action",
+      "destination": "00B_Intro_Zoom_Auth_Gate",
+      "description": "Tutup modal pendaftaran akun dan kembali ke gerbang pilihan Auth Gate"
+    },
+    {
+      "element": "Btn_Daftar_Akun_Sekarang",
+      "figcraft_nodes": [
+        {"id": 3199, "frame": "00C_Auth_Register", "label": "Daftar Akun Sekarang", "proto_dest": 3}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/auth/register -> /",
+      "description": "Validasi form pendaftaran akun baru lalu masuk ke 01_Home"
+    },
+    {
+      "element": "Btn_Google_SignIn",
+      "figcraft_nodes": [
+        {"id": 3205, "frame": "00C_Auth_Register", "label": "Lanjutkan dengan Google", "proto_dest": 3},
+        {"id": 3334, "frame": "00D_Modal_Login_Dark", "label": "Lanjutkan dengan Google", "proto_dest": 3351}
+      ],
+      "interaction_kind": "Action",
+      "destination": "oauth_google -> /",
+      "description": "Autentikasi Google OAuth 2.0 menggunakan ikon Google resmi lalu masuk ke Home"
+    },
+    {
+      "element": "Btn_SSO_UI",
+      "figcraft_nodes": [
+        {"id": 3264, "frame": "00C_Auth_Register", "label": "Masuk dengan SSO UI", "proto_dest": 3},
+        {"id": 3323, "frame": "00D_Modal_Login_Dark", "label": "Masuk dengan SSO UI", "proto_dest": 3351},
+        {"id": 3616, "frame": "01_Home_Dark_Theme", "label": "Masuk dengan SSO UI", "proto_dest": 3280}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/auth/callback/ui",
+      "description": "Login CAS/OIDC Universitas Indonesia dengan logo resmi Makara UI PNG untuk klaim status verified_student & Diskon Khusus Mahasiswa UI"
+    },
+    {
+      "element": "Btn_Apple_SignIn",
+      "figcraft_nodes": [
+        {"id": 3275, "frame": "00C_Auth_Register", "label": "Lanjutkan dengan Apple ID", "proto_dest": 3},
+        {"id": 3341, "frame": "00D_Modal_Login_Dark", "label": "Lanjutkan dengan Apple ID", "proto_dest": 3351}
+      ],
+      "interaction_kind": "Action",
+      "destination": "oauth_apple -> /",
+      "description": "Sign in with Apple menggunakan ikon monokrom Apple lalu masuk ke Home"
+    },
+    {
+      "element": "Theme_Toggle_Button",
+      "figcraft_nodes": [
+        {"id": 3219, "frame": "01_Home", "label": "Moon Outline Toggle", "proto_dest": 3351},
+        {"id": 3368, "frame": "01_Home_Dark_Theme", "label": "Sun Gold Toggle", "proto_dest": 3},
+        {"id": 3283, "frame": "00D_Modal_Login_Dark", "label": "Sun Gold Toggle", "proto_dest": 3618},
+        {"id": 5813, "frame": "Modal_Forgot_Password", "label": "Moon Outline Toggle", "proto_dest": 5757},
+        {"id": 5816, "frame": "Modal_Forgot_Password_Dark", "label": "Sun Gold Toggle", "proto_dest": 5697}
+      ],
+      "interaction_kind": "State",
+      "destination": "data-theme=\"dark\" | data-theme=\"light\"",
+      "description": "Toggle tema Light (#FFFFFF) ke Dark Cinema Slate (#0B0F17) dengan dissolve 150ms pada seluruh 19 pasangan layar pasca-parallax (39 tombol termasuk komponen master 644)"
+    },
+    {
+      "element": "Auth_Switch_And_Login_Actions",
+      "figcraft_nodes": [
+        {"id": 24, "frame": "01_Home", "label": "Account Pill", "proto_dest": 3618},
+        {"id": 3371, "frame": "01_Home_Dark_Theme", "label": "Account Pill", "proto_dest": 3280},
+        {"id": 3212, "frame": "00C_Auth_Register", "label": "Sudah memiliki akun? Masuk di sini", "proto_dest": 3618},
+        {"id": 3346, "frame": "00D_Modal_Login_Dark", "label": "Belum memiliki akun? Daftar di sini", "proto_dest": 3707},
+        {"id": 3317, "frame": "00D_Modal_Login_Dark", "label": "Masuk Sekarang", "proto_dest": 3351},
+        {"id": 3295, "frame": "00D_Modal_Login_Dark", "label": "Btn_Close_Login_Dark", "proto_dest": 3682}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/auth/login | /auth/register",
+      "description": "Perpindahan antar dialog daftar akun (00C Light/Dark), login (00D Light/Dark), dan beranda tema masing-masing"
+    },
+    {
+      "element": "Link_Lupa_Kata_Sandi",
+      "figcraft_nodes": [
+        {"id": 5754, "frame": "00D_Modal_Login", "label": "Lupa kata sandi?", "proto_dest": 5697},
+        {"id": 5756, "frame": "00D_Modal_Login_Dark", "label": "Lupa kata sandi?", "proto_dest": 5757}
+      ],
+      "interaction_kind": "Route",
+      "destination": "/auth/forgot-password",
+      "backend_api_targets": ["POST /auth/forgot-password", "POST /auth/reset-password"],
+      "description": "Membuka Modal_Forgot_Password (440px Light #FFFFFF / Dark #161F30, Lock 24x24, Email + icon mail, tombol 48px Kirim Instruksi Reset, dan Micro-State Sukses)"
+    },
+    {
+      "element": "Modal_Forgot_Password_Actions",
+      "figcraft_nodes": [
+        {"id": 5705, "frame": "Modal_Forgot_Password", "label": "Btn_Close_Forgot_Form", "proto_dest": 3618},
+        {"id": 5726, "frame": "Modal_Forgot_Password", "label": "Link_Kembali_Masuk_Form", "proto_dest": 3618},
+        {"id": 5738, "frame": "Modal_Forgot_Password", "label": "Btn_Close_Forgot_Success", "proto_dest": 3618},
+        {"id": 5751, "frame": "Modal_Forgot_Password", "label": "Btn_Kembali_Halaman_Masuk", "proto_dest": 3618},
+        {"id": 5765, "frame": "Modal_Forgot_Password_Dark", "label": "Btn_Close_Forgot_Form", "proto_dest": 3280},
+        {"id": 5786, "frame": "Modal_Forgot_Password_Dark", "label": "Link_Kembali_Masuk_Form", "proto_dest": 3280},
+        {"id": 5798, "frame": "Modal_Forgot_Password_Dark", "label": "Btn_Close_Forgot_Success", "proto_dest": 3280},
+        {"id": 5811, "frame": "Modal_Forgot_Password_Dark", "label": "Btn_Kembali_Halaman_Masuk", "proto_dest": 3280}
+      ],
+      "interaction_kind": "Action",
+      "destination": "/auth/login",
+      "backend_api_targets": ["POST /auth/forgot-password", "POST /auth/reset-password"],
+      "description": "Menutup Modal_Forgot_Password (Light/Dark) atau kembali ke halaman masuk tema masing-masing setelah mengirim instruksi reset kata sandi"
+    }
+  ],
+  "team_briefing_assignments": {
+    "source_artboard_id": 5500,
+    "source_artboard_name": "09_Project_Architecture_Team_Briefing",
+    "anggota_2_teman_a": {
+      "modul": "Modul A: Core Backend, Auth Guard & Routing",
+      "responsibilities": [
+        "Flask Application Factory, Blueprint Routing, Session Management",
+        "Forgot Password Flow (Modal_Forgot_Password Light & Dark -> Form Reset & Success Micro-State)",
+        "Backend Endpoints: POST /auth/forgot-password & POST /auth/reset-password"
+      ],
+      "figcraft_artboard_ids": [5500, 3618, 3280, 5697, 5757]
+    }
+  },
+  "user_flow_pointers": {
+    "group_id": 2786,
+    "group_name": "User_Flow_Pointers",
+    "connectors": [
+      {
+        "from": "00_Cinematic_Parallax_Intro",
+        "to": "00B_Intro_Zoom_Auth_Gate",
+        "label": "Scroll / Klik Jelajah",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "00B_Intro_Zoom_Auth_Gate",
+        "to": "00C_Auth_Register",
+        "label": "Daftar Akun Baru → /auth/register",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "00B_Intro_Zoom_Auth_Gate",
+        "to": "01_Home",
+        "label": "Pilih Masuk / Lanjut sebagai Tamu",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "01_Home",
+        "to": "02B_Detail_Schedule_Location",
+        "label": "Pilih Film / Konser",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "02B_Detail_Schedule_Location",
+        "to": "03_Cinema_Seat_POV",
+        "label": "Pilih Bioskop & Jam",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "03_Cinema_Seat_POV",
+        "to": "06_Payment_Instruction",
+        "label": "Konfirmasi Kursi & Checkout",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "06_Payment_Instruction",
+        "to": "07_Ticket_Success",
+        "label": "Pembayaran Berhasil",
+        "style": "solid #0EA5E9 2.5px triangleArrow"
+      },
+      {
+        "from": "06_Payment_Instruction",
+        "to": "08_Modals_System",
+        "label": "Waktu Habis / Gagal Bayar",
+        "style": "dashed [8,6] #DC2626 2.5px triangleArrow"
+      },
+      {
+        "from": "04B_Concert_Syarat_Ketentuan",
+        "to": "04_Concert_Spot_POV",
+        "label": "Pilih Tiket & Spot → /event/coldplay/tickets",
+        "style": "solid #006875 2.5px triangleArrow"
+      }
+    ]
+  },
+  "artboards": [
+    {
+      "id": 3075,
+      "name": "00_Cinematic_Parallax_Intro",
+      "type": "FRAME",
+      "role": "Step 0: 3D Multi-Layer Parallax Intro (Layer 1 Doorway Z:40, Layer 2 Audience Silhouette Z:30, Layer 3 Sandwich Typography FEEL THE MOMENTS Z:20, Layer 4 Curved Screen & Projector Glow Z:10)",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -3101.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 3115,
+      "name": "00B_Intro_Zoom_Auth_Gate",
+      "type": "FRAME",
+      "role": "Step 0B: Dolly Zoom-in transition & Clean #FFFFFF Auth Gate Card (Masuk Member, Daftar Baru, Lanjut Tamu)",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -1581.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 3154,
+      "name": "00C_Auth_Register",
+      "type": "FRAME",
+      "role": "Step 0C: Create Account Modal (/auth/register) on dark overlay (#FFFFFF 480px card, 16px radius, SSO UI dengan logo Makara UI PNG, Google OAuth, Apple ID)",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -1581.0,
+        "y": 1840.0
+      }
+    },
+    {
+      "id": 3280,
+      "name": "00D_Modal_Login_Dark",
+      "type": "FRAME",
+      "role": "Step 0D: Dark Mode Login Modal (/auth/login) Deep Cinema Slate (#0B0F17/#161F30), Sun Theme Toggle, SSO UI dengan Makara UI PNG, Google OAuth, Apple ID",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -3101.0,
+        "y": 1840.0
+      }
+    },
+    {
+      "id": 3351,
+      "name": "01_Home_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 1 Dark Mode: Discovery catalog (Deep Cinema Slate #0B0F17/#161F30), Sun Theme Toggle, Banner SSO UI dengan Makara UI PNG & Diskon Khusus Mahasiswa UI",
+      "bounds": {
+        "height": 1600.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": -1020.0
+      }
+    },
+    {
+      "id": 3,
+      "name": "01_Home",
+      "type": "FRAME",
+      "role": "Step 1: Discovery catalog, Now Playing cards (↗ arc badge) & Coming Soon cards (🔔 Ingatkan Saya)",
+      "bounds": {
+        "height": 1785.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 122,
+      "name": "03_Cinema_Seat_POV",
+      "type": "FRAME",
+      "role": "Step 3: Interactive cinema seat map with 3D POV simulator & HUD metrics",
+      "bounds": {
+        "height": 1028.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 376,
+      "name": "04_Concert_Spot_POV",
+      "type": "FRAME",
+      "role": "Step 3: Concert spot selector with integrated pricing, height slider & stage angle toggles",
+      "bounds": {
+        "height": 1095.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 484,
+      "name": "05_Checkout",
+      "type": "FRAME",
+      "role": "Step 4: Buyer form, 10:00 reservation countdown, VA/Retail/E-Wallet accordions, service fee (Rp 3.000/tiket)",
+      "bounds": {
+        "height": 1227.0,
+        "width": 1440.0,
+        "x": 4499.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 2346,
+      "name": "06_Payment_Instruction",
+      "type": "FRAME",
+      "role": "Step 4: Single active BCA VA (Hick's Law), >=48px Fitts CTAs, Btn_Ganti_Metode (->484), Btn_Batal_Transaksi (->2601 Modal C), 10s auto-verify green badge, seat release warning & Accordions",
+      "bounds": {
+        "height": 1143.4,
+        "width": 1440.0,
+        "x": 6019.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 2482,
+      "name": "07_Ticket_Success",
+      "type": "FRAME",
+      "role": "Step 5: Payment success banner, E-Ticket QR & booking code (Frame_ETicket_Success), PDF/Wallet actions",
+      "bounds": {
+        "height": 816.2,
+        "width": 1440.0,
+        "x": 7539.0,
+        "y": 840.0
+      }
+    },
+    {
+      "id": 644,
+      "name": "02_Master_Detail_Movie",
+      "type": "COMPONENT",
+      "role": "Master reusable movie detail template (synopsis, production details, trivia)",
+      "bounds": {
+        "height": 943.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": 2680.0
+      }
+    },
+    {
+      "id": 1162,
+      "name": "Footer_Web_titiket",
+      "type": "COMPONENT",
+      "role": "Reusable Master Footer Component with 4 columns and 12 official payment PNG logos",
+      "bounds": {
+        "height": 210.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": 2680.0
+      }
+    },
+    {
+      "id": 1836,
+      "name": "04B_Concert_Syarat_Ketentuan",
+      "type": "FRAME",
+      "role": "Step 2: Pure Terms Tab (Hero + Kembali CTA, 20/24px 1.75px monochrome outline icon kit, Syarat & Ketentuan Resmi Acara, Sticky Sidebar w/ Banner Mini, Wristband Verification & Monochrome Share)",
+      "bounds": {
+        "height": 1236.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": 2680.0
+      }
+    },
+    {
+      "id": 2173,
+      "name": "02B_Detail_Schedule_Location",
+      "type": "FRAME",
+      "role": "Step 2B: Cinema city/theater dropdown, date chips, and showtime studio grid",
+      "bounds": {
+        "height": 1201.8,
+        "width": 1440.0,
+        "x": 4499.0,
+        "y": 2680.0
+      }
+    },
+    {
+      "id": 2601,
+      "name": "08_Modals_System",
+      "type": "FRAME",
+      "role": "Modals A-D (Timeout, Conflict Seat Toast, Cancel Confirm rgba(0,0,0,0.5), VA Copied Squash&Stretch), Dynamic Error X SVG, Hover/Wind-up specs",
+      "bounds": {
+        "height": 1017.79,
+        "width": 1440.0,
+        "x": 6019.0,
+        "y": 2680.0
+      }
+    },
+    {
+      "id": 700,
+      "name": "02A_Detail_Movie_01_SORE",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance - SORE: Istri dari Masa Depan",
+      "bounds": {
+        "height": 987.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": 4500.0
+      }
+    },
+    {
+      "id": 756,
+      "name": "02A_Detail_Movie_02_JatuhCinta",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance - Jatuh Cinta Seperti di Film-Film",
+      "bounds": {
+        "height": 987.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": 4500.0
+      }
+    },
+    {
+      "id": 812,
+      "name": "02A_Detail_Movie_03_BoBoiBoy",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance - BoBoiBoy Movie 2",
+      "bounds": {
+        "height": 987.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": 4500.0
+      }
+    },
+    {
+      "id": 868,
+      "name": "02A_Detail_Movie_04_EjenAli2",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance - Ejen Ali: The Movie 2",
+      "bounds": {
+        "height": 987.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": 5600.0
+      }
+    },
+    {
+      "id": 924,
+      "name": "02A_Detail_Movie_05_LaLaLand",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance - La La Land",
+      "bounds": {
+        "height": 1007.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": 5600.0
+      }
+    },
+    {
+      "id": 980,
+      "name": "02A_Detail_Movie_06_Endgame",
+      "type": "INSTANCE",
+      "role": "Step 2A: Movie detail instance : Avengers: Endgame",
+      "bounds": {
+        "height": 1003.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": 5600.0
+      }
+    },
+    {
+      "id": 3682,
+      "name": "00B_Intro_Zoom_Auth_Gate_Dark",
+      "type": "FRAME",
+      "role": "Step 0B Dark Mode: Dolly Zoom-in Auth Gate (#0B0F17/#161F30 card, transparent titiket.com logo, Sun Theme Toggle)",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -3101.0,
+        "y": -450.0
+      }
+    },
+    {
+      "id": 3707,
+      "name": "00C_Auth_Register_Dark",
+      "type": "FRAME",
+      "role": "Step 0C Dark Mode: Create Account Modal (/auth/register) Deep Cinema Slate (#0B0F17/#161F30), Makara UI PNG, Google OAuth, Apple ID, Sun Theme Toggle",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -1581.0,
+        "y": -450.0
+      }
+    },
+    {
+      "id": 3618,
+      "name": "00D_Modal_Login",
+      "type": "FRAME",
+      "role": "Step 0D Light Mode: Login Modal (/auth/login) clean #FFFFFF card matching 00D_Modal_Login_Dark, Makara UI PNG, Google OAuth, Apple ID, Moon Theme Toggle",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -4621.0,
+        "y": 1840.0
+      }
+    },
+    {
+      "id": 3779,
+      "name": "02A_Detail_Movie_01_SORE_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 01 SORE (#0B0F17/#161F30), production & format badges, transparent Dark logo, Sun Theme Toggle -> 700",
+      "bounds": {
+        "height": 981.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": -2150.0
+      }
+    },
+    {
+      "id": 5827,
+      "name": "02A_Detail_Movie_02_JatuhCinta_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 02 Jatuh Cinta Seperti di Film-Film (#0B0F17/#161F30), Sun Theme Toggle -> 756",
+      "bounds": {
+        "height": 981.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": -2150.0
+      }
+    },
+    {
+      "id": 5968,
+      "name": "02A_Detail_Movie_03_BoBoiBoy_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 03 BoBoiBoy The Movie (#0B0F17/#161F30), Sun Theme Toggle -> 812",
+      "bounds": {
+        "height": 981.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": -3350.0
+      }
+    },
+    {
+      "id": 6109,
+      "name": "02A_Detail_Movie_04_EjenAli2_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 04 Ejen Ali: The Movie 2 (#0B0F17/#161F30), Sun Theme Toggle -> 868",
+      "bounds": {
+        "height": 981.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": -3350.0
+      }
+    },
+    {
+      "id": 6250,
+      "name": "02A_Detail_Movie_05_LaLaLand_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 05 La La Land (#0B0F17/#161F30), Sun Theme Toggle -> 924",
+      "bounds": {
+        "height": 1001.0,
+        "width": 1440.0,
+        "x": -61.0,
+        "y": -4450.0
+      }
+    },
+    {
+      "id": 6391,
+      "name": "02A_Detail_Movie_06_Endgame_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2A Dark Mode: Movie detail 06 Avengers: Endgame (#0B0F17/#161F30), Sun Theme Toggle -> 980",
+      "bounds": {
+        "height": 997.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": -4450.0
+      }
+    },
+    {
+      "id": 3906,
+      "name": "02B_Detail_Schedule_Location_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2B Dark Mode: Cinema city/theater dropdown, date chips, and darkened showtime studio grid (#161F30/#1E293B), Sun Theme Toggle",
+      "bounds": {
+        "height": 1193.8,
+        "width": 1440.0,
+        "x": 4499.0,
+        "y": -2150.0
+      }
+    },
+    {
+      "id": 4082,
+      "name": "03_Cinema_Seat_POV_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 3 Dark Mode: Interactive cinema seat map (60 seats high-contrast text), 3D POV HUD & sidebar, Sun Theme Toggle",
+      "bounds": {
+        "height": 1020.0,
+        "width": 1440.0,
+        "x": 1459.0,
+        "y": -650.0
+      }
+    },
+    {
+      "id": 4401,
+      "name": "04_Concert_Spot_POV_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 3 Dark Mode: Concert spot selector Spot 1..4 dark cards, lens/camera HUD pills & 3D stage preview, Sun Theme Toggle",
+      "bounds": {
+        "height": 1089.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": -650.0
+      }
+    },
+    {
+      "id": 4562,
+      "name": "04B_Concert_Syarat_Ketentuan_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 2 Dark Mode: Pure Terms Tab (Coldplay T&C dark surface, Rp 800.000 & promotor sidebar contrast, Sun Theme Toggle)",
+      "bounds": {
+        "height": 1228.0,
+        "width": 1440.0,
+        "x": 2979.0,
+        "y": -2150.0
+      }
+    },
+    {
+      "id": 4752,
+      "name": "05_Checkout_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 4 Dark Mode: Buyer form (#0B0F17 inputs), VA/Retail/E-Wallet dark accordions & payment pills, Sun Theme Toggle",
+      "bounds": {
+        "height": 1222.0,
+        "width": 1440.0,
+        "x": 4499.0,
+        "y": -650.0
+      }
+    },
+    {
+      "id": 4954,
+      "name": "06_Payment_Instruction_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 4 Dark Mode: Single active BCA VA (#0B0F17/#161F30), Fitts CTAs, auto-verify banner & order sidebar, Sun Theme Toggle",
+      "bounds": {
+        "height": 1135.4,
+        "width": 1440.0,
+        "x": 6019.0,
+        "y": -650.0
+      }
+    },
+    {
+      "id": 5101,
+      "name": "07_Ticket_Success_Dark_Theme",
+      "type": "FRAME",
+      "role": "Step 5 Dark Mode: Payment success banner, dark E-Ticket metadata cells & intentional crisp #FFFFFF QR_Code_Box, Sun Theme Toggle",
+      "bounds": {
+        "height": 808.2,
+        "width": 1440.0,
+        "x": 7539.0,
+        "y": -650.0
+      }
+    },
+    {
+      "id": 5223,
+      "name": "08_Modals_System_Dark_Theme",
+      "type": "FRAME",
+      "role": "Modals A-D Dark Mode (Timeout, Conflict F6/F7 Toast, Cancel Confirm #2D1418/#FCA5A5 CTA, VA Copied Toast & Sedang Tayang card), Sun Theme Toggle",
+      "bounds": {
+        "height": 1017.79,
+        "width": 1440.0,
+        "x": 6019.0,
+        "y": -2150.0
+      }
+    },
+    {
+      "id": 5500,
+      "name": "09_Project_Architecture_Team_Briefing",
+      "type": "FRAME",
+      "role": "DDP 1 Presentation & Team Briefing Board (1440x1080): Header + 3-Column Auto-Layout Grid (Macro User Flow Step 0-5, Modul A Anggota 2 Teman A Auth & Forgot Password API sampai Modul D, Rubrik Authentic Assessment Target Nilai A)",
+      "bounds": {
+        "height": 1080.0,
+        "width": 1440.0,
+        "x": 7539.0,
+        "y": 2800.0
+      }
+    },
+    {
+      "id": 5697,
+      "name": "Modal_Forgot_Password",
+      "type": "FRAME",
+      "role": "Forgot Password Modal Flow (/auth/forgot-password -> POST /auth/forgot-password, POST /auth/reset-password): 440px #FFFFFF card (16px radius, 32px padding, Lock 24x24, Email + mail icon, 48px CTA) + Micro-State Alternatif Success State (Tautan Berhasil Dikirim!) + Moon Theme Toggle -> 5757",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -4621.0,
+        "y": 2840.0
+      }
+    },
+    {
+      "id": 5757,
+      "name": "Modal_Forgot_Password_Dark",
+      "type": "FRAME",
+      "role": "Forgot Password Modal Flow Dark Mode (#02060D backdrop, #161F30 440px cards, #0B0F17 email input & guidance box, #2DD4BF / #34D399 accents) + Sun Theme Toggle -> 5697",
+      "bounds": {
+        "height": 900.0,
+        "width": 1440.0,
+        "x": -3101.0,
+        "y": 2840.0
+      }
+    }
+  ],
+  "verification": {
+    "total_top_level_nodes": 43,
+    "total_artboards": 42,
+    "light_dark_screen_pairs": 19,
+    "theme_toggle_nodes": 39,
+    "user_flow_group_present": true,
+    "artboard_bounding_box_overlaps": 0,
+    "empty_frames": 0,
+    "dark_logos_with_solid_fill": 0,
+    "suspicious_bright_surfaces_in_dark": 0,
+    "cross_theme_non_toggle_routes": 0,
+    "double_hyphens": 0,
+    "disallowed_tokens_or_placeholders": 0,
+    "wired_proto_interactions": 163,
+    "person_silhouette_asset": "reference_assets/person_silhouette_clean.png",
+    "makara_ui_logo_asset": "reference_assets/makara_ui.png",
+    "movies_catalog_count": 6,
+    "payment_logos_count": 12,
+    "static_synced_logos_count": 12
+  }
+}

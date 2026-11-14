@@ -1,0 +1,95 @@
+{
+  "catalog_source": "reference_assets",
+  "movies": [
+    {
+      "id": "sore",
+      "title": "SORE: Istri dari Masa Depan",
+      "tagline": "Till Death Do us Loop.",
+      "synopsis": "Jonathan menjalani hidupnya seperti biasa hingga Sore, seorang wanita misterius, muncul dan mengaku sebagai istrinya dari masa depan. Membawa misi untuk mengubah gaya hidup serta kebiasaan Jonathan sebelum terlambat, pertemuan lintas waktu ini membuka rahasia masa depan yang menguji keyakinan dan cinta mereka.",
+      "rating": 7.5,
+      "duration": "1h 48m",
+      "age_rating": "13+",
+      "genres": ["Drama", "Fantasy", "Romance", "Sci-Fi"],
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (CinemaScope)",
+        "sound_mix": "Dolby Digital 5.1"
+      },
+      "poster_file": "reference_assets/images/Poster Film SORE INI YANG REKOMENDASI YA.jpeg"
+    },
+    {
+      "id": "jatuh-cinta-seperti-di-film-film",
+      "title": "Jatuh Cinta Seperti di Film-Film",
+      "tagline": "Cinta kadang datang dalam hitam dan putih, sebelum menemukan warnanya sendiri.",
+      "synopsis": "Bagus, seorang penulis naskah adaptasi, diam-diam menuangkan perasaannya kepada sahabat SMA-nya, Hana, yang baru saja kehilangan sang suami lewat sebuah skenario film romantis. Di tengah duka dan keraguan, Bagus harus membuktikan bahwa kisah cinta yang tulus tidak hanya terjadi di layar lebar.",
+      "rating": 8.2,
+      "duration": "1h 58m",
+      "age_rating": "13+",
+      "genres": ["Romance", "Comedy", "Drama"],
+      "tech_specs": {
+        "aspect_ratio": "1.85:1 (Flat)",
+        "sound_mix": "Dolby Digital 5.1"
+      },
+      "poster_file": "reference_assets/images/Jatuh Cinta seperti di Film Film Poster.jpeg"
+    },
+    {
+      "id": "boboiboy-the-movie",
+      "title": "BoBoiBoy The Movie",
+      "tagline": "Satu kekuatan, tujuh kuasa, demi menyelamatkan sahabat dan bumi.",
+      "synopsis": "Sekelompok pemburu harta karun alien bernama Tengkotak menculik Ochobot untuk menemukan lokasi Sfera Kuasa purba yang tersembunyi di Bumi. BoBoiBoy bersama para sahabatnya harus berpacu melawan waktu, menguasai kekuatan elemen baru, dan menggagalkan rencana jahat Bora Ra.",
+      "rating": 7.5,
+      "duration": "1h 40m",
+      "age_rating": "SU",
+      "genres": ["Animation", "Action", "Adventure"],
+      "tech_specs": {
+        "aspect_ratio": "1.85:1 (Flat)",
+        "sound_mix": "Dolby Atmos / 5.1"
+      },
+      "poster_file": "reference_assets/images/Poster Boboiby Movie .jpg"
+    },
+    {
+      "id": "ejen-ali-the-movie-2",
+      "title": "Ejen Ali: The Movie 2",
+      "tagline": "Misi Satria dimulai: protokol baru, ancaman baru di Cyberaya.",
+      "synopsis": "Ejen Ali dipilih untuk menguji proyek rahasia bernama Satria, sistem tempur canggih berbasis kecerdasan buatan yang dirancang untuk misi M.A.T.A. Ketika ancaman siber baru mengguncang keamanan Cyberaya, Ali harus membuktikan kelayakannya sekaligus menjaga kepercayaan rekan-rekannya.",
+      "rating": 8.1,
+      "duration": "1h 45m",
+      "age_rating": "SU",
+      "genres": ["Animation", "Action", "Sci-Fi"],
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (Scope)",
+        "sound_mix": "Dolby Atmos"
+      },
+      "poster_file": "reference_assets/images/Ejen Ali Movie 2 Poster.jpg"
+    },
+    {
+      "id": "la-la-land",
+      "title": "La La Land",
+      "tagline": "Here's to the fools who dream.",
+      "synopsis": "Di jantung kota Los Angeles, seorang pianis jazz idealis bernama Sebastian dan calon aktris penuh mimpi bernama Mia saling jatuh cinta sambil mengejar ambisi masing-masing. Saat kesuksesan mulai menghampiri, mereka dihadapkan pada pilihan sulit antara mempertahankan cinta atau meraih impian.",
+      "rating": 8.0,
+      "duration": "2h 8m",
+      "age_rating": "13+",
+      "genres": ["Musical", "Romance", "Drama"],
+      "tech_specs": {
+        "aspect_ratio": "2.55:1 (CinemaScope)",
+        "sound_mix": "Dolby Atmos"
+      },
+      "poster_file": "reference_assets/images/Poster La La Land.jpg"
+    },
+    {
+      "id": "avengers-endgame",
+      "title": "Avengers: Endgame",
+      "tagline": "Part of the journey is the end.",
+      "synopsis": "Setelah separuh populasi alam semesta lenyap akibat jentikan jari Thanos, para anggota Avengers yang tersisa bersatu kembali untuk misi terakhir yang nyaris mustahil. Dengan memanfaatkan Quantum Realm, mereka mempertaruhkan segalanya demi membalikkan keadaan dan memulihkan keseimbangan semesta.",
+      "rating": 8.4,
+      "duration": "3h 2m",
+      "age_rating": "13+",
+      "genres": ["Action", "Adventure", "Sci-Fi"],
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (IMAX 1.90:1)",
+        "sound_mix": "Dolby Atmos / DTS:X"
+      },
+      "poster_file": "reference_assets/images/Poster Avengers ENDGAME.jpeg"
+    }
+  ]
+}

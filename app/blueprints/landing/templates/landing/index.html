@@ -1,0 +1,197 @@
+{#
+  landing/index.html — FOLDER TEAMMATE 1.
+  Tata letak titiket.com, tema terang bersih (#F8FAFC - #F1F5F9).
+  Data: `events` dari shared_state.EVENTS, `studios` dari landing/routes.py.
+  Interaksi (carousel, filter, modal trailer): static/js/landing.js.
+#}
+{% extends "base.html" %}
+{% set step = "landing" %}
+{% set theme_color = "#FFFFFF" %}
+{% block title %}Beli tiket bioskop & konser{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block header_center %}
+<div class="nav-tools">
+  <label class="nav-location">
+    <svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg>
+    <span class="visually-hidden">Lokasi</span>
+    {# ponytail: pilihan lokasi belum memfilter jadwal; sambungkan saat ada data bioskop per kota. #}
+    <select aria-label="Lokasi">
+      <option>JABODETABEK</option>
+      <option>BANDUNG</option>
+      <option>SURABAYA</option>
+      <option>YOGYAKARTA</option>
+    </select>
+  </label>
+  <label class="nav-search">
+    <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+    <input type="search" id="catalog-search" placeholder="Cari film, bioskop, atau konser..."
+           aria-label="Cari film, bioskop, atau konser" autocomplete="off">
+  </label>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a class="nav-link" href="{{ url_for('checkout.index') }}">
+  <svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>
+  <span>Pesanan Saya</span>
+  <span class="badge-count num" {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
+</a>
+<a class="nav-link" href="#promo">
+  <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
+  <span>Promo</span>
+</a>
+<span class="nav-avatar" role="img" aria-label="Profil pengguna">
+  <svg class="icon icon--lg" aria-hidden="true"><use href="#i-user"/></svg>
+</span>
+{% endblock %}
+
+{% block content %}
+{% set categories = [
+  ("bioskop", "Bioskop", "ticket"),
+  ("konser", "Konser", "music"),
+  ("film", "Film", "film"),
+  ("mfood", "m.food", "food"),
+  ("sewa", "Sewa Tempat", "seat"),
+] %}
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero__inner">
+    <h1 id="hero-title">Feel the moments beyond</h1>
+    <div class="category-pills" role="group" aria-label="Kategori">
+      {% for key, label, icon_name in categories %}
+      <button class="category-pill" type="button" data-filter="{{ key }}"
+              aria-pressed="false">
+        <span class="category-pill__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-{{ icon_name }}"/></svg></span>
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<div class="container landing">
+
+  {# ---------- Carousel promo: bergeser otomatis tiap 4 detik ---------- #}
+  <section class="promo" id="promo" aria-roledescription="carousel" aria-label="Promo">
+    <button class="promo__arrow promo__arrow--prev" type="button" id="promo-prev" aria-label="Promo sebelumnya">
+      <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+    </button>
+    <ul class="promo__track" id="promo-track">
+      {% for event in events %}
+      {% set poster = asset_url(event.poster) %}
+      {% set concert = event.kind == "concert" %}
+      <li class="promo__slide">
+        <a class="promo-card" href="{{ url_for('visualizer.index', type='concert', event=event.event_id) if concert
+                                       else url_for('visualizer.index', type='cinema', film=event.event_id) }}">
+          {% if poster %}<img src="{{ poster }}" alt="" loading="lazy">{% endif %}
+          <span class="promo-card__text">
+            <small>{{ "Konser · tiket tersedia" if concert else "Sedang tayang" }}</small>
+            <strong>{{ event.title }}</strong>
+            <span>{{ "Pilih kategori dan lihat pandangannya dalam 3D" if concert else "Pilih kursi dan lihat pandangannya dalam 3D" }}</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <button class="promo__arrow promo__arrow--next" type="button" id="promo-next" aria-label="Promo berikutnya">
+      <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+    </button>
+    <div class="promo__dots" id="promo-dots"></div>
+  </section>
+
+  {# ---------- Katalog ---------- #}
+  <section class="section" id="katalog" aria-labelledby="catalog-title">
+    <h2 id="catalog-title">Lagi tayang</h2>
+    <ul class="film-grid" id="film-grid">
+      {% for event in events %}
+      {% set poster = asset_url(event.poster) %}
+      {% set trailer = asset_url(event.trailer) %}
+      {% set concert = event.kind == "concert" %}
+      <li class="film-card" data-tags="{{ 'konser' if concert else 'bioskop film' }}"
+          data-title="{{ (event.title ~ ' ' ~ event.meta) | lower }}">
+        <div class="film-card__poster">
+          {% if poster %}
+          <img src="{{ poster }}" alt="Poster {{ event.title }}" loading="lazy" width="300" height="450">
+          {% else %}
+          <div class="film-card__missing" role="img" aria-label="Poster belum tersedia">
+            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-film"/></svg>
+          </div>
+          {% endif %}
+          <span class="film-card__rank num" aria-hidden="true">{{ loop.index }}</span>
+          <div class="film-card__actions">
+            {% if trailer %}
+            <button class="pill pill--light" type="button" data-trailer="{{ trailer }}" data-title="{{ event.title }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-play"/></svg>
+              Lihat trailer
+            </button>
+            {% endif %}
+            <a class="pill pill--solid" href="{{ url_for('visualizer.index', type='concert', event=event.event_id) if concert
+                                              else url_for('visualizer.index', type='cinema', film=event.event_id) }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-ticket"/></svg>
+              Beli tiket
+            </a>
+          </div>
+        </div>
+        <h3 class="film-card__title">{{ event.title }}</h3>
+        <p class="film-card__meta">
+          {% for part in event.meta.split(" · ") %}<span class="chip">{{ part }}</span>{% endfor %}
+        </p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="catalog-empty" id="catalog-empty" hidden>Belum ada yang cocok di sini. Coba kategori atau kata kunci lain.</p>
+  </section>
+
+  {# ---------- Studio ---------- #}
+  <section class="section" aria-labelledby="studio-title">
+    <h2 id="studio-title">Cari tau studio XXI, yuk!</h2>
+    <ul class="studio-grid">
+      {% for studio_type, title, text, image in studios %}
+      {% set photo = asset_url(image) %}
+      <li class="studio-card">
+        {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
+        <h3>{{ title }}</h3>
+        <p>{{ text }}</p>
+        <a class="pill pill--solid" href="{{ url_for('visualizer.index', type='cinema', studio=studio_type) }}"
+           aria-label="Baca lebih lanjut tentang {{ title }}">Baca lebih lanjut</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<dialog class="trailer-dialog" id="trailer-dialog" aria-labelledby="trailer-title">
+  <div class="trailer-dialog__head">
+    <h2 id="trailer-title"></h2>
+    <form method="dialog">
+      <button class="btn btn--icon btn--ghost" aria-label="Tutup trailer">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </form>
+  </div>
+  <video id="trailer-video" controls playsinline preload="none"></video>
+</dialog>
+{% endblock %}
+
+{% block footer %}
+<footer class="site-footer landing-footer">
+  <div class="container">
+    <nav class="landing-footer__links" aria-label="Tautan kaki">
+      <a href="{{ url_for('landing.index') }}">Beranda</a>
+      <a href="{{ url_for('visualizer.index') }}">Pilih Kursi & POV 3D</a>
+      <a href="{{ url_for('checkout.index') }}">Pesanan Saya</a>
+    </nav>
+    <p>
+      Copyright © 2026 titiket.com. Proyek tugas kuliah Dasar-Dasar Pemrograman 1, tidak berafiliasi dengan
+      Cinema XXI maupun penyelenggara konser resmi. Poster dan trailer adalah milik pemegang hak cipta masing-masing.
+    </p>
+  </div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}

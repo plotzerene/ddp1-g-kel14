@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Galat {{ code }}{% endblock %}
+{% block content %}
+<div class="container">
+  <section class="empty-state glass" aria-labelledby="error-title">
+    <span class="empty-state__code num">{{ code }}</span>
+    <h1 id="error-title">Ada yang tidak beres</h1>
+    <p>{{ message }}</p>
+    <a class="btn btn--primary" href="{{ url_for('landing.index') }}">
+      <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+      Kembali ke daftar acara
+    </a>
+  </section>
+</div>
+{% endblock %}

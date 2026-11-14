@@ -1,0 +1,19 @@
+# Lingkungan Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Salinan aset yang dibuat otomatis saat `python run.py` (sumbernya: ./reference_assets/)
+app/static/reference_assets/
+
+# Konfigurasi lokal
+.env
+instance/
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
