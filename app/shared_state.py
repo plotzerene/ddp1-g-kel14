@@ -30,15 +30,18 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from typing import Any, MutableMapping
+import secrets
+import threading
+import time
 
-from flask import session
+from flask import current_app, session
 
 CART_SESSION_KEY = "tiketpov_cart"
 MAX_CART_ITEMS = 6          # cookie session Flask dibatasi ±4 KB; pindah ke DB bila perlu lebih
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # 1. Harga tiket (Rupiah)
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 TICKET_PRICES: dict[str, int] = {
     # Cinema XXI — per kursi
     "regular": 50_000,
@@ -67,10 +70,9 @@ def format_rupiah(amount: float | int | None) -> str:
     return "Rp " + f"{int(round(amount)):,}".replace(",", ".")
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # 2. Katalog acara
-# --------------------------------------------------------------------------- #
-# ponytail: semua film bisa dibuka di keempat studio; batasi per film bila jadwal nyata dibutuhkan.
+# =========================================================================== #
 CINEMA_STUDIOS: tuple[str, ...] = ("xxi-regular", "xxi-premiere", "xxi-imax", "xxi-4dx")
 
 
@@ -88,27 +90,40 @@ class Event:
     venues: tuple[str, ...]     # venue_id di modul visualizer
 
 
-def _film(event_id: str, title: str, meta: str, poster: str, trailer: str) -> Event:
-    return Event(event_id, title, "film", meta, f"images/{poster}", f"videos/{trailer}", CINEMA_STUDIOS)
+def _film(
+    event_id: str,
+    title: str,
+    meta: str,
+    poster: str,
+    trailer: str,
+    venues: tuple[str, ...] = CINEMA_STUDIOS,
+) -> Event:
+    return Event(event_id, title, "film", meta, f"images/{poster}", f"videos/{trailer}", venues)
 
 
 EVENTS: dict[str, Event] = {
     event.event_id: event for event in (
         _film("sore", "SORE: Istri dari Masa Depan", "2D · 1h 48m · Drama / Romance · R13+",
               "poster_film_sore_ini_yang_rekomendasi_ya.jpg",
-              "sore_istri_dari_masa_depan_official_trailer.mp4"),
+              "sore_istri_dari_masa_depan_official_trailer.mp4",
+              ("xxi-regular", "xxi-premiere", "xxi-imax", "xxi-4dx")),
         _film("jatuh-cinta-seperti-di-film-film", "Jatuh Cinta Seperti di Film Film",
               "2D · 1h 58m · Romance / Comedy · R13+",
               "jatuh_cinta_seperti_di_film_film_poster.jpg",
-              "jatuh_cinta_seperti_di_film_film_official_trailer.mp4"),
+              "jatuh_cinta_seperti_di_film_film_official_trailer.mp4",
+              ("xxi-regular", "xxi-premiere")),
         _film("boboiboy-the-movie", "BoBoiBoy The Movie", "2D · 1h 40m · Animation / Action · SU",
-              "poster_boboiby_movie.jpg", "boboiboy_the_movie_official_trailer.mp4"),
+              "poster_boboiby_movie.jpg", "boboiboy_the_movie_official_trailer.mp4",
+              ("xxi-regular", "xxi-4dx")),
         _film("ejen-ali-the-movie-2", "Ejen Ali: The Movie 2", "2D · 1h 45m · Animation / Action · SU",
-              "ejen_ali_movie_2_poster.jpg", "ejen_ali_the_movie_2_misi_satria_official_trailer_2.mp4"),
+              "ejen_ali_movie_2_poster.jpg", "ejen_ali_the_movie_2_misi_satria_official_trailer_2.mp4",
+              ("xxi-regular", "xxi-imax")),
         _film("la-la-land", "La La Land", "2D · 2h 8m · Musical / Romance · R13+",
-              "poster_la_la_land.jpg", "la_la_land_2016_movie_official_trailer_dreamers.mp4"),
+              "poster_la_la_land.jpg", "la_la_land_2016_movie_official_trailer_dreamers.mp4",
+              ("xxi-regular", "xxi-premiere", "xxi-imax")),
         _film("avengers-endgame", "Avengers: Endgame", "2D / IMAX / 4DX · 3h 2m · Action / Sci-Fi · R13+",
-              "poster_avengers_endgame.jpg", "trailer_cinema.mp4"),
+              "poster_avengers_endgame.jpg", "trailer_cinema.mp4",
+              ("xxi-regular", "xxi-imax", "xxi-4dx")),
         Event("coldplay-gbk", "Coldplay: Music of the Spheres", "concert",
               "Stadion Utama Gelora Bung Karno · Jakarta · Live Concert",
               "images/poster_coldplay_konser.jpg", "videos/coldplay_live.mp4", ("gbk-coldplay",)),
@@ -129,9 +144,9 @@ def event_for_venue(venue_id: str, preferred: str | None = None) -> Event | None
     return next((event for event in EVENTS.values() if venue_id in event.venues), None)
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # 3. Keranjang
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 @dataclass
 class CartItem:
     event_id: str
@@ -213,3 +228,98 @@ class Cart:
 
     def seat_keys(self) -> list[str]:
         return [item.key for item in self.items()]
+
+
+# =========================================================================== #
+# 4. Sesi Autentikasi & Penyimpan Pesanan (Profile & Riwayat Transaksi)
+# =========================================================================== #
+AUTH_SESSION_KEY = "tiketpov_user"
+ORDER_OWNER_KEY = "tiketpov_seat_owner"
+
+
+def current_user() -> dict[str, Any] | None:
+    """Data pengguna yang sedang masuk pada sesi Flask, atau None untuk tamu."""
+    raw = session.get(AUTH_SESSION_KEY)
+    return dict(raw) if isinstance(raw, dict) and raw.get("email") else None
+
+
+def set_current_user(user: dict[str, Any] | None) -> None:
+    if user is None:
+        session.pop(AUTH_SESSION_KEY, None)
+    else:
+        session[AUTH_SESSION_KEY] = dict(user)
+    session.modified = True
+
+
+def active_order_owner() -> str:
+    """Kunci pemilik pesanan di store: email akun bila sudah masuk, atau token sesi."""
+    user = current_user()
+    if user and user.get("email"):
+        return f"user:{str(user['email']).strip().lower()}"
+    owner = session.get(ORDER_OWNER_KEY)
+    if not owner:
+        owner = secrets.token_hex(16)
+        session[ORDER_OWNER_KEY] = owner
+    return f"sess:{owner}"
+
+
+class OrderStore:
+    """Penyimpan daftar pesanan sementara (PENDING, PAID, CANCELLED, EXPIRED) per pemilik."""
+
+    def __init__(self) -> None:
+        self._guard = threading.Lock()
+        self._orders: dict[str, list[dict[str, Any]]] = {}
+
+    @staticmethod
+    def _expire_if_needed(entry: dict[str, Any], now_ts: float) -> None:
+        if entry.get("status") == "PENDING" and float(entry.get("expires_ts", 0)) <= now_ts:
+            entry["status"] = "EXPIRED"
+            entry.setdefault("cancelled_at", time.strftime("%d %b %Y · %H.%M WIB"))
+            entry.setdefault("cancel_reason", "Batas waktu pembayaran berakhir")
+
+    def upsert(self, owner: str, order: dict[str, Any]) -> dict[str, Any]:
+        copy = dict(order)
+        with self._guard:
+            bucket = self._orders.setdefault(owner, [])
+            for idx, existing in enumerate(bucket):
+                if existing.get("code") == copy.get("code"):
+                    bucket[idx] = copy
+                    return dict(copy)
+            bucket.insert(0, copy)
+            return dict(copy)
+
+    def list_for(self, owner: str) -> list[dict[str, Any]]:
+        now_ts = time.time()
+        with self._guard:
+            bucket = self._orders.get(owner, [])
+            for entry in bucket:
+                self._expire_if_needed(entry, now_ts)
+            return [dict(entry) for entry in bucket]
+
+    def find(self, owner: str, code: str) -> dict[str, Any] | None:
+        now_ts = time.time()
+        with self._guard:
+            for entry in self._orders.get(owner, []):
+                if entry.get("code") == code:
+                    self._expire_if_needed(entry, now_ts)
+                    return dict(entry)
+        return None
+
+    def find_latest_pending(self, owner: str) -> dict[str, Any] | None:
+        for entry in self.list_for(owner):
+            if entry.get("status") == "PENDING":
+                return entry
+        return None
+
+    def update_status(self, owner: str, code: str, status: str, **fields: Any) -> dict[str, Any] | None:
+        with self._guard:
+            for entry in self._orders.get(owner, []):
+                if entry.get("code") == code:
+                    entry["status"] = status
+                    entry.update(fields)
+                    return dict(entry)
+        return None
+
+
+def get_order_store() -> OrderStore:
+    return current_app.config.setdefault("ORDERS_STORE", OrderStore())

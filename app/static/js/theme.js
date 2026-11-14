@@ -7,11 +7,14 @@
   var themeColor = document.querySelector('meta[name="theme-color"]');
   var colorScheme = document.querySelector('meta[name="color-scheme"]');
 
-  // Tema efektif: pilihan eksplisit, atau bawaan halaman (landing terang, halaman lain gelap).
+  // Tema efektif: pilihan eksplisit, atau bawaan halaman (beranda, promo, keranjang, checkout, dan profil terang; visualizer gelap).
   function effectiveTheme() {
     var explicit = root.getAttribute("data-theme");
     if (explicit === "light" || explicit === "dark") return explicit;
-    return document.body && document.body.getAttribute("data-step") === "landing" ? "light" : "dark";
+    var step = document.body && document.body.getAttribute("data-step");
+    return (step === "landing" || step === "promo" || step === "cart" || step === "checkout" || step === "profile")
+      ? "light"
+      : "dark";
   }
 
   function render() {
@@ -27,6 +30,12 @@
   if (btn) {
     btn.addEventListener("click", function () {
       var next = effectiveTheme() === "dark" ? "light" : "dark";
+      // Transisi warna singkat (lihat liquid_glass.css) lalu dilepas lagi agar tidak membebani interaksi lain.
+      root.classList.add("is-theme-switching");
+      window.clearTimeout(btn._switchTimer);
+      btn._switchTimer = window.setTimeout(function () {
+        root.classList.remove("is-theme-switching");
+      }, 340);
       root.setAttribute("data-theme", next);
       try {
         localStorage.setItem(KEY, next);

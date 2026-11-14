@@ -1,7 +1,8 @@
-// intro.js: parallax mouse tiga lapis, lalu dolly zoom menuju gerbang masuk.
+// intro.js: parallax mouse empat lapis, lalu dolly zoom menuju Auth Gate.
 (function () {
   var stage = document.getElementById("intro-stage");
   var start = document.getElementById("intro-start");
+  var ctaWrap = document.getElementById("intro-cta");
   var gate = document.getElementById("intro-gate");
   if (!stage || !start || !gate) return;
 
@@ -11,7 +12,6 @@
   var pos = { x: 0, y: 0 };
   var frame = null;
 
-  // Bergerak perlahan menuju target. Berhenti sendiri saat sudah sampai.
   function paint() {
     pos.x += (target.x - pos.x) * 0.12;
     pos.y += (target.y - pos.y) * 0.12;
@@ -45,11 +45,12 @@
   start.addEventListener("click", function () {
     start.disabled = true;
     start.setAttribute("aria-expanded", "true");
+    if (ctaWrap) ctaWrap.classList.add("is-done");
     stage.classList.add("is-dolly");
     window.setTimeout(function () {
       gate.hidden = false;
       var first = gate.querySelector("button, a");
       if (first) first.focus();
-    }, reduce ? 0 : 1100);
+    }, reduce ? 0 : 900);
   });
 })();

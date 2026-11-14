@@ -66,9 +66,9 @@ class StudioSpec:
     sold_ratio: float = 0.24
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Target: layar
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 class CinemaScreen(TargetStage):
     """Layar datar di bidang z = 0 yang menghadap penonton (+z)."""
 
@@ -118,9 +118,9 @@ class CurvedCinemaScreen(CinemaScreen):
                              curve_radius=self.radius)
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Kursi
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 class CinemaSeat(SeatNode):
     """Kursi bioskop standar: duduk tegak menghadap layar (-z)."""
 
@@ -219,9 +219,9 @@ class MotionSeat(CinemaSeat):
                 "footrest": {"raised": False, "length_m": 0.35, "top_y": 0.18}}
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Studio
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 class CinemaStudio(Venue):
     """Basis semua studio: membangun grid kursi dari `StudioSpec`."""
 
@@ -242,7 +242,7 @@ class CinemaStudio(Venue):
         self._seats = {seat.seat_id: seat for row in self._grid for seat in row}
         self._obstruction = SeatedRowObstruction()
 
-    # --- hook yang boleh di-override subclass --------------------------------
+    # === hook yang boleh di-override subclass ================================
     def gap_after(self, number: int) -> float:
         """Celah tambahan (m) setelah kursi bernomor `number` — lorong, meja, dsb."""
         return self.SPEC.aisle_width_m if number in self.SPEC.aisle_after else 0.0
@@ -266,7 +266,7 @@ class CinemaStudio(Venue):
     def furniture(self) -> list[dict]:
         return []
 
-    # --- pembangunan grid ----------------------------------------------------
+    # === pembangunan grid ====================================================
     def _column_offsets(self) -> list[float]:
         """Posisi x tiap nomor kursi, simetris terhadap sumbu tengah layar."""
         spec, cursor, centers = self.SPEC, 0.0, []
@@ -309,7 +309,7 @@ class CinemaStudio(Venue):
         self._after_build(grid)
         return grid
 
-    # --- kontrak Venue -------------------------------------------------------
+    # === kontrak Venue =======================================================
     def targets(self) -> list[TargetStage]:
         return [self._screen]
 
@@ -432,11 +432,11 @@ class CinemaStudio(Venue):
         return self._layout
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Empat studio konkret
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 class RegularStudio(CinemaStudio):
-    display_name = "Regular / Deluxe"
+    display_name = "Regular 2D"
     tagline_text = "13 baris × 18 kursi, layar lebar 14 × 6 m (2.39:1)"
     SPEC = StudioSpec(
         studio_type="regular", rows=13, seats_per_row=18, seat_pitch_m=0.56,
@@ -506,7 +506,7 @@ class PremiereStudio(CinemaStudio):
 
 
 class IMAXStudio(CinemaStudio):
-    display_name = "IMAX"
+    display_name = "IMAX Laser"
     tagline_text = "14 baris × 22 kursi di tribun curam, layar lengkung 22 × 12 m"
     SCREEN_RADIUS_M: ClassVar[float] = 30.0
     SPEC = StudioSpec(
@@ -537,7 +537,7 @@ class IMAXStudio(CinemaStudio):
 
 
 class FourDXStudio(CinemaStudio):
-    display_name = "4DX"
+    display_name = "4DX Motion"
     tagline_text = "8 baris × 16 kursi gerak hidrolik dalam blok 4-kursi"
     seat_class = MotionSeat
     BLOCK_SIZE: ClassVar[int] = 4

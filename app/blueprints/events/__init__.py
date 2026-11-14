@@ -42,15 +42,353 @@ def _youtube_embed(embed_id: str | None) -> str:
     return f"https://www.youtube-nocookie.com/embed/{embed_id}" if embed_id else ""
 
 
+MOVIE_PRODUCTION: dict[str, dict] = {
+    "sore": {
+        "director": "Yandy Laurens",
+        "writer": "Yandy Laurens",
+        "producer": "Suryana Paramita",
+        "studio": "Cerita Films",
+        "origin": "Indonesia",
+        "cast": ["Sheila Dara Aisha", "Dion Wiyoko", "Goran Bogdan", "Lara Nekic"],
+        "trivia": "Salah satu film Indonesia pertama yang mengambil lokasi syuting di Kroasia; lagu tema utamanya berjudul 'Forget Jakarta' karya Adhitia Sofyan.",
+        "language": "Indonesia",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "jatuh-cinta-seperti-di-film-film": {
+        "director": "Yandy Laurens",
+        "writer": "Yandy Laurens",
+        "producer": "Ernest Prakasa, Suryana Paramita",
+        "studio": "Imajinari & Jagartha",
+        "origin": "Indonesia",
+        "cast": ["Ringgo Agus Rahman", "Nirina Zubir", "Alex Abbad", "Sheila Dara Aisha", "Dion Wiyoko"],
+        "trivia": "Sekitar 80 persen durasi film disajikan dalam visual hitam putih (monokrom) sebelum bertransisi penuh warna di bagian akhir cerita.",
+        "language": "Indonesia",
+        "subtitles": "Bahasa Inggris",
+    },
+    "boboiboy-the-movie": {
+        "director": "Nizam Razak",
+        "writer": "Nizam Razak • Anas Abdul Aziz",
+        "producer": "Animonsta Studios",
+        "studio": "Animonsta Studios (Monsta)",
+        "origin": "Malaysia",
+        "cast": ["Nur Fathiah Diaz", "Dzubir Mohammed Zakaria", "Wong Wai Kay", "Fadzli Mohd Rawi"],
+        "trivia": "Menjadi salah satu film animasi terlaris di Malaysia dan pertama kali memperkenalkan perubahan Kuasa Tahap Kedua BoBoiBoy di layar lebar.",
+        "language": "Melayu",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "ejen-ali-the-movie-2": {
+        "director": "Usamah Zaid Yasin",
+        "writer": "Usamah Zaid Yasin",
+        "producer": "WAU Animation & Primeworks Studios",
+        "studio": "WAU Animation & Primeworks Studios",
+        "origin": "Malaysia",
+        "cast": ["Ida Rahayu Yusoff", "Noorhayati Maslini", "Shafiq Isa", "Azman Zulkiply"],
+        "trivia": "Sekuel resmi ini memperluas teknologi proyek IRIS melalui peluncuran kostum tempur taktis Satria berbasis kecerdasan buatan.",
+        "language": "Melayu",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "la-la-land": {
+        "director": "Damien Chazelle",
+        "writer": "Damien Chazelle",
+        "producer": "Fred Berger, Jordan Horowitz, Marc Platt",
+        "studio": "Summit Entertainment & Black Label Media",
+        "origin": "Amerika Serikat",
+        "cast": ["Ryan Gosling", "Emma Stone", "John Legend", "Rosemarie DeWitt"],
+        "trivia": "Adegan pembuka di jalan layang Los Angeles direkam dalam satu kali pengambilan gambar (one-take) bersama puluhan penari di bawah terik matahari.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "avengers-endgame": {
+        "director": "Anthony & Joe Russo",
+        "writer": "Christopher Markus & Stephen McFeely",
+        "producer": "Kevin Feige",
+        "studio": "Marvel Studios",
+        "origin": "Amerika Serikat",
+        "cast": ["Robert Downey Jr.", "Chris Evans", "Scarlett Johansson", "Mark Ruffalo", "Chris Hemsworth"],
+        "trivia": "Seluruh adegan aksi utama film ini direkam penuh menggunakan kamera IMAX digital untuk menghasilkan cakupan layar vertikal yang lebih luas.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+}
+
+CINEMA_DATES: list[dict] = [
+    {"id": "2026-11-14", "day": "Sab", "date": "14 Nov", "badge": "Hari Ini", "chip": "Hari Ini • 14 Nov"},
+    {"id": "2026-11-15", "day": "Min", "date": "15 Nov", "badge": "Besok", "chip": "Besok • 15 Nov"},
+    {"id": "2026-11-16", "day": "Sen", "date": "16 Nov", "badge": "", "chip": "Sen • 16 Nov"},
+    {"id": "2026-11-17", "day": "Sel", "date": "17 Nov", "badge": "", "chip": "Sel • 17 Nov"},
+    {"id": "2026-11-18", "day": "Rab", "date": "18 Nov", "badge": "", "chip": "Rab • 18 Nov"},
+]
+
+CINEMA_SCHEDULES: list[dict] = [
+    {
+        "id": "agora-xxi",
+        "name": "AGORA MALL XXI • Thamrin Nine",
+        "city": "Jakarta Pusat",
+        "address": "Jl. M.H. Thamrin No.10, Jakarta Pusat",
+        "distance": "1.2 km dari lokasimu",
+        "formats_label": "Regular 2D • IMAX Laser • The Premiere",
+        "studios": [
+            {
+                "venue_id": "xxi-regular",
+                "type": "Regular 2D",
+                "room": "Studio 4",
+                "audio": "Dolby 7.1",
+                "price": 50000,
+                "vip": False,
+                "times": ["12:00", "14:30", "17:00", "19:30"],
+                "limited_time": "19:30",
+            },
+            {
+                "venue_id": "xxi-imax",
+                "type": "IMAX Laser",
+                "room": "IMAX Hall",
+                "audio": "12-Ch Laser Audio",
+                "price": 85000,
+                "vip": False,
+                "times": ["13:15", "16:00", "18:45", "21:30"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-premiere",
+                "type": "The Premiere",
+                "room": "Premiere Suite",
+                "audio": "Recliner",
+                "price": 150000,
+                "vip": True,
+                "times": ["14:00", "17:30", "20:30"],
+                "limited_time": "",
+            },
+        ],
+    },
+    {
+        "id": "gi-xxi",
+        "name": "Grand Indonesia XXI",
+        "city": "Jakarta Pusat",
+        "address": "Grand Indonesia West Mall Lt. 8, Jl. M.H. Thamrin",
+        "distance": "1.8 km dari lokasimu",
+        "formats_label": "Regular 2D • 4DX Motion",
+        "studios": [
+            {
+                "venue_id": "xxi-regular",
+                "type": "Regular 2D",
+                "room": "Studio 2",
+                "audio": "Dolby Digital",
+                "price": 50000,
+                "vip": False,
+                "times": ["12:45", "15:20", "18:00", "20:45"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-4dx",
+                "type": "4DX Motion",
+                "room": "4DX Hall",
+                "audio": "Kursi Gerak",
+                "price": 110000,
+                "vip": False,
+                "times": ["14:15", "19:00"],
+                "limited_time": "",
+            },
+        ],
+    },
+    {
+        "id": "sency-xxi",
+        "name": "Senayan City XXI",
+        "city": "Jakarta Selatan",
+        "address": "Senayan City Mall Lt. 5, Jl. Asia Afrika Lot 19",
+        "distance": "3.4 km dari lokasimu",
+        "formats_label": "Regular 2D • The Premiere • 4DX Motion",
+        "studios": [
+            {
+                "venue_id": "xxi-regular",
+                "type": "Regular 2D",
+                "room": "Studio 1",
+                "audio": "Dolby Atmos",
+                "price": 50000,
+                "vip": False,
+                "times": ["13:00", "15:30", "18:00", "20:30"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-premiere",
+                "type": "The Premiere",
+                "room": "Premiere Suite",
+                "audio": "Recliner",
+                "price": 150000,
+                "vip": True,
+                "times": ["14:15", "17:15", "20:15"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-4dx",
+                "type": "4DX Motion",
+                "room": "4DX Hall",
+                "audio": "Kursi Gerak",
+                "price": 110000,
+                "vip": False,
+                "times": ["13:45", "16:30", "19:15"],
+                "limited_time": "19:15",
+            },
+        ],
+    },
+    {
+        "id": "pim-xxi",
+        "name": "Pondok Indah 2 XXI",
+        "city": "Jakarta Selatan",
+        "address": "Pondok Indah Mall 2 Lt. 3, Metro Pondok Indah",
+        "distance": "6.2 km dari lokasimu",
+        "formats_label": "Regular 2D • IMAX Laser",
+        "studios": [
+            {
+                "venue_id": "xxi-regular",
+                "type": "Regular 2D",
+                "room": "Studio 3",
+                "audio": "Dolby 7.1",
+                "price": 50000,
+                "vip": False,
+                "times": ["12:45", "15:30", "18:15", "21:00"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-imax",
+                "type": "IMAX Laser",
+                "room": "IMAX Hall",
+                "audio": "Laser Projection",
+                "price": 85000,
+                "vip": False,
+                "times": ["13:15", "16:00", "19:30"],
+                "limited_time": "",
+            },
+        ],
+    },
+    {
+        "id": "margo-xxi",
+        "name": "Margo City XXI",
+        "city": "Depok",
+        "address": "Margo City Mall Lt. 3, Jl. Margonda Raya No. 358",
+        "distance": "14.5 km dari lokasimu",
+        "formats_label": "Regular 2D • The Premiere",
+        "studios": [
+            {
+                "venue_id": "xxi-regular",
+                "type": "Regular 2D",
+                "room": "Studio 5",
+                "audio": "Dolby 7.1",
+                "price": 50000,
+                "vip": False,
+                "times": ["13:00", "15:30", "18:00", "20:30"],
+                "limited_time": "",
+            },
+            {
+                "venue_id": "xxi-premiere",
+                "type": "The Premiere",
+                "room": "Premiere Suite",
+                "audio": "Recliner",
+                "price": 150000,
+                "vip": True,
+                "times": ["15:00", "18:30", "21:00"],
+                "limited_time": "",
+            },
+        ],
+    },
+]
+
+COLDPLAY_STAGE_ZONES: list[dict] = [
+    {
+        "name": "Main Stage (Sisi Utara)",
+        "detail": "Panggung utama selebar 48 meter dengan layar LED melengkung dan 2 menara speaker raksasa.",
+    },
+    {
+        "name": "B-Stage (Catwalk Tengah)",
+        "detail": "Panggung bundar di tengah arena Festival dan My Universe, terhubung langsung via runway utama.",
+    },
+    {
+        "name": "C-Stage (Akustik Selatan)",
+        "detail": "Panggung intim di sisi selatan lapangan untuk segmen akustik dekat tribun CAT 3.",
+    },
+]
+
+COLDPLAY_OFFICIAL_RULES: list[dict] = [
+    {
+        "no": "01",
+        "title": "Identitas Asli Wajib Dibawa",
+        "body": "Nama pada e-tiket wajib sesuai KTP, SIM, Paspor, atau Kartu Pelajar/Mahasiswa yang masih berlaku saat penukaran gelang maupun masuk gerbang GBK.",
+    },
+    {
+        "no": "02",
+        "title": "Batas Maksimal Pembelian",
+        "body": "Satu akun terverifikasi dapat memesan maksimal 4 tiket per kategori untuk menjaga pemerataan akses penggemar dan mencegah praktik percaloan.",
+    },
+    {
+        "no": "03",
+        "title": "Batas Usia Penonton",
+        "body": "Penonton di bawah 14 tahun wajib didampingi pemegang tiket berusia 18 tahun ke atas; area Festival dan My Universe berdiri bebas direkomendasikan minimal usia 12 tahun.",
+    },
+    {
+        "no": "04",
+        "title": "Ketentuan Tas & Barang Terlarang",
+        "body": "Hanya tas berukuran maksimal A4 yang diizinkan. Dilarang membawa kamera profesional lensa lepas, tongsis, botol kaca, makanan/minuman luar, dan laser pointer.",
+    },
+    {
+        "no": "05",
+        "title": "Kebijakan Tanpa Masuk Ulang",
+        "body": "Barcode gelang wristband hanya berlaku satu kali pindai masuk stadion. Penonton yang keluar dari area venue tidak diperkenankan masuk kembali.",
+    },
+    {
+        "no": "06",
+        "title": "Tiket Non-Refundable & Anti Duplikasi",
+        "body": "Tiket yang sudah dibeli tidak dapat dibatalkan atau dipindahtangankan secara sembarangan. Jangan bagikan kode batang maupun QR di media sosial.",
+    },
+    {
+        "no": "07",
+        "title": "Kenyamanan & Prosedur Darurat",
+        "body": "Ikuti arahan petugas keamanan PK Entertainment, jaga hidrasi di area berdiri, dan kenali jalur evakuasi serta pos medis terdekat di setiap zona tribun.",
+    },
+]
+
+
+STUDIO_FORMAT_LABELS: dict[str, str] = {
+    "xxi-regular": "Regular 2D",
+    "xxi-premiere": "The Premiere",
+    "xxi-imax": "IMAX Laser",
+    "xxi-4dx": "4DX Motion",
+}
+
+
+def _film_schedules(event) -> tuple[list[dict], list[str]]:
+    """Saring jadwal bioskop sesuai format studio resmi film ini."""
+    allowed = set(event.venues)
+    filtered: list[dict] = []
+    for cinema in CINEMA_SCHEDULES:
+        studios = [st for st in cinema["studios"] if st["venue_id"] in allowed]
+        if not studios:
+            continue
+        filtered.append({
+            **cinema,
+            "studios": studios,
+            "formats_label": " • ".join(st["type"] for st in studios),
+        })
+    available_formats = [
+        STUDIO_FORMAT_LABELS[v] for v in event.venues if v in STUDIO_FORMAT_LABELS
+    ]
+    return filtered, available_formats
+
+
 @events_bp.get("/movie/<slug>")
+@events_bp.get("/movie/<slug>", endpoint="movie_detail")
 def movie(slug: str):
     details = _catalog().get(slug)
     event = EVENTS.get(slug)
     if details is None or event is None or event.kind != "film":
         abort(404)
+    filtered_schedules, available_formats = _film_schedules(event)
     return render_template(
         "events/movie.html",
         movie=details,
+        production=MOVIE_PRODUCTION.get(slug, {}),
+        dates=CINEMA_DATES,
+        schedules=filtered_schedules,
+        cities=sorted({c["city"] for c in filtered_schedules}),
+        available_formats=available_formats,
         poster_url=asset_url(event.poster),
         trailer_local=asset_url(event.trailer),
         trailer_embed=_youtube_embed(details.get("embed_id")),
@@ -71,8 +409,24 @@ def _render_coldplay(tab: str):
         tabs=tabs,
         poster_url=asset_url(event.poster),
         buy_url=url_for("visualizer.studio", venue_id=venue.venue_id),
-        categories=[{"label": b.label, "standing": b.standing} for b in venue.blocks.values()],
+        categories=[
+            {
+                "block_id": b.block_id,
+                "label": b.label,
+                "category": getattr(b, "category", b.label),
+                "color": b.color,
+                "price": b.price,
+                "standing": b.standing,
+                "restricted": getattr(b, "restricted", False),
+                "description": getattr(b, "description", ""),
+                "perks": getattr(b, "perks", ()),
+                "select_url": url_for("visualizer.studio", venue_id=venue.venue_id, block=b.block_id),
+            }
+            for b in venue.blocks.values()
+        ],
         info=COLDPLAY_INFO,
+        stage_zones=COLDPLAY_STAGE_ZONES,
+        rules=COLDPLAY_OFFICIAL_RULES,
     )
 
 

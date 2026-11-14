@@ -1,6 +1,5 @@
-// movie_trailer.js: modal trailer YouTube di halaman detail film.
-// Dialog native menangani Escape dan jebakan fokus. Iframe dikosongkan saat modal ditutup
-// supaya video berhenti diputar.
+// movie_trailer.js: modal trailer hybrid (MP4 lokal atau embed YouTube) di halaman detail film.
+// Dialog native dan handler tombol tutup memutus pemutaran media saat modal ditutup.
 (function () {
   var dialog = document.getElementById("trailer-modal");
   var openBtn = document.getElementById("trailer-open");
@@ -9,7 +8,30 @@
   // Prioritas 1: video lokal (HTML5). Prioritas 2: iframe YouTube dari embed_id.
   var video = document.getElementById("trailer-video");
   var frame = document.getElementById("trailer-frame");
+  var closeBtns = dialog.querySelectorAll(".trailer-modal__close, #trailer-close");
   var embedUrl = dialog.getAttribute("data-embed") || "";
+
+  function stopMedia() {
+    if (video) {
+      video.pause();
+      try {
+        video.currentTime = 0;
+      } catch (err) {
+        // Abaikan jika metadata video belum dimuat.
+      }
+    }
+    if (frame) frame.removeAttribute("src");
+  }
+
+  function closeModal() {
+    stopMedia();
+    if (typeof dialog.close === "function" && dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute("open");
+    }
+    if (openBtn && typeof openBtn.focus === "function") openBtn.focus();
+  }
 
   openBtn.addEventListener("click", function () {
     if (video) {
@@ -17,23 +39,41 @@
       var played = video.play();
       if (played && typeof played.catch === "function") played.catch(function () {});
     } else if (embedUrl && frame) {
-      frame.setAttribute("src", embedUrl + "?autoplay=1&rel=0");
+      var sep = embedUrl.indexOf("?") === -1 ? "?" : "&";
+      frame.setAttribute("src", embedUrl + sep + "autoplay=1&rel=0");
     }
-    dialog.showModal();
-    var closeBtn = dialog.querySelector(".trailer-modal__close");
-    if (closeBtn) closeBtn.focus();
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "open");
+    }
+    if (closeBtns[0]) closeBtns[0].focus();
+  });
+
+  closeBtns.forEach(function (btn) {
+    btn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeModal();
+    });
   });
 
   // Escape, tombol tutup, dan klik di luar panel semuanya memicu close.
-  dialog.addEventListener("close", function () {
-    if (video) {
-      video.pause();
-      video.currentTime = 0;
-    }
-    if (frame) frame.removeAttribute("src");
+  dialog.addEventListener("close", stopMedia);
+
+  dialog.addEventListener("cancel", function (event) {
+    event.preventDefault();
+    closeModal();
   });
 
   dialog.addEventListener("click", function (event) {
-    if (event.target === dialog) dialog.close();
+    if (event.target === dialog) closeModal();
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && (dialog.open || dialog.hasAttribute("open"))) {
+      event.preventDefault();
+      closeModal();
+    }
   });
 })();

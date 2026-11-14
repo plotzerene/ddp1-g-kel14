@@ -6,11 +6,13 @@ html[data-theme="light"] .panel,
 html[data-theme="light"] .picker,
 html[data-theme="light"] .insight,
 html[data-theme="light"] .cta-bar,
+html[data-theme="light"] .viz-event-card,
+html[data-theme="light"] .viz-pov-card,
+html[data-theme="light"] .viz-map-card,
 html[data-theme="light"] .venue-tabs,
 html[data-theme="light"] .venue-tab,
 html[data-theme="light"] .map-wrap,
 html[data-theme="light"] .map-legend,
-html[data-theme="light"] .deck,
 html[data-theme="light"] .viz-left,
 html[data-theme="light"] .viz-right,
 html[data-theme="light"] .reco-results,
@@ -21,10 +23,435 @@ html[data-theme="light"] .ticket-row,
 html[data-theme="light"] .totals,
 html[data-theme="light"] .method,
 html[data-theme="light"] .eticket,
-html[data-theme="light"] .checkout__section {
-  background: var(--color-card);
-  border-color: var(--color-hairline-strong);
+html[data-theme="light"] .checkout__section,
+html:not([data-theme="dark"]) body[data-step="cart"] .checkout__section,
+html:not([data-theme="dark"]) body[data-step="cart"] .ticket-row,
+html:not([data-theme="dark"]) body[data-step="cart"] .summary,
+html:not([data-theme="dark"]) body[data-step="checkout"] .checkout__section,
+html:not([data-theme="dark"]) body[data-step="checkout"] .ticket-row,
+html:not([data-theme="dark"]) body[data-step="checkout"] .summary,
+html:not([data-theme="dark"]) body[data-step="checkout"] .eticket,
+html:not([data-theme="dark"]) body[data-step="profile"] .profile-card {
+  background: #FFFFFF;
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   color: var(--color-foreground);
+}
+
+/* Pastikan kanvas viewport 3D visualizer selalu berada pada mode bioskop gelap (#08090C). */
+.viewport,
+.viewport__stage,
+.viewport__canvas {
+  background: #08090C !important;
+}
+
+/* Screen 03 Visualizer: sinkronisasi tema Light (#FFFFFF) & Dark (#161F30) untuk panel luar */
+html[data-theme="dark"] .viz .panel,
+html[data-theme="dark"] .viz .picker,
+html[data-theme="dark"] .viz .insight,
+html[data-theme="dark"] .viz .cta-bar {
+  background: #161F30;
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .viz .venue-tab,
+html[data-theme="dark"] .viz .reco-card,
+html[data-theme="dark"] .viz .spot-card,
+html[data-theme="dark"] .viz .category-btn,
+html[data-theme="dark"] .viz .preset {
+  background: #1E293B;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #E2E8F0;
+}
+
+html[data-theme="light"] .viz {
+  color: #0F172A;
+}
+
+html[data-theme="light"] .viz .viz-left,
+html[data-theme="light"] .viz .viz-right,
+html[data-theme="light"] .viz .venue-tabs,
+html[data-theme="light"] .viz .map-legend,
+html[data-theme="light"] .viz .reco-results,
+html[data-theme="light"] .viz .preset-list {
+  background: transparent;
+}
+
+html[data-theme="light"] .viz .panel,
+html[data-theme="light"] .viz .picker,
+html[data-theme="light"] .viz .insight,
+html[data-theme="light"] .viz .cta-bar,
+html[data-theme="light"] .viz .viz-event-card,
+html[data-theme="light"] .viz .viz-pov-card,
+html[data-theme="light"] .viz .viz-map-card,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .picker,
+html[data-theme="light"] .insight,
+html[data-theme="light"] .cta-bar {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  color: #0F172A;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .venue-tab,
+html[data-theme="light"] .reco-card,
+html[data-theme="light"] .mini-seat,
+html[data-theme="light"] .spot-card,
+html[data-theme="light"] .category-btn,
+html[data-theme="light"] .preset,
+html[data-theme="light"] #btn-heatmap,
+html[data-theme="light"] .picker .segmented__btn,
+html[data-theme="light"] .btn--outline-neutral {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .venue-tab:hover,
+html[data-theme="light"] .reco-card:hover,
+html[data-theme="light"] .mini-seat:hover,
+html[data-theme="light"] .spot-card:hover,
+html[data-theme="light"] .category-btn:hover,
+html[data-theme="light"] .preset:hover,
+html[data-theme="light"] #btn-heatmap:hover,
+html[data-theme="light"] .picker .segmented__btn:hover,
+html[data-theme="light"] .btn--outline-neutral:hover:not(:disabled) {
+  background: #F0FDFA;
+  border-color: #0891B2;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .venue-tab.is-active,
+html[data-theme="light"] .venue-tab[aria-selected="true"],
+html[data-theme="light"] .spot-card.is-active,
+html[data-theme="light"] .spot-card[aria-pressed="true"],
+html[data-theme="light"] .category-btn.is-active,
+html[data-theme="light"] .category-btn[aria-pressed="true"],
+html[data-theme="light"] .preset.is-active,
+html[data-theme="light"] .preset[aria-checked="true"],
+html[data-theme="light"] #btn-heatmap[aria-pressed="true"],
+html[data-theme="light"] .picker .segmented__btn[aria-pressed="true"] {
+  background: #006875;
+  border-color: #006875;
+  color: #FFFFFF;
+}
+
+html[data-theme="light"] .mini-seat.is-selected,
+html[data-theme="light"] .mini-seat[aria-pressed="true"] {
+  background: #006875;
+  border-color: #004E58;
+  color: #FFFFFF;
+}
+
+html[data-theme="light"] .spot-card__num {
+  background: #FFFFFF;
+  border-color: #CBD5E1;
+  color: #006875;
+}
+
+html[data-theme="light"] .spot-card[aria-pressed="true"] .spot-card__num {
+  background: #004E58;
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+
+html[data-theme="light"] .spot-card span:last-child {
+  color: #475569;
+}
+
+html[data-theme="light"] .spot-card[aria-pressed="true"] span:last-child,
+html[data-theme="light"] .venue-tab[aria-selected="true"] .venue-tab__price {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme="light"] .viz .venue-tab__price {
+  color: #006875;
+  font-weight: 700;
+}
+
+html[data-theme="light"] .viz .muted,
+html[data-theme="light"] .viz .picker__hint,
+html[data-theme="light"] .viz .panel__hint,
+html[data-theme="light"] .viz-event-card__datetime {
+  color: #475569;
+}
+
+html[data-theme="light"] .viz-event-card__venue,
+html[data-theme="light"] .viz .cta-bar__price {
+  color: #006875;
+}
+
+html[data-theme="light"] .viz-event-card__poster {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+}
+
+html[data-theme="light"] .category-btn__name {
+  color: #0F172A;
+}
+
+html[data-theme="light"] .category-btn__price {
+  color: #1E293B;
+}
+
+html[data-theme="light"] .category-btn__type {
+  color: #64748B;
+}
+
+html[data-theme="light"] .venue-tab.is-active .venue-tab__price,
+html[data-theme="light"] .spot-card.is-active small,
+html[data-theme="light"] .category-btn.is-active small,
+html[data-theme="light"] .category-btn[aria-pressed="true"] .category-btn__name,
+html[data-theme="light"] .category-btn[aria-pressed="true"] .category-btn__price,
+html[data-theme="light"] .category-btn[aria-pressed="true"] .category-btn__type {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Pertahankan kanvas 3D Three.js saja dalam mode gelap sinematik */
+html[data-theme="light"] #viewport-stage,
+html[data-theme="light"] .viewport,
+html[data-theme="light"] .viewport-stage {
+  background: #08090C;
+  color: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+html[data-theme="light"] .viewport .hud--tl,
+html[data-theme="light"] .viewport .hud.glass,
+html[data-theme="light"] .viewport .hud .glass,
+html[data-theme="light"] .viewport .hud-pill,
+html[data-theme="light"] .viewport .score-pill,
+html[data-theme="light"] .viewport .badge {
+  background: rgba(11, 15, 23, 0.86);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme="light"] .viewport .hud--tr,
+html[data-theme="light"] .viewport .hud--br {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: transparent;
+}
+
+html[data-theme="light"] .viewport .hud__sub,
+html[data-theme="light"] .viewport .score-pill span,
+html[data-theme="light"] .viewport .hud--hint {
+  color: #CBD5E1;
+}
+
+/* 3 Metrik Horizontal & Dek Kontrol di luar kanvas 3D mengikuti Mode Terang bersih (#FFFFFF / #F7FAFC) */
+html[data-theme="light"] .pov-hud-metrics {
+  background: #F7FAFC;
+  border-color: #E2E8F0;
+}
+
+html[data-theme="light"] .pov-metric__label {
+  color: #64748B;
+}
+
+html[data-theme="light"] .pov-metric__value {
+  color: #0F172A;
+}
+
+html[data-theme="light"] .pov-metric__value--teal {
+  color: #006875;
+}
+
+html[data-theme="light"] .viz .deck {
+  background: transparent;
+  border-top-color: #E2E8F0;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .viz .deck .eyebrow,
+html[data-theme="light"] .viz .deck__note {
+  color: #475569;
+}
+
+html[data-theme="light"] .viz .deck .btn,
+html[data-theme="light"] .viz .deck .segmented {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .viz .deck .btn:hover,
+html[data-theme="light"] .viz .deck .segmented__btn:hover {
+  background: #F0FDFA;
+  border-color: #0891B2;
+}
+
+html[data-theme="light"] .viz .deck .segmented__btn {
+  color: #334155;
+}
+
+html[data-theme="light"] .viz .deck .btn.is-active,
+html[data-theme="light"] .viz .deck .btn[aria-pressed="true"],
+html[data-theme="light"] .viz .deck .segmented__btn[aria-pressed="true"],
+html[data-theme="light"] .viz .deck .segmented__btn[aria-checked="true"],
+html[data-theme="light"] .viz .deck .segmented__btn[aria-selected="true"] {
+  background: #006875;
+  border-color: #006875;
+  color: #FFFFFF;
+}
+
+/* Peta Kursi 2D & Stadion Mode Terang (FigCraft 03) */
+html[data-theme="light"] .room {
+  fill: rgba(248, 250, 252, 0.88);
+  stroke: #E2E8F0;
+}
+
+html[data-theme="light"] .screen-line {
+  stroke: #C59B27;
+}
+
+html[data-theme="light"] .screen-glow {
+  stroke: rgba(197, 155, 39, 0.35);
+}
+
+html[data-theme="light"] .sight-cone {
+  fill: rgba(0, 104, 117, 0.12);
+  stroke: rgba(0, 104, 117, 0.45);
+}
+
+html[data-theme="light"] .seat__shape {
+  fill: #E6F4F4;
+  stroke: #006875;
+}
+
+html[data-theme="light"] .seat__num {
+  fill: #006875;
+}
+
+html[data-theme="light"] .seat.is-sweet .seat__shape {
+  fill: #FDF7E7;
+  stroke: #C59B27;
+}
+
+html[data-theme="light"] .seat.is-sweet .seat__num {
+  fill: #8A6A12;
+}
+
+html[data-theme="light"] .seat:hover .seat__shape,
+html[data-theme="light"] .seat:focus-visible .seat__shape {
+  fill: #0891B2;
+  stroke: #004E58;
+}
+
+html[data-theme="light"] .seat:hover .seat__num,
+html[data-theme="light"] .seat:focus-visible .seat__num {
+  fill: #FFFFFF;
+}
+
+html[data-theme="light"] .seat.is-sold .seat__shape {
+  fill: #CBD4E1;
+  stroke: #94A3B8;
+}
+
+html[data-theme="light"] .seat.is-sold .seat__num {
+  fill: #64748B;
+}
+
+html[data-theme="light"] .seat.is-selected .seat__shape {
+  fill: #006875;
+  stroke: #004E58;
+}
+
+html[data-theme="light"] .seat.is-selected .seat__num {
+  fill: #FFFFFF;
+}
+
+html[data-theme="light"] .legend-swatch--avail {
+  background: #E6F4F4;
+  border-color: #006875;
+}
+
+html[data-theme="light"] .legend-swatch--chosen {
+  background: #006875;
+  border-color: #004E58;
+}
+
+html[data-theme="light"] .legend-swatch--taken {
+  background: #CBD4E1;
+  border-color: #94A3B8;
+}
+
+html[data-theme="light"] .legend-swatch--sweet {
+  background: #FDF7E7;
+  border-color: #C59B27;
+}
+
+html[data-theme="light"] .tier-bg {
+  fill: #E2E8F0;
+  stroke: #CBD5E1;
+}
+
+html[data-theme="light"] .pitch {
+  fill: #F8FAFC;
+}
+
+html[data-theme="light"] .tower {
+  fill: #334155;
+  stroke: #64748B;
+}
+
+/* Seat lock timer pill (Screen 03 Booking Card) */
+.seat-lock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(0, 104, 117, 0.16);
+  border: 1px solid rgba(20, 184, 166, 0.34);
+  font-size: 0.82rem;
+}
+
+.seat-lock-pill__label {
+  color: var(--color-muted-fg);
+}
+
+.seat-lock-pill__clock {
+  font-weight: 800;
+  color: #2DD4BF;
+  font-variant-numeric: tabular-nums;
+}
+
+.seat-lock-pill.is-urgent {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.seat-lock-pill.is-urgent .seat-lock-pill__clock {
+  color: #F59E0B;
+}
+
+.seat-lock-pill.is-expired {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.seat-lock-pill.is-expired .seat-lock-pill__clock {
+  color: #EF4444;
+}
+
+html[data-theme="light"] .seat-lock-pill {
+  background: #F0FDFA;
+  border-color: #99F6E4;
+}
+
+html[data-theme="light"] .seat-lock-pill__label {
+  color: #334155;
+}
+
+html[data-theme="light"] .seat-lock-pill__clock {
+  color: #006875;
 }
 
 html[data-theme="light"] .panel__hint,
@@ -40,10 +467,209 @@ html[data-theme="light"] .map-tooltip {
 
 /* Teks aksen kuning di atas latar putih perlu versi yang lebih gelap agar terbaca. */
 html[data-theme="light"] .insight__score,
-html[data-theme="light"] .score-pill {
-  color: #92400E;
+html[data-theme="light"] .reco-card__score {
+  color: #8A6A12;
+}
+
+html[data-theme="light"] .reco-card ul {
+  color: #334155;
+}
+
+html[data-theme="light"] .reco-note {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+  color: #78350F;
+}
+
+html[data-theme="light"] .battery__label {
+  color: #047857;
+}
+
+html[data-theme="light"] .battery.is-partial .battery__label {
+  color: #B45309;
+}
+
+html[data-theme="light"] .picker__group > .eyebrow {
+  color: #006875;
+}
+
+html[data-theme="light"] .picker__swatch {
+  border-color: rgba(15, 23, 42, 0.25);
+}
+
+html[data-theme="light"] .map-spotlight-btn {
+  background: #E6F4F5;
+  border-color: #006875;
+  color: #006875;
+}
+
+html[data-theme="light"] .map-spotlight-btn:hover {
+  background: #006875;
+  color: #FFFFFF;
+}
+
+html[data-theme="light"] .seat-spotlight-dialog {
+  background: #FFFFFF;
+  color: #0F172A;
+  border-color: #CBD5E1;
+}
+
+html[data-theme="light"] .seat-spotlight-selected {
+  color: #006875;
+}
+
+html[data-theme="light"] .cinema-screen-banner {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  border-top: 3px solid #C59B27;
+  color: #0F172A;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .pov-hud-metrics {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+html[data-theme="light"] .pov-metric__label {
+  color: #64748B;
+}
+
+html[data-theme="light"] .pov-metric__value {
+  color: #0F172A;
+}
+
+html[data-theme="light"] .pov-metric__value--teal {
+  color: #006875;
+}
+
+html[data-theme="light"] .pov-metric__value--gold {
+  color: #8A6A12;
+}
+
+html[data-theme="light"] #btn-cart {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+html[data-theme="light"] .chip--accent,
+html:not([data-theme="dark"]) body[data-step="landing"] .chip--accent {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+  color: #8A6A12;
+}
+
+html[data-theme="light"] .chip--info {
+  background: #E6F4F5;
+  border-color: #99F6E4;
+  color: #006875;
+}
+
+html[data-theme="light"] .slider-field__top output,
+html[data-theme="light"] .mini-grid__label {
+  color: #006875;
+}
+
+html[data-theme="light"] .map-wrap {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+html[data-theme="light"] .viz[data-kind="cinema"] .map-wrap {
+  background-image:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.68) 0%, rgba(15, 23, 42, 0.84) 100%),
+    url("../reference_assets/images/bioskopbg.jpg");
+  background-size: cover;
+  background-position: center;
+  border-color: #CBD5E1;
 }
 
 html[data-theme="light"] .map-svg {
-  background: var(--color-card);
+  background: transparent;
+}
+
+html[data-theme="light"] .eticket__terms {
+  color: #64748B;
+}
+
+/* Kontras teks ringkasan pembayaran dan e-tiket pada mode terang */
+html[data-theme="light"] .summary-row label,
+html[data-theme="light"] .fee-label,
+html[data-theme="light"] .totals dt,
+html[data-theme="light"] .pov-meta dt,
+html[data-theme="light"] .ticket-row__venue,
+html[data-theme="light"] .eticket__venue,
+html[data-theme="light"] .payment-inst__label,
+html[data-theme="light"] .payment-inst__guide,
+html[data-theme="light"] .payment-inst__qris-meta,
+html[data-theme="light"] .pay-group__title,
+html[data-theme="light"] .field__hint {
+  color: #334155 !important;
+  font-weight: 500;
+}
+
+html[data-theme="light"] .summary-row .num,
+html[data-theme="light"] .totals dd,
+html[data-theme="light"] .totals__grand dt,
+html[data-theme="light"] .totals__grand dd,
+html[data-theme="light"] .pov-meta dd,
+html[data-theme="light"] .ticket-row__side strong,
+html[data-theme="light"] .eticket__price {
+  color: #0F172A !important;
+  font-weight: 600;
+}
+
+html[data-theme="light"] .totals__discount dt,
+html[data-theme="light"] .totals__discount dd {
+  color: #047857 !important;
+  font-weight: 600;
+}
+
+html[data-theme="light"] .btn--danger {
+  border-color: rgba(220, 38, 38, 0.45);
+  color: #DC2626;
+}
+
+/* Spanduk promo mahasiswa UI (SSO UI) di mode terang: amber gelap di atas krem terang */
+html[data-theme="light"] .sso-promo-banner,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner,
+html[data-theme="light"] .sso-promo-card {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%) !important;
+  border-color: #F59E0B !important;
+}
+
+html[data-theme="light"] .sso-promo-card.is-verified {
+  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%) !important;
+  border-color: #10B981 !important;
+}
+
+html[data-theme="light"] .sso-promo-banner h2,
+html[data-theme="light"] .sso-promo-banner p,
+html[data-theme="light"] .sso-promo-banner .chip,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner h2,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner p,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner .chip,
+html[data-theme="light"] .sso-promo-card__title,
+html[data-theme="light"] .sso-promo-card__status {
+  color: #78350F !important;
+}
+
+html[data-theme="light"] .sso-promo-card.is-verified .sso-promo-card__title,
+html[data-theme="light"] .sso-promo-card.is-verified .sso-promo-card__status {
+  color: #065F46 !important;
+}
+
+html[data-theme="light"] .sso-promo-cta,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-cta,
+html[data-theme="light"] #sso-verify-trigger {
+  background: #D97706 !important;
+  border-color: #B45309 !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="light"] .sso-promo-cta:hover,
+html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-cta:hover,
+html[data-theme="light"] #sso-verify-trigger:hover {
+  background: #B45309 !important;
 }

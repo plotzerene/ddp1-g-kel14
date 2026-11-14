@@ -1,105 +1,432 @@
-/**
- * landing.js — FOLDER TEAMMATE 1. Tiga interaksi halaman depan:
- *   1. carousel promo (CSS scroll-snap; JS hanya untuk geser otomatis, panah, dan titik)
- *   2. filter kategori + pencarian katalog
- *   3. modal trailer (<dialog> bawaan browser)
- */
-const $ = (id) => document.getElementById(id);
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Interaksi Landing Page titiket.com sesuai Artboard FigCraft 01_Home. */
 
-/* ---------- 1. Carousel promo ---------- */
-const promo = $('promo');
-const track = $('promo-track');
-const slides = [...track.children];
-const dots = slides.map((_, index) => {
-  const dot = document.createElement('button');
-  dot.type = 'button';
-  dot.className = 'promo__dot';
-  dot.setAttribute('aria-label', `Promo ${index + 1} dari ${slides.length}`);
-  dot.addEventListener('click', () => goTo(index));
-  $('promo-dots').append(dot);
-  return dot;
-});
+(() => {
+  const REMIND_STORAGE_KEY = "titiket-reminders";
 
-const slideStep = () => (slides[1] ? slides[1].offsetLeft - slides[0].offsetLeft : track.clientWidth);
-const currentIndex = () => Math.round(track.scrollLeft / slideStep());
-
-function goTo(index) {
-  track.scrollTo({ left: index * slideStep(), behavior: reducedMotion ? 'auto' : 'smooth' });
-}
-
-function move(delta) {
-  const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
-  if (delta > 0 && atEnd) goTo(0);                       // sampai ujung → kembali ke awal
-  else if (delta < 0 && track.scrollLeft <= 4) goTo(slides.length - 1);
-  else goTo(currentIndex() + delta);
-}
-
-function syncDots() {
-  const active = currentIndex();
-  const last = Math.round((track.scrollWidth - track.clientWidth) / slideStep());   // posisi geser terakhir
-  dots.forEach((dot, index) => {
-    dot.hidden = index > last;
-    dot.setAttribute('aria-current', String(index === active));
-  });
-}
-
-$('promo-prev').addEventListener('click', () => move(-1));
-$('promo-next').addEventListener('click', () => move(1));
-track.addEventListener('scroll', syncDots, { passive: true });
-window.addEventListener('resize', syncDots);
-syncDots();
-if (!reducedMotion) {
-  // Geser tiap 4 detik; berhenti selama kursor atau fokus keyboard ada di carousel.
-  window.setInterval(() => {
-    if (!promo.matches(':hover, :focus-within') && !document.hidden) move(1);
-  }, 4000);
-}
-
-/* ---------- 2. Filter kategori + pencarian ---------- */
-const cards = [...document.querySelectorAll('.film-card')];
-const pills = [...document.querySelectorAll('.category-pill')];
-const search = $('catalog-search');
-let activeTag = '';                 // kosong = semua kategori
-
-function applyFilter() {
-  const query = search.value.trim().toLowerCase();
-  let visible = 0;
-  for (const card of cards) {
-    const match = (!activeTag || card.dataset.tags.split(' ').includes(activeTag)) && card.dataset.title.includes(query);
-    card.hidden = !match;
-    visible += match;
+  /* 1. Helper Toast Ringan */
+  const toastRegion = document.getElementById("toast-region");
+  function showToast(message) {
+    if (!toastRegion) return;
+    const item = document.createElement("div");
+    item.className = "toast toast--info";
+    item.textContent = message;
+    toastRegion.appendChild(item);
+    window.setTimeout(() => {
+      item.remove();
+    }, 2800);
   }
-  $('catalog-empty').hidden = visible > 0;
-}
 
-for (const pill of pills) {
-  pill.addEventListener('click', () => {
-    activeTag = activeTag === pill.dataset.filter ? '' : pill.dataset.filter;      // klik lagi = tampilkan semua
-    pills.forEach((other) => other.setAttribute('aria-pressed', String(other.dataset.filter === activeTag)));
-    applyFilter();
+  /* 3. Featured Mini Carousel */
+  const carousel = document.getElementById("promo");
+  const track = document.getElementById("promo-track");
+  const prevBtn = document.getElementById("promo-prev");
+  const nextBtn = document.getElementById("promo-next");
+  const dotsWrap = document.getElementById("promo-dots");
+
+  if (track) {
+    const slides = Array.from(track.querySelectorAll(".featured-slide"));
+    const dotButtons = [];
+    let activeSlide = 0;
+
+    function getStepSize() {
+      if (!slides.length) return 380;
+      const firstWidth = slides[0].getBoundingClientRect().width || 360;
+      const style = window.getComputedStyle(track);
+      const gap = parseFloat(style.columnGap || style.gap || "16") || 16;
+      return firstWidth + gap;
+    }
+
+    function setActiveDot(index) {
+      activeSlide = Math.max(0, Math.min(index, slides.length - 1));
+      dotButtons.forEach((dot, idx) => {
+        const isCurrent = idx === activeSlide;
+        dot.classList.toggle("is-active", isCurrent);
+        dot.setAttribute("aria-current", isCurrent ? "true" : "false");
+      });
+    }
+
+    function scrollToSlide(index) {
+      if (!slides.length) return;
+      const targetIndex = ((index % slides.length) + slides.length) % slides.length;
+      const step = getStepSize();
+      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+      const targetLeft = Math.min(maxScroll, Math.round(targetIndex * step));
+      track.scrollTo({ left: targetLeft, behavior: "smooth" });
+      setActiveDot(targetIndex);
+    }
+
+    if (dotsWrap && slides.length > 1) {
+      slides.forEach((_, idx) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = idx === 0 ? "promo__dot is-active" : "promo__dot";
+        dot.setAttribute("aria-current", idx === 0 ? "true" : "false");
+        dot.setAttribute("aria-label", `Sorotan ${idx + 1}`);
+        dot.addEventListener("click", () => scrollToSlide(idx));
+        dotsWrap.appendChild(dot);
+        dotButtons.push(dot);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (track.scrollLeft <= 8) {
+          track.scrollTo({ left: Math.max(0, track.scrollWidth - track.clientWidth), behavior: "smooth" });
+          setActiveDot(slides.length - 1);
+          return;
+        }
+        scrollToSlide(Math.max(0, activeSlide - 1));
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+        if (atEnd) {
+          track.scrollTo({ left: 0, behavior: "smooth" });
+          setActiveDot(0);
+          return;
+        }
+        scrollToSlide(activeSlide + 1);
+      });
+    }
+
+    let scrollTick = null;
+    track.addEventListener("scroll", () => {
+      if (scrollTick) window.cancelAnimationFrame(scrollTick);
+      scrollTick = window.requestAnimationFrame(() => {
+        const step = getStepSize();
+        const approxIndex = Math.round(track.scrollLeft / Math.max(1, step));
+        setActiveDot(approxIndex);
+      });
+    }, { passive: true });
+
+    const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reducedMotion && slides.length > 1) {
+      let paused = false;
+      const pause = () => { paused = true; };
+      const resume = () => { paused = false; };
+      if (carousel) {
+        carousel.addEventListener("mouseenter", pause);
+        carousel.addEventListener("mouseleave", resume);
+        carousel.addEventListener("focusin", pause);
+        carousel.addEventListener("focusout", resume);
+      }
+      window.setInterval(() => {
+        if (paused || document.hidden) return;
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+        if (atEnd) {
+          track.scrollTo({ left: 0, behavior: "smooth" });
+          setActiveDot(0);
+        } else {
+          scrollToSlide(activeSlide + 1);
+        }
+      }, 6500);
+    }
+  }
+
+  /* 4. Filter, Search & Expand ("Lagi tayang" + "Coming Soon") */
+  const searchInput = document.getElementById("catalog-search");
+  const nowPlayingChips = Array.from(document.querySelectorAll('[data-filter-group="now-playing"] .filter-chip'));
+  const comingSoonChips = Array.from(document.querySelectorAll('[data-filter-group="coming-soon"] .filter-chip'));
+  const expandBtn = document.getElementById("now-playing-expand");
+  const nowPlayingCards = Array.from(document.querySelectorAll('.poster-card[data-grid="now-playing"]'));
+  const comingSoonCards = Array.from(document.querySelectorAll('.poster-card[data-grid="coming-soon"]'));
+  const emptyState = document.getElementById("catalog-empty");
+
+  const state = {
+    nowPlayingFilter: "all",
+    comingSoonFilter: "all",
+    expandedNowPlaying: false,
+    searchQuery: searchInput ? searchInput.value : "",
+  };
+
+  function syncChipGroup(chips, activeValue) {
+    chips.forEach((chip) => {
+      const isMatch = chip.dataset.filter === activeValue;
+      chip.setAttribute("aria-pressed", String(isMatch));
+    });
+  }
+
+  function applyCatalogState() {
+    const query = state.searchQuery.trim().toLowerCase();
+    const revealExtra = state.expandedNowPlaying || Boolean(query) || state.nowPlayingFilter !== "all";
+    let visibleNowCount = 0;
+
+    nowPlayingCards.forEach((card) => {
+      const isExtra = card.dataset.extra === "true";
+      card.classList.toggle("is-revealed", isExtra && revealExtra);
+
+      const matchesKind = state.nowPlayingFilter === "all" || card.dataset.kind === state.nowPlayingFilter;
+      const haystack = (card.dataset.search || "").toLowerCase();
+      const matchesSearch = !query || haystack.includes(query);
+      const visible = matchesKind && matchesSearch && (!isExtra || revealExtra);
+
+      card.hidden = !matchesKind || !matchesSearch;
+      if (visible) visibleNowCount += 1;
+    });
+
+    comingSoonCards.forEach((card) => {
+      const matchesKind = state.comingSoonFilter === "all" || card.dataset.kind === state.comingSoonFilter;
+      const haystack = (card.dataset.search || "").toLowerCase();
+      const matchesSearch = !query || haystack.includes(query);
+      card.hidden = !matchesKind || !matchesSearch;
+    });
+
+    if (emptyState) {
+      emptyState.hidden = visibleNowCount > 0;
+    }
+
+    if (expandBtn) {
+      expandBtn.setAttribute("aria-expanded", String(state.expandedNowPlaying));
+      const labelSpan = expandBtn.querySelector("span");
+      if (labelSpan) {
+        labelSpan.textContent = state.expandedNowPlaying ? "Ringkas" : "Lihat semua \u203A";
+      }
+    }
+  }
+
+  nowPlayingChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      state.nowPlayingFilter = chip.dataset.filter || "all";
+      syncChipGroup(nowPlayingChips, state.nowPlayingFilter);
+      applyCatalogState();
+    });
   });
-}
-search.addEventListener('input', applyFilter);
-applyFilter();
 
-/* ---------- 3. Modal trailer ---------- */
-const dialog = $('trailer-dialog');
-const video = $('trailer-video');
+  comingSoonChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      state.comingSoonFilter = chip.dataset.filter || "all";
+      syncChipGroup(comingSoonChips, state.comingSoonFilter);
+      applyCatalogState();
+    });
+  });
 
-document.addEventListener('click', (event) => {
-  const button = event.target.closest('[data-trailer]');
-  if (!button) return;
-  $('trailer-title').textContent = button.dataset.title;
-  video.src = button.dataset.trailer;
-  dialog.showModal();
-  video.play().catch(() => {});          // bila autoplay ditolak, pengguna tinggal menekan tombol putar
-});
-dialog.addEventListener('click', (event) => {
-  if (event.target === dialog) dialog.close();           // klik area gelap di luar video
-});
-dialog.addEventListener('close', () => {
-  video.pause();
-  video.removeAttribute('src');
-  video.load();
-});
+  if (expandBtn) {
+    expandBtn.addEventListener("click", () => {
+      state.expandedNowPlaying = !state.expandedNowPlaying;
+      applyCatalogState();
+    });
+  }
+
+  if (searchInput) {
+    const onSearch = () => {
+      state.searchQuery = searchInput.value || "";
+      applyCatalogState();
+    };
+    searchInput.addEventListener("input", onSearch);
+    searchInput.addEventListener("search", onSearch);
+    if (state.searchQuery.trim()) {
+      applyCatalogState();
+    }
+
+    /* Placeholder berganti tiap 3 detik dengan efek pudar (CSS di landing.css).
+       Label aksesibel tetap aria-label statis; placeholder hanya contoh pencarian.
+       Berhenti saat kolom fokus/terisi atau tab tidak terlihat. */
+    const SEARCH_HINTS = [
+      "Cari film SORE: Istri dari Masa Depan...",
+      "Cari konser Coldplay di GBK...",
+      "Cari bioskop Studio IMAX...",
+      "Cari film Jatuh Cinta Seperti di Film Film...",
+    ];
+    const HINT_FADE_MS = 220;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let hintIndex = 0;
+    searchInput.placeholder = SEARCH_HINTS[hintIndex];
+
+    window.setInterval(() => {
+      if (document.hidden || document.activeElement === searchInput || searchInput.value) return;
+      hintIndex = (hintIndex + 1) % SEARCH_HINTS.length;
+      if (reduceMotion.matches) {
+        searchInput.placeholder = SEARCH_HINTS[hintIndex];
+        return;
+      }
+      searchInput.classList.add("is-hint-out");
+      window.setTimeout(() => {
+        searchInput.placeholder = SEARCH_HINTS[hintIndex];
+        searchInput.classList.remove("is-hint-out");
+      }, HINT_FADE_MS);
+    }, 3000);
+  }
+
+  /* 5. 5 Category Quick Actions + Modal Info ("titiket.food" & "Sewa Tempat") */
+  const quickCats = Array.from(document.querySelectorAll(".quick-cat[data-category]"));
+  const quickInfoModal = document.getElementById("quick-info-modal");
+  const quickInfoTitle = document.getElementById("quick-info-title");
+  const quickInfoClose = document.getElementById("quick-info-close");
+  const quickInfoFood = document.getElementById("quick-info-food");
+  const quickInfoSewa = document.getElementById("quick-info-sewa");
+  const nowPlayingSection = document.getElementById("lagi-tayang");
+
+  function openQuickInfo(mode) {
+    if (!quickInfoModal || !quickInfoFood || !quickInfoSewa || !quickInfoTitle) return;
+    if (mode === "food") {
+      quickInfoTitle.textContent = "titiket.food \u2022 Pre-Order Bioskop";
+      quickInfoFood.hidden = false;
+      quickInfoSewa.hidden = true;
+    } else {
+      quickInfoTitle.textContent = "Sewa Tempat & Studio Bioskop";
+      quickInfoFood.hidden = true;
+      quickInfoSewa.hidden = false;
+    }
+    if (typeof quickInfoModal.showModal === "function") {
+      quickInfoModal.showModal();
+    }
+  }
+
+  quickCats.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cat = btn.dataset.category || "";
+      quickCats.forEach((item) => item.setAttribute("aria-pressed", String(item === btn)));
+
+      if (cat === "bioskop" || cat === "film") {
+        state.nowPlayingFilter = "film";
+        syncChipGroup(nowPlayingChips, "film");
+        applyCatalogState();
+        if (nowPlayingSection) {
+          nowPlayingSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
+
+      if (cat === "konser") {
+        state.nowPlayingFilter = "concert";
+        syncChipGroup(nowPlayingChips, "concert");
+        applyCatalogState();
+        if (nowPlayingSection) {
+          nowPlayingSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
+
+      if (cat === "food" || cat === "sewa") {
+        openQuickInfo(cat);
+      }
+    });
+  });
+
+  if (quickInfoClose && quickInfoModal) {
+    quickInfoClose.addEventListener("click", () => quickInfoModal.close());
+    quickInfoModal.addEventListener("click", (event) => {
+      if (event.target === quickInfoModal) quickInfoModal.close();
+    });
+  }
+
+  /* 6. "Ingatkan Saya" Toggle Persistence (Coming Soon) */
+  const remindButtons = Array.from(document.querySelectorAll(".remind-btn[data-remind-id]"));
+  let savedReminders = new Set();
+
+  try {
+    const raw = JSON.parse(localStorage.getItem(REMIND_STORAGE_KEY) || "[]");
+    if (Array.isArray(raw)) {
+      savedReminders = new Set(raw);
+    }
+  } catch {
+    savedReminders = new Set();
+  }
+
+  function renderRemindButton(btn) {
+    const id = btn.dataset.remindId || "";
+    const active = savedReminders.has(id);
+    btn.setAttribute("aria-pressed", String(active));
+    const label = btn.querySelector("span");
+    if (label) {
+      label.textContent = active ? "Pengingat Aktif \u2713" : "Ingatkan Saya";
+    }
+  }
+
+  remindButtons.forEach((btn) => {
+    renderRemindButton(btn);
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.remindId || "";
+      const title = btn.dataset.remindTitle || "judul ini";
+      if (!id) return;
+
+      if (savedReminders.has(id)) {
+        savedReminders.delete(id);
+        showToast(`Pengingat untuk ${title} dimatikan.`);
+      } else {
+        savedReminders.add(id);
+        showToast(`Kami akan mengingatkan saat tiket ${title} tersedia.`);
+      }
+
+      try {
+        localStorage.setItem(REMIND_STORAGE_KEY, JSON.stringify(Array.from(savedReminders)));
+      } catch {
+        /* Abaikan */
+      }
+      renderRemindButton(btn);
+    });
+  });
+
+  /* 7. Modal Trailer Native */
+  const trailerDialog = document.getElementById("trailer-dialog");
+  const trailerTitle = document.getElementById("trailer-title");
+  const trailerVideo = document.getElementById("trailer-video");
+  const trailerClose = document.getElementById("landing-trailer-close");
+
+  if (trailerDialog && trailerVideo) {
+    function stopLandingTrailer() {
+      trailerVideo.pause();
+      try {
+        trailerVideo.currentTime = 0;
+      } catch {
+        /* Abaikan jika metadata belum termuat */
+      }
+      trailerVideo.removeAttribute("src");
+      trailerVideo.load();
+    }
+
+    function closeLandingTrailer() {
+      stopLandingTrailer();
+      if (typeof trailerDialog.close === "function" && trailerDialog.open) {
+        trailerDialog.close();
+      } else {
+        trailerDialog.removeAttribute("open");
+      }
+    }
+
+    document.querySelectorAll("[data-trailer]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const src = btn.dataset.trailer || "";
+        const title = btn.dataset.title || "Film";
+        if (!src) return;
+        if (trailerTitle) trailerTitle.textContent = `Trailer: ${title}`;
+        trailerVideo.src = src;
+        if (typeof trailerDialog.showModal === "function") {
+          trailerDialog.showModal();
+        } else {
+          trailerDialog.setAttribute("open", "open");
+        }
+        trailerVideo.play().catch(() => {});
+      });
+    });
+
+    if (trailerClose) {
+      trailerClose.addEventListener("click", (event) => {
+        event.preventDefault();
+        closeLandingTrailer();
+      });
+    }
+
+    trailerDialog.addEventListener("click", (event) => {
+      if (event.target === trailerDialog) closeLandingTrailer();
+    });
+
+    trailerDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      closeLandingTrailer();
+    });
+
+    trailerDialog.addEventListener("close", stopLandingTrailer);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && (trailerDialog.open || trailerDialog.hasAttribute("open"))) {
+        event.preventDefault();
+        closeLandingTrailer();
+      }
+    });
+  }
+
+  applyCatalogState();
+})();

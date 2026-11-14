@@ -10,11 +10,14 @@ TiketPOV — pemesanan tiket dengan visualizer POV 3D (proyek DDP 1).
 from __future__ import annotations
 
 import os
+from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request
 
 from .assets_sync import asset_url, sync_reference_assets
-from .shared_state import Cart, format_rupiah
+from .shared_state import Cart, current_user, format_rupiah
+
+SSO_UI_CAS_LOGIN = "https://sso.ui.ac.id/cas2/login"
 
 
 def create_app(config: dict | None = None) -> Flask:
@@ -34,24 +37,38 @@ def create_app(config: dict | None = None) -> Flask:
     app.config["ASSET_REPORT"] = report
     app.logger.info(report.summary())
 
+    from .blueprints.auth import auth_bp
     from .blueprints.checkout import checkout_bp
     from .blueprints.events import events_bp
     from .blueprints.intro import intro_bp
     from .blueprints.landing import landing_bp
     from .blueprints.visualizer import visualizer_bp
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(intro_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(landing_bp)
     app.register_blueprint(visualizer_bp, url_prefix="/visualizer")
-    app.register_blueprint(checkout_bp, url_prefix="/checkout")
+    app.register_blueprint(checkout_bp)
 
     app.jinja_env.filters["rupiah"] = format_rupiah
 
     @app.context_processor
     def inject_globals() -> dict:
-        # `asset_url("images/x.jpg")` → URL statis, atau None bila filenya tidak ada.
-        return {"cart_count": Cart().count, "asset_url": asset_url}
+        # `asset_url("images/x.jpg")` -> URL statis, atau None bila filenya tidak ada.
+        try:
+            service_url = f"{request.url_root.rstrip('/')}/auth/callback/ui"
+            sso_ui_login_url = f"{SSO_UI_CAS_LOGIN}?service={quote(service_url, safe='')}"
+        except RuntimeError:
+            sso_ui_login_url = SSO_UI_CAS_LOGIN
+        user = current_user()
+        return {
+            "cart_count": Cart().count,
+            "asset_url": asset_url,
+            "sso_ui_login_url": sso_ui_login_url,
+            "current_user": user,
+            "is_authenticated": bool(user),
+        }
 
     @app.errorhandler(404)
     def not_found(error):

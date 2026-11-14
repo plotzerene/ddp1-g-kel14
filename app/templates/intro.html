@@ -1,41 +1,130 @@
 {% extends "base.html" %}
+{% set theme_color = "#02060D" %}
 {% block title %}Selamat datang{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">{% endblock %}
-{% block header_center %}{% endblock %}
+{% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block content %}
 {% set silhouette_url = asset_url("person_silhouette_clean.png") %}
+{% set makara_url = asset_url("makara_ui.png") %}
 <section class="intro" aria-labelledby="intro-title">
+  <div class="intro__brand-bar">
+    <a href="{{ url_for('landing.index') }}" class="brand-logo" aria-label="titiket.com Beranda">
+      <span class="brand-logo__name">titiket</span>
+      <span class="brand-logo__dot" aria-hidden="true"></span>
+      <span class="brand-logo__tld">com</span>
+    </a>
+  </div>
+
   <div class="intro__stage" id="intro-stage">
-    {# Lapis 1: frame pintu bioskop #}
-    <div class="intro__layer" data-depth="18">
-      <div class="intro__inner intro__door" aria-hidden="true"></div>
+    {# Lapis 4: atmosfer auditorium, sorot cahaya proyektor, dan layar melengkung perak #3081 #}
+    <div class="intro__layer" data-depth="10">
+      <div class="intro__inner intro__screen-wrap" aria-hidden="true">
+        <div class="intro__ambient-glow"></div>
+        <div class="intro__projector-spark"></div>
+        <div class="intro__projector-beam"></div>
+        <div class="intro__silver-screen">
+          <div class="intro__screen-bloom"></div>
+        </div>
+        <div class="intro__stage-rim"></div>
+      </div>
     </div>
-    {# Lapis 2: siluet penonton dari reference_assets #}
+
+    {# Lapis 3: tipografi masif tanpa penghalang #3091 #}
+    <div class="intro__layer" data-depth="18">
+      <div class="intro__inner intro__title-wrap">
+        <span class="intro__kicker">TITIKET.COM &bull; CINEMA GRAND ENTRANCE</span>
+        <h1 class="intro__title" id="intro-title" aria-label="FEEL THE MOMENTS">
+          <span class="intro__title-line1" aria-hidden="true">FEEL THE</span>
+          <span class="intro__title-line2" aria-hidden="true">MOMENTS</span>
+        </h1>
+        <p class="intro__subtitle">Layar bioskop dan panggung konser di satu tempat.</p>
+      </div>
+    </div>
+
+    {# Lapis 2: siluet penonton #3096 #}
     <div class="intro__layer" data-depth="34">
       <div class="intro__inner intro__audience" aria-hidden="true">
-        {% if silhouette_url %}<img src="{{ silhouette_url }}" alt="" width="900" height="600">{% endif %}
+        {% if silhouette_url %}<img src="{{ silhouette_url }}" alt="" width="617" height="485">{% endif %}
       </div>
     </div>
-    {# Lapis 3: teks masif #}
-    <div class="intro__layer" data-depth="-14">
-      <div class="intro__inner intro__title-wrap">
-        <h1 class="intro__title" id="intro-title">FEEL THE MOMENTS</h1>
+
+    {# Lapis 1: bingkai tirai pintu luar #3103 tanpa menutupi tipografi tengah #}
+    <div class="intro__layer" data-depth="26">
+      <div class="intro__inner intro__door" aria-hidden="true">
+        <div class="intro__lintel"></div>
+        <div class="intro__curtain intro__curtain-left">
+          <span class="intro__curtain-rib"></span>
+          <span class="intro__curtain-glow"></span>
+        </div>
+        <div class="intro__curtain intro__curtain-right">
+          <span class="intro__curtain-rib"></span>
+          <span class="intro__curtain-glow"></span>
+        </div>
+        <div class="intro__sill"></div>
       </div>
     </div>
   </div>
 
-  <div class="intro__cta">
-    <button type="button" class="intro__start" id="intro-start" aria-controls="intro-gate" aria-expanded="false">Mulai Eksplorasi</button>
+  <div class="intro__cta" id="intro-cta">
+    <button type="button" class="intro__start" id="intro-start" aria-controls="intro-gate" aria-expanded="false">
+      Mulai Eksplorasi &darr;
+    </button>
+    <p class="intro__scroll-cue">Gulir atau klik untuk masuk</p>
   </div>
 
-  <div class="intro__gate" id="intro-gate" role="group" aria-label="Pilihan masuk" hidden>
-    <p class="intro__gate-title">Masuk untuk pengalaman terbaik</p>
-    <div class="intro__gate-actions">
-      <button type="button" class="intro__option" data-auth-open="login">Masuk Akun</button>
-      <button type="button" class="intro__option" data-auth-open="register">Buat Akun</button>
-      <a class="intro__option intro__option-guest" href="{{ url_for('landing.index') }}">Lanjut sebagai Tamu</a>
+  <div class="intro__gate" id="intro-gate" role="dialog" aria-labelledby="intro-gate-heading" hidden>
+    <div class="intro__gate-card">
+      <div class="intro__gate-brand">
+        <a href="{{ url_for('landing.index') }}" class="brand-logo" aria-label="titiket.com">
+          <span class="brand-logo__name">titiket</span>
+          <span class="brand-logo__dot" aria-hidden="true"></span>
+          <span class="brand-logo__tld">com</span>
+        </a>
+      </div>
+      <div class="intro__gate-header">
+        <h2 id="intro-gate-heading">Mulai Pengalaman Menontonmu</h2>
+        <p class="intro__gate-title">Pilih metode autentikasi untuk melanjutkan:</p>
+      </div>
+
+      <p class="intro__gate-feedback" id="intro-gate-feedback" role="status" hidden></p>
+
+      <div class="intro__gate-actions">
+        <a class="intro__option intro__option-sso" href="{{ sso_ui_login_url }}" rel="noopener">
+          <span class="intro__option-left">
+            {% if makara_url %}<img src="{{ makara_url }}" alt="" width="20" height="20">{% else %}<svg class="icon icon--sm" aria-hidden="true"><use href="#i-shield"/></svg>{% endif %}
+            <span>Masuk dengan SSO UI</span>
+          </span>
+          <span class="intro__sso-badge">Diskon 15%</span>
+        </a>
+
+        <button type="button" class="intro__option intro__option-secondary" data-oauth-provider="Google">
+          <svg class="intro__oauth-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.63v3.01h3.89c2.28-2.1 3.53-5.19 3.53-8.88z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.89-3.01c-1.08.72-2.45 1.16-4.04 1.16-3.11 0-5.75-2.1-6.69-4.93H1.3v3.1A12 12 0 0 0 12 24z"/>
+            <path fill="#FBBC05" d="M5.31 14.31A7.2 7.2 0 0 1 4.94 12c0-.8.14-1.58.37-2.31V6.59H1.3A12 12 0 0 0 0 12c0 1.94.46 3.77 1.3 5.41l4.01-3.1z"/>
+            <path fill="#EA4335" d="M12 4.76c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.3 6.59l4.01 3.1c.94-2.83 3.58-4.93 6.69-4.93z"/>
+          </svg>
+          <span>Masuk dengan Google</span>
+        </button>
+
+        <button type="button" class="intro__option intro__option-secondary" data-auth-open="login">
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-mail"/></svg>
+          <span>Masuk dengan Email</span>
+        </button>
+      </div>
+
+      <p class="intro__gate-register">
+        Belum punya akun?
+        <button type="button" class="intro__register-link" data-auth-open="register">Daftar Akun Baru</button>
+      </p>
+
+      <div class="intro__gate-divider" aria-hidden="true">
+        <span></span><span>atau</span><span></span>
+      </div>
+
+      <a class="intro__option-guest" href="{{ url_for('landing.index') }}">Lanjut Jelajah sebagai Tamu &rarr;</a>
     </div>
   </div>
 </section>

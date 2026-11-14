@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set step = "cart" %}
+{% set theme_color = "#FFFFFF" %}
+{% block title %}Keranjang Belanja{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container checkout cart-page">
+  <header class="checkout__head">
+    <h1>Keranjang Belanja</h1>
+  </header>
+
+  {% if not items %}
+  <section class="empty-state cart-empty-card" aria-labelledby="empty-title">
+    <span class="cart-empty-card__icon" aria-hidden="true">
+      <svg class="icon icon--lg" aria-hidden="true"><use href="#i-cart"/></svg>
+    </span>
+    <h2 id="empty-title">Keranjangmu masih kosong</h2>
+    <p>Pilih tiket dan tekan tombol Tambah ke Keranjang.</p>
+    <a class="btn btn--primary cart-empty-card__cta" href="{{ url_for('landing.index') }}">
+      <span>Pilih Tiket</span>
+      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+    </a>
+  </section>
+  {% else %}
+  <div class="checkout__grid">
+    <div class="checkout__main-col">
+      <section class="checkout__section" aria-labelledby="cart-tickets-title">
+        <div class="checkout__section-head">
+          <h2 id="cart-tickets-title">Tiket pilihanmu <span class="num">({{ items | length }})</span></h2>
+          <form method="post" action="{{ url_for('checkout.clear') }}">
+            <button class="btn btn--ghost" type="submit">
+              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+              Kosongkan
+            </button>
+          </form>
+        </div>
+
+        <ul class="ticket-list">
+          {% for item in items %}
+          <li class="ticket-row glass">
+            <div class="ticket-row__main">
+              <span class="chip chip--info">{{ item.category }}</span>
+              <h3>{{ item.seat_label }}</h3>
+              <p class="ticket-row__venue">{{ item.venue_name }}</p>
+            </div>
+
+            <dl class="pov-meta" aria-label="Data POV dari visualizer">
+              <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} &middot; {{ item.pov.grade }}</dd></div>
+              <div><dt>Jarak ke layar/panggung</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
+              <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
+              <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
+              <div><dt>Tinggi badan simulasi</dt><dd class="num">{{ item.pov.body_height_cm | round | int }} cm</dd></div>
+            </dl>
+
+            <div class="ticket-row__side">
+              <strong class="num">{{ item.price | rupiah }}</strong>
+              <form method="post" action="{{ url_for('checkout.remove', index=loop.index0) }}">
+                <input type="hidden" name="next" value="cart">
+                <button class="btn btn--danger" type="submit" aria-label="Hapus {{ item.seat_label }}">
+                  <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+                  Hapus
+                </button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+
+        <div class="checkout__ticket-footer">
+          <a class="btn btn--ghost" href="{{ url_for('landing.index') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+            Pilih tiket lain
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <aside class="summary glass checkout__section" aria-labelledby="cart-summary-title">
+      <h2 id="cart-summary-title">Ringkasan Keranjang</h2>
+
+      <div class="summary-breakdown" aria-label="Rincian biaya tiket">
+        <h3 class="summary-breakdown__title">Rincian Harga</h3>
+        <dl class="totals">
+          <div class="summary-row"><dt class="fee-label">Subtotal tiket</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
+          {% if totals.tax %}<div class="summary-row"><dt class="fee-label">Pajak konser 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
+          {% if totals.convenience %}<div class="summary-row"><dt class="fee-label">Convenience fee 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
+          {% if totals.admin %}<div class="summary-row"><dt class="fee-label">Biaya admin bioskop</dt><dd class="num">{{ totals.admin | rupiah }}</dd></div>{% endif %}
+          <div class="summary-row totals__grand">
+            <dt>Total sementara</dt>
+            <dd class="num">{{ totals.total | rupiah }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <a class="btn btn--primary btn--block cart-proceed-btn" id="proceed-to-checkout-btn" data-requires-auth="true" href="{{ url_for('checkout.index') }}">
+        <span>Lanjut ke Pembayaran</span>
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+      </a>
+    </aside>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

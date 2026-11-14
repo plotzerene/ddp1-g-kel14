@@ -269,8 +269,11 @@ class RouteTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def test_pages_render(self):
-        for path in ("/", "/visualizer/studio/xxi-regular", "/visualizer/studio/gbk-coldplay", "/checkout/"):
+        for path in ("/", "/visualizer/studio/xxi-regular", "/visualizer/studio/gbk-coldplay", "/cart"):
             self.assertEqual(self.client.get(path).status_code, 200, path)
+        empty_checkout = self.client.get("/checkout/")
+        self.assertEqual(empty_checkout.status_code, 302)
+        self.assertTrue(empty_checkout.headers["Location"].endswith("/cart"))
         self.assertEqual(self.client.get("/visualizer/?event=coldplay-gbk").status_code, 302)
         self.assertEqual(self.client.get("/visualizer/studio/tidak-ada").status_code, 404)
 
@@ -328,6 +331,12 @@ class RouteTests(unittest.TestCase):
         body = {"venue_id": "xxi-regular", "seat_id": available.seat_id, "body_height_cm": 165}
         self.assertEqual(self.client.post("/visualizer/api/cart", json=body).status_code, 201)
         self.assertEqual(self.client.post("/visualizer/api/cart", json=body).get_json()["status"], "exists")
+        guest_redirect = self.client.get("/checkout/")
+        self.assertEqual(guest_redirect.status_code, 302)
+        self.assertEqual(
+            self.client.post("/auth/login", json={"email": "penguji@example.com", "password": "password123"}).status_code,
+            200,
+        )
         page = self.client.get("/checkout/").get_data(as_text=True)
         self.assertIn(available.label, page)
         invalid = self.client.post("/checkout/pay", data={"name": "", "email": "x", "method": ""})
@@ -340,6 +349,10 @@ class RouteTests(unittest.TestCase):
 
     def test_standing_ticket_never_says_kursi(self):
         """Area berdiri (Festival / My Universe): data POV dan pesan keranjang tidak memakai kata "kursi"."""
+        self.assertEqual(
+            self.client.post("/auth/login", json={"email": "konser@example.com", "password": "password123"}).status_code,
+            200,
+        )
         body = {"venue_id": GBK, "seat_id": "festival:spot1"}
         pov_json = self.client.post("/visualizer/api/pov", json=body).get_data(as_text=True)
         self.assertNotIn("kursi", pov_json.lower())
@@ -349,7 +362,9 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(again["status"], "exists")
         for message in (added.get_json()["message"], again["message"]):
             self.assertNotIn("kursi", message.lower())
-        self.assertNotIn("kursi", self.client.get("/checkout/").get_data(as_text=True).lower())
+        checkout_resp = self.client.get("/checkout/")
+        self.assertEqual(checkout_resp.status_code, 200)
+        self.assertNotIn("kursi", checkout_resp.get_data(as_text=True).lower())
         seated = self.client.post("/visualizer/api/cart", json={"venue_id": GBK, "seat_id": "cat3:R1:S188"})
         self.assertIn("Kursi", seated.get_json()["message"])          # tribun duduk tetap menyebut kursi
 
@@ -358,7 +373,8 @@ class RouteTests(unittest.TestCase):
         self.assertIn('name="theme-color" content="#FFFFFF"', page)
         self.assertNotIn("m.tix", page.lower())
         self.assertNotIn("m-tix", page.lower())
-        self.assertIn('content="#0F0F23"', self.client.get("/checkout/").get_data(as_text=True))
+        self.assertIn('name="theme-color" content="#FFFFFF"', self.client.get("/cart").get_data(as_text=True))
+        self.assertIn('content="#0F0F23"', self.client.get("/visualizer/studio/xxi-regular").get_data(as_text=True))
 
     def test_static_assets_exist(self):
         for path in ("/static/js/vendor/three.module.min.js", "/static/css/tokens.css",

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% set step = "promo" %}
+
+{% block title %}Promo &amp; Syarat Ketentuan{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/promo.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container promo-page">
+  <section class="promo-hero" aria-labelledby="promo-page-title">
+    <p class="promo-eyebrow">Penawaran Resmi • Bioskop &amp; Konser</p>
+    <h1 id="promo-page-title">Promo &amp; Syarat Ketentuan</h1>
+    <p class="promo-hero-sub">
+      Lihat daftar lengkap promo aktif di titiket.com beserta mekanisme klaim, kode voucher, kuota, dan syarat ketentuan resmi sebelum melanjutkan ke pemilihan kursi 3D POV atau checkout.
+    </p>
+
+    <div class="promo-toolbar">
+      <div class="promo-filters" role="group" aria-label="Filter kategori promo">
+        <button type="button" class="promo-chip is-active" data-promo-filter="all" aria-pressed="true">Semua Promo</button>
+        <button type="button" class="promo-chip" data-promo-filter="mahasiswa" aria-pressed="false">Mahasiswa UI</button>
+        <button type="button" class="promo-chip" data-promo-filter="bioskop" aria-pressed="false">Bioskop</button>
+        <button type="button" class="promo-chip" data-promo-filter="konser" aria-pressed="false">Konser</button>
+        <button type="button" class="promo-chip" data-promo-filter="pembayaran" aria-pressed="false">Pembayaran</button>
+        <button type="button" class="promo-chip" data-promo-filter="kuliner" aria-pressed="false">titiket.food</button>
+      </div>
+      <p class="promo-count" id="promo-visible-count">Menampilkan {{ offers|length }} promo aktif</p>
+    </div>
+  </section>
+
+  <section aria-label="Daftar promo aktif">
+    <div class="promo-grid" id="promo-card-grid">
+      {% for offer in offers %}
+      <article class="promo-card" data-promo-category="{{ offer.category }}" id="{{ offer.id }}">
+        <div class="promo-card-top">
+          <div class="promo-badge-row">
+            <span class="promo-badge promo-badge-{{ offer.accent }}">{{ offer.badge }}</span>
+            <span class="promo-cat-pill">{{ offer.category_label }}</span>
+          </div>
+          <span class="promo-period">{{ offer.period }}</span>
+        </div>
+
+        <h2 class="promo-card-title">{{ offer.title }}</h2>
+        <p class="promo-card-highlight">{{ offer.highlight }}</p>
+        <p class="promo-card-summary">{{ offer.summary }}</p>
+
+        <div class="promo-code-box">
+          <div>
+            <span class="promo-code-label">Kode / Mekanisme Klaim</span>
+            <span class="promo-code-value">{{ offer.code }}</span>
+          </div>
+          {% if offer.code in ["TITIKETIMAX", "FOOD20"] %}
+          <button type="button" class="promo-copy-btn" data-copy-code="{{ offer.code }}">Salin Kode</button>
+          {% endif %}
+        </div>
+
+        <div class="promo-terms-box">
+          <h3 class="promo-terms-heading">Syarat &amp; Ketentuan Promo</h3>
+          <ol class="promo-terms-list">
+            {% for term in offer.terms %}
+            <li>{{ term }}</li>
+            {% endfor %}
+          </ol>
+        </div>
+
+        <div class="promo-card-footer">
+          {% if offer.cta_kind == "sso" %}
+          <a class="promo-cta-btn" href="{{ sso_ui_login_url }}" rel="noopener">
+            {% if makara_url %}
+            <img src="{{ makara_url }}" alt="" width="18" height="18" aria-hidden="true">
+            {% endif %}
+            <span>{{ offer.cta_label }}</span>
+          </a>
+          {% else %}
+          <a class="promo-cta-btn" href="{{ offer.cta_href }}">{{ offer.cta_label }}</a>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="promo-general-card" aria-labelledby="promo-general-title">
+    <h2 id="promo-general-title">Ketentuan Umum Promo titiket.com</h2>
+    <ol class="promo-general-list">
+      {% for rule in general_terms %}
+      <li>{{ rule }}</li>
+      {% endfor %}
+    </ol>
+    <div class="promo-general-actions">
+      <a class="promo-cta-btn" href="{{ url_for('landing.index') }}">Jelajahi Film &amp; Konser</a>
+      <a class="promo-secondary-link" href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Konser</a>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var chips = document.querySelectorAll("[data-promo-filter]");
+    var cards = document.querySelectorAll("[data-promo-category]");
+    var countEl = document.getElementById("promo-visible-count");
+
+    function applyFilter(category) {
+      var visible = 0;
+      chips.forEach(function (chip) {
+        var active = chip.getAttribute("data-promo-filter") === category;
+        chip.classList.toggle("is-active", active);
+        chip.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      cards.forEach(function (card) {
+        var match = category === "all" || card.getAttribute("data-promo-category") === category;
+        card.hidden = !match;
+        if (match) visible += 1;
+      });
+      if (countEl) {
+        countEl.textContent = "Menampilkan " + visible + " promo aktif";
+      }
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        applyFilter(chip.getAttribute("data-promo-filter") || "all");
+      });
+    });
+
+    document.querySelectorAll("[data-copy-code]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var code = btn.getAttribute("data-copy-code") || "";
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).catch(function () {});
+        }
+        btn.textContent = "Tersalin: " + code;
+        window.setTimeout(function () {
+          btn.textContent = "Salin Kode";
+        }, 1800);
+      });
+    });
+  })();
+</script>
+{% endblock %}

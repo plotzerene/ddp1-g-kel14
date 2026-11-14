@@ -19,7 +19,7 @@ class ThemeToggleTests(unittest.TestCase):
 
     def test_toggle_is_on_every_main_page(self):
         venue_id = self.client.get("/visualizer/api/venues").get_json()["venues"][0]["venue_id"]
-        for path in ("/", f"/visualizer/studio/{venue_id}", "/checkout/"):
+        for path in ("/", f"/visualizer/studio/{venue_id}", "/cart"):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
@@ -49,6 +49,27 @@ class ThemeToggleTests(unittest.TestCase):
         script = (ROOT / "app/static/js/theme.js").read_text(encoding="utf-8")
         self.assertNotIn(DOUBLE_HYPHEN, partial)
         self.assertNotIn(DOUBLE_HYPHEN, script)
+
+    def test_circular_crescent_toggle_everywhere(self):
+        tokens = (ROOT / "app/static/css/tokens.css").read_text(encoding="utf-8")
+        partial = (ROOT / "app/templates/_theme_toggle.html").read_text(encoding="utf-8")
+        script = (ROOT / "app/static/js/theme.js").read_text(encoding="utf-8")
+
+        self.assertIn(".theme-toggle__moon", tokens)
+        self.assertIn("display: none !important;", tokens)
+        self.assertIn("border-radius: 9999px;", tokens)
+        self.assertIn("theme-toggle__moon", partial)
+        self.assertNotIn("theme-toggle__sun", partial)
+        self.assertIn('step === "promo"', script)
+
+        for path in ("/", "/promo", "/visualizer/studio/xxi-regular", "/cart"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, path)
+            html = response.get_data(as_text=True)
+            response.close()
+            self.assertIn('id="theme-toggle"', html, path)
+            self.assertIn("theme-toggle__moon", html, path)
+            self.assertNotIn("theme-toggle__sun", html, path)
 
 
 if __name__ == "__main__":

@@ -290,7 +290,7 @@ class MediaController {
     }
   }
 
-  /* ----------------------------- Web Audio -------------------------------- */
+  /* •••••••••••• Web Audio •••••••••••• */
   /** Harus dipanggil dari gesture pengguna (klik). */
   async unlockAudio() {
     if (!this.graph) this._buildGraph();
@@ -510,6 +510,10 @@ export class PovScene {
     this.goal = { pos: new THREE.Vector3(0, 1.2, 10), yaw: 0, pitch: 0, fov: 55 };
     this.look = { yaw: 0, pitch: 0, yawNow: 0, pitchNow: 0 };   // offset dari seretan pengguna
     this.damping = 5;
+    this.idleResetMs = 3000;
+    this._idleTimer = null;
+    this._isDragging = false;
+    this._autoResetting = false;
 
     this._bindPointer();
     this.resizeObserver = new ResizeObserver(() => this._resize());
@@ -518,7 +522,7 @@ export class PovScene {
     this.renderer.setAnimationLoop(() => this._frame());
   }
 
-  /* ----------------------------- Utilitas -------------------------------- */
+  /* •••••••••••• Utilitas •••••••••••• */
   _std(color, extra = {}) {
     return new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0, ...extra });
   }
@@ -560,23 +564,43 @@ export class PovScene {
     group.clear();
   }
 
-  _resize() {
-    const width = Math.max(1, Math.floor(this.host.clientWidth));
-    const height = Math.max(1, Math.floor(this.host.clientHeight));
+  resize(explicitWidth, explicitHeight) {
+    const width = Math.max(1, Math.floor(explicitWidth || this.host.clientWidth));
+    const height = Math.max(1, Math.floor(explicitHeight || this.host.clientHeight));
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     if (this.onAspect) this.onAspect(width / height);
   }
 
+  _resize() {
+    this.resize();
+  }
+
   get aspect() {
     return this.camera.aspect;
   }
 
-  /* ----------------------------- Kontrol kamera --------------------------- */
+  /* •••••••••••• Kontrol kamera •••••••••••• */
+  _clearIdleReset() {
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+      this._idleTimer = null;
+    }
+    this._autoResetting = false;
+  }
+
+  _scheduleIdleReset() {
+    if (this._isDragging) return;
+    if (this._idleTimer) clearTimeout(this._idleTimer);
+    this._idleTimer = setTimeout(() => {
+      this._idleTimer = null;
+      this.resetLook({ auto: true });
+    }, this.idleResetMs);
+  }
+
   _bindPointer() {
     const canvas = this.canvas;
-    let dragging = false;
     let lastX = 0;
     let lastY = 0;
     const limitPitch = () => {
@@ -585,7 +609,8 @@ export class PovScene {
     };
 
     canvas.addEventListener('pointerdown', (event) => {
-      dragging = true;
+      this._isDragging = true;
+      this._clearIdleReset();
       lastX = event.clientX;
       lastY = event.clientY;
       canvas.setPointerCapture(event.pointerId);
@@ -593,7 +618,8 @@ export class PovScene {
       if (this.onInteract) this.onInteract();
     });
     canvas.addEventListener('pointermove', (event) => {
-      if (!dragging) return;
+      if (!this._isDragging) return;
+      this._clearIdleReset();
       const radPerPixel = THREE.MathUtils.degToRad(this.camera.fov) / Math.max(1, canvas.clientHeight);
       this.look.yaw += (event.clientX - lastX) * radPerPixel;
       this.look.pitch += (event.clientY - lastY) * radPerPixel;
@@ -602,8 +628,11 @@ export class PovScene {
       lastY = event.clientY;
     });
     const stop = () => {
-      dragging = false;
+      this._isDragging = false;
       canvas.classList.remove('is-dragging');
+      if (Math.abs(this.look.yaw) > 0.002 || Math.abs(this.look.pitch) > 0.002) {
+        this._scheduleIdleReset();
+      }
     };
     canvas.addEventListener('pointerup', stop);
     canvas.addEventListener('pointercancel', stop);
@@ -613,9 +642,11 @@ export class PovScene {
       const moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
       if (moves[event.key]) {
         event.preventDefault();
+        this._clearIdleReset();
         this.look.yaw += moves[event.key][0];
         this.look.pitch += moves[event.key][1];
         limitPitch();
+        this._scheduleIdleReset();
         if (this.onInteract) this.onInteract();
       } else if (event.key === 'Home' || event.key === '0') {
         this.resetLook();
@@ -624,12 +655,14 @@ export class PovScene {
   }
 
   /** Kembali ke arah pandang yang dihitung Python. */
-  resetLook() {
+  resetLook({ auto = false } = {}) {
+    if (!auto) this._clearIdleReset();
     this.look.yaw = 0;
     this.look.pitch = 0;
+    if (auto) this._autoResetting = true;
   }
 
-  /* ----------------------------- Memuat venue ----------------------------- */
+  /* •••••••••••• Memuat venue •••••••••••• */
   loadVenue(layout) {
     this._clearGroup(this.world);
     this._clearGroup(this.local);
@@ -652,7 +685,7 @@ export class PovScene {
     this.media.setSource(layout.media.video, layout.media.video_label);
   }
 
-  /* ----------------------------- Layar / LED ------------------------------ */
+  /* •••••••••••• Layar / LED •••••••••••• */
   _buildSurface(surface, parent = this.world) {
     let geometry;
     if (surface.shape === 'curved') {
@@ -993,7 +1026,7 @@ export class PovScene {
     }
   }
 
-  /* ----------------------------- Efek 4DX --------------------------------- */
+  /* •••••••••••• Efek 4DX •••••••••••• */
   _buildFourDX(L) {
     const config = L.features.four_dx;
     const rand = mulberry32(41);
@@ -2102,9 +2135,15 @@ export class PovScene {
     view.yaw += shortestAngle(view.yaw, goal.yaw) * k;
     view.pitch += (goal.pitch - view.pitch) * k;
     view.fov += (goal.fov - view.fov) * k;
-    const kLook = 1 - Math.exp(-14 * dt);
+    const lookRate = this._autoResetting ? 4.5 : 14;
+    const kLook = 1 - Math.exp(-lookRate * dt);
     this.look.yawNow += (this.look.yaw - this.look.yawNow) * kLook;
     this.look.pitchNow += (this.look.pitch - this.look.pitchNow) * kLook;
+    if (this._autoResetting && Math.abs(this.look.yawNow) < 0.001 && Math.abs(this.look.pitchNow) < 0.001) {
+      this._autoResetting = false;
+      this.look.yawNow = 0;
+      this.look.pitchNow = 0;
+    }
 
     for (const update of this.updaters) update(dt, time);
 

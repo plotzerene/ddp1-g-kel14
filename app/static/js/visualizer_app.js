@@ -37,11 +37,76 @@ const state = {
   compareMode: 'pip',
   photoIndex: 0,
   photoKey: '',
+  fullscreen: false,
 };
 
-/* -------------------------------------------------------------------------- */
+function syncEventCard(layout) {
+  const isConcert = layout.kind === 'concert';
+  const kindEl = $('event-card-kind');
+  const titleEl = $('event-card-title');
+  const venueEl = $('event-card-venue');
+  const dtEl = $('event-card-datetime');
+  const posterEl = $('event-card-poster');
+  const badgeEl = $('pov-card-badge');
+
+  if (kindEl) kindEl.textContent = isConcert ? 'Konser Live' : 'Sedang Tayang';
+  if (titleEl) titleEl.textContent = layout.event ? layout.event.title : layout.name;
+  if (badgeEl) {
+    badgeEl.textContent = layout.short_label;
+    badgeEl.hidden = isConcert;
+  }
+  if (posterEl) {
+    const posterSrc = (layout.media && layout.media.poster) || '';
+    if (posterSrc) {
+      posterEl.src = posterSrc;
+      posterEl.alt = layout.event ? layout.event.title : layout.name;
+      posterEl.hidden = false;
+    } else {
+      posterEl.hidden = true;
+    }
+  }
+  const sched = boot.schedule || {};
+  if (venueEl) {
+    venueEl.textContent = isConcert
+      ? 'Stadion Utama GBK \u2022 Coldplay Live'
+      : `${sched.cinema || 'AGORA MALL XXI'} \u2022 ${layout.short_label}`;
+  }
+  if (dtEl) {
+    dtEl.textContent = isConcert
+      ? '19 Des 2026 \u2022 19:30 WIB'
+      : `${sched.date || 'Sabtu, 14 Nov 2026'} \u2022 ${sched.time || '19:00 WIB'}`;
+  }
+}
+
+function updateQuickHudMetrics(pov, target, parts) {
+  const viewVal = $('metric-view-val');
+  const neckVal = $('metric-neck-val');
+  const distVal = $('metric-dist-val');
+  if (viewVal) {
+    const clearPct = Math.round(pov.clear_view_pct ?? 100);
+    const viewTag = clearPct >= 90 ? 'Optimal' : clearPct >= 70 ? 'Baik' : 'Terhalang';
+    viewVal.textContent = `${clearPct}% ${viewTag}`;
+  }
+  if (neckVal) {
+    const rawDeg = pov.summary && pov.summary.neck_pitch_deg !== undefined
+      ? Number(pov.summary.neck_pitch_deg)
+      : 0;
+    const rounded = Math.round(rawDeg);
+    const sign = rounded > 0 ? '+' : '';
+    const absDeg = Math.abs(rounded);
+    const neckTag = absDeg <= 12 ? 'Nyaman' : absDeg <= 22 ? 'Cukup' : 'Mendongak';
+    neckVal.textContent = `${sign}${rounded}\u00b0 (${neckTag})`;
+  }
+  if (distVal && target) {
+    const distScore = parts.fov ?? parts.proximity ?? pov.score.total;
+    const distTag = distScore >= 80 ? 'Ideal' : distScore >= 55 ? 'Cukup' : 'Jauh';
+    distVal.textContent = `${fixed(target.distance_m, 1)} m \u2022 ${distTag}`;
+  }
+}
+
+/* •••••••••••• */
 /* Util: API, toast, debounce                                                 */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 async function api(url, options = {}) {
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -83,15 +148,19 @@ function debounce(fn, wait) {
 
 function setVeil(visible, text = '', isError = false) {
   const veil = $('veil');
+  if (!veil) return;
+  veil.hidden = !visible;
+  veil.setAttribute('aria-hidden', String(!visible));
   veil.classList.toggle('is-hidden', !visible);
   veil.classList.toggle('is-error', isError);
-  veil.querySelector('.spinner').hidden = isError;
+  const spinner = veil.querySelector('.spinner');
+  if (spinner) spinner.hidden = isError;
   if (text) $('veil-text').textContent = text;
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Komponen                                                                   */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 const map = new Map2DPicker({
   host: $('map2d'),
   legend: $('map-legend'),
@@ -119,29 +188,139 @@ try {
 
 const isStandingPov = (pov) => Boolean(pov && pov.viewer && pov.viewer.posture === 'standing');
 
+let seatLockRemaining = 600;
+let seatLockTargetKey = '';
+let seatLockIntervalId = null;
+let seatLockExpiredShown = false;
+
+function formatLockClock(sec) {
+  const safe = Math.max(0, sec | 0);
+  const mm = String(Math.floor(safe / 60)).padStart(2, '0');
+  const ss = String(safe % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+function renderSeatLockClock() {
+  const clockEl = $('seat-lock-countdown');
+  const pillEl = $('seat-lock-timer');
+  if (!clockEl) return;
+  clockEl.textContent = formatLockClock(seatLockRemaining);
+  if (pillEl) {
+    pillEl.classList.toggle('is-urgent', seatLockRemaining > 0 && seatLockRemaining <= 120);
+    pillEl.classList.toggle('is-expired', seatLockRemaining <= 0);
+  }
+}
+
+async function handleLockExpiredModal() {
+  if (seatLockExpiredShown) return;
+  seatLockExpiredShown = true;
+  const standing = isStandingPov(state.pov);
+  try {
+    state.cart = await postJson('/visualizer/api/cart/clear', {});
+  } catch (e) { /* abaikan kegagalan rilis kunci cadangan */ }
+  syncCart();
+  if (window.TitiketModals && typeof window.TitiketModals.showExpiredReservation === 'function') {
+    window.TitiketModals.showExpiredReservation({
+      standing,
+      onRestart: async () => {
+        seatLockExpiredShown = false;
+        seatLockTargetKey = '';
+        seatLockRemaining = 600;
+        renderSeatLockClock();
+        try {
+          await loadVenue(state.venueId);
+        } catch (err) { reportFatal(err); }
+      },
+    });
+  }
+}
+
+function ensureSeatLockTimer(pov) {
+  if (state.cart && state.cart.count > 0 && Number(state.cart.lock_seconds_left) > 0) {
+    seatLockRemaining = Number(state.cart.lock_seconds_left);
+    seatLockExpiredShown = false;
+    renderSeatLockClock();
+  } else {
+    const key = pov ? `${pov.venue_id || ''}:${pov.block_id || ''}:${pov.seat_id || ''}` : '';
+    if (key && key !== seatLockTargetKey) {
+      seatLockTargetKey = key;
+      seatLockRemaining = 600;
+      seatLockExpiredShown = false;
+      renderSeatLockClock();
+    }
+  }
+  if (!seatLockIntervalId && $('seat-lock-countdown')) {
+    renderSeatLockClock();
+    seatLockIntervalId = window.setInterval(() => {
+      if (seatLockRemaining > 0) {
+        seatLockRemaining -= 1;
+        renderSeatLockClock();
+        if (seatLockRemaining <= 0) handleLockExpiredModal();
+      }
+    }, 1000);
+  }
+}
+
 function syncTerminology(pov) {
   const standing = isStandingPov(pov);
   const cinema = state.layout && state.layout.kind === 'cinema';
   const stepperLabel = $('stepper-viz-label');
   if (stepperLabel) stepperLabel.textContent = standing ? 'Pilih Kategori (CAT) & POV 3D' : 'Pilih Kursi & POV 3D';
-  $('map-title').textContent = standing ? 'Pilih Kategori / Area' : 'Pilih Kursi';
-  $('map-hint').textContent = standing
-    ? 'Klik area lapangan atau pilih spot berdiri di bawah.'
-    : (cinema ? 'Klik kursi untuk melihat POV-nya.' : 'Klik blok kategori, lalu pilih kursi di panel yang muncul.');
-  $('reco-title').textContent = standing ? 'Rekomendasi Posisi Otomatis' : 'Rekomendasi Kursi Otomatis';
+  const lockLabel = $('seat-lock-label');
+  if (lockLabel) lockLabel.textContent = standing ? 'Batas waktu kunci tiket' : 'Batas waktu kunci kursi';
+  ensureSeatLockTimer(pov);
+  const mapTitleText = standing ? 'Pilih Kategori (CAT)' : (cinema ? 'Pilih Kursi Kamu' : 'Pilih Kursi');
+  $('map-title').textContent = mapTitleText;
+  const spotTitle = $('seat-spotlight-title');
+  if (spotTitle) spotTitle.textContent = mapTitleText;
+  const mapHintEl = $('map-hint');
+  if (mapHintEl) {
+    mapHintEl.textContent = standing
+      ? 'Pilih area atau spot berdiri di bawah.'
+      : (cinema ? 'Pilih kursi pada peta.' : 'Pilih blok kategori pada peta.');
+  }
+  const spotBtn = $('btn-map-spotlight');
+  if (spotBtn) {
+    const spotLbl = spotBtn.querySelector('span');
+    if (spotLbl) spotLbl.textContent = standing ? 'Perbesar Peta Area' : 'Perbesar Peta Kursi';
+  }
+  const metricViewLbl = $('metric-view-label');
+  if (metricViewLbl) metricViewLbl.textContent = cinema ? 'PANDANGAN LAYAR' : 'PANDANGAN PANGGUNG';
+  const summaryLbl = $('cta-summary-label');
+  if (summaryLbl && state.cart.count === 0) {
+    summaryLbl.textContent = standing ? 'Tiket Terpilih' : 'Kursi Terpilih';
+  }
+  const fsExitLbl = $('fs-exit-label');
+  if (fsExitLbl) fsExitLbl.textContent = standing ? 'Kembali ke Peta Area (Esc)' : 'Kembali ke Peta Kursi (Esc)';
+  $('reco-title').textContent = standing ? 'Rekomendasi Spot Otomatis' : 'Rekomendasi Kursi Otomatis';
   $('reco-hint').textContent = standing
-    ? 'Pilih preferensi, lalu 3 posisi terbaik ditandai di peta.'
-    : 'Pilih preferensi, lalu 3 kursi terbaik ditandai di peta.';
+    ? 'Pilih preferensi spot berdiri.'
+    : 'Pilih preferensi kursi.';
   const recoBtnLabel = $('btn-recommend').querySelector('span');
   if (recoBtnLabel && !$('btn-recommend').disabled) {
-    recoBtnLabel.textContent = standing ? 'Cari 3 posisi terbaik' : 'Cari 3 kursi terbaik';
+    recoBtnLabel.textContent = standing ? 'Cari 3 spot terbaik' : 'Cari 3 kursi terbaik';
   }
   $('insight-title').textContent = standing ? 'Spot Insight' : 'Seat Insight';
 }
 
-/* -------------------------------------------------------------------------- */
+function syncVenueTabs(blockId = null) {
+  for (const tab of document.querySelectorAll('.venue-tab')) {
+    let active = false;
+    if (tab.dataset.concertBlock) {
+      const blocks = (tab.dataset.concertBlocks || tab.dataset.concertBlock).split(',');
+      active = Boolean(blockId) && blocks.includes(blockId);
+    } else if (tab.dataset.venue) {
+      active = tab.dataset.venue === state.venueId;
+    }
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    if (active) $('viz-grid').setAttribute('aria-labelledby', tab.id);
+  }
+}
+
+/* •••••••••••• */
 /* Memuat venue                                                               */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 async function loadVenue(venueId, pushHistory = false) {
   if (scene) setVeil(true, 'Memuat venue…');
   const layout = await api(venueUrl(boot.api.layout, venueId) + filmQuery);
@@ -154,23 +333,29 @@ async function loadVenue(venueId, pushHistory = false) {
   state.photoIndex = 0;
   state.photoKey = '';
 
+  const vizApp = $('viz-app');
+  if (vizApp) vizApp.dataset.kind = layout.kind;
+  const screenBanner = $('cinema-screen-banner');
+  if (screenBanner) screenBanner.hidden = layout.kind !== 'cinema';
+  const displayGroup = $('deck-display-group');
+  if (displayGroup) displayGroup.hidden = layout.kind !== 'cinema';
+  const compareBtn = $('btn-compare');
+  if (compareBtn) compareBtn.hidden = layout.kind !== 'cinema';
+  if (layout.kind !== 'cinema') state.compareOn = false;
+
   $('viz-title').textContent = layout.name;
-  $('viz-tagline').textContent = layout.tagline;
+  const vizTagline = $('viz-tagline');
+  if (vizTagline) vizTagline.textContent = layout.tagline;
   $('viz-eyebrow').textContent = layout.event ? layout.event.title : 'Visualizer';
+  syncEventCard(layout);
   syncTerminology(null);
   document.title = `${layout.name} · titiket.com`;
-  for (const tab of document.querySelectorAll('.venue-tab')) {
-    const active = tab.dataset.venue === venueId;
-    tab.setAttribute('aria-selected', String(active));
-    tab.tabIndex = active ? 0 : -1;
-    if (active) $('viz-grid').setAttribute('aria-labelledby', tab.id);
-  }
-  if (pushHistory) window.history.pushState({ venueId }, '', venueUrl(boot.urls.studio, venueId) + filmQuery);
+  syncVenueTabs(layout.kind !== 'cinema' && layout.default_selector ? layout.default_selector.block_id : null);
+  if (pushHistory) window.history.pushState({ venueId }, '', venueUrl(boot.urls.studio, venueId) + (window.location.search || filmQuery));
 
   picker.close();
   map.render(layout);
   map.setCart(state.cart.keys);
-  renderTargets(layout);
   renderLenses(layout);
   renderPresets(layout);
   $('battery').hidden = layout.kind === 'cinema';
@@ -188,9 +373,9 @@ async function loadVenue(venueId, pushHistory = false) {
   if (scene) setVeil(false);
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Meminta & menerapkan POV                                                   */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 let povAbort = null;
 
 async function requestPov(mode = 'glide') {
@@ -223,19 +408,25 @@ function applyPov(pov, mode) {
   map.setSelection(pov);
   picker.sync(pov, state.selector);
   syncTerminology(pov);
+  if (state.layout && state.layout.kind !== 'cinema') {
+    const rawSeat = String(pov.seat && pov.seat.seat_id || '');
+    const activeBlock = (state.selector && state.selector.block_id) || (rawSeat.includes(':') ? rawSeat.split(':')[0] : rawSeat);
+    syncVenueTabs(activeBlock);
+  }
 
   const standing = isStandingPov(pov);
   $('hud-seat').textContent = standing ? pov.seat.label : `${pov.seat.label} (Duduk Bernomor)`;
+  const spotSel = $('spotlight-selection');
+  if (spotSel) {
+    spotSel.textContent = `${pov.seat.label} · ${pov.seat.category} · ${formatRupiah(pov.seat.price)}`;
+  }
   $('hud-sub').textContent = standing
     ? `Free Standing (Berdiri Bebas) · ${formatRupiah(pov.seat.price)}`
     : `${pov.seat.category} · ${formatRupiah(pov.seat.price)}`;
   $('hud-score-value').textContent = Math.round(pov.score.total);
   $('hud-score-grade').textContent = pov.score.grade;
   $('eye-note').textContent = `Tinggi mata ${fixed(pov.viewer.eye_height_m, 2)} m dari lantai (${pov.viewer.posture_label}).`;
-  for (const button of $('target-buttons').querySelectorAll('[data-target]')) {
-    button.setAttribute('aria-pressed', String(button.dataset.target === pov.active_target));
-  }
-  for (const button of $('lens-buttons').children) {
+  for (const button of document.querySelectorAll('#lens-buttons [data-lens]')) {
     button.setAttribute('aria-pressed', String(button.dataset.lens === pov.camera.lens.mode));
   }
   updateInsight(pov);
@@ -243,46 +434,47 @@ function applyPov(pov, mode) {
   renderCompare();
 }
 
+function preserveScroll(fn) {
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  const mapScroll = $('seat-map-scroll');
+  const msx = mapScroll ? mapScroll.scrollLeft : 0;
+  const msy = mapScroll ? mapScroll.scrollTop : 0;
+  fn();
+  window.scrollTo(sx, sy);
+  if (mapScroll) mapScroll.scrollTo(msx, msy);
+  window.requestAnimationFrame(() => {
+    window.scrollTo(sx, sy);
+    if (mapScroll) mapScroll.scrollTo(msx, msy);
+  });
+}
+
 /** Pilih kursi (bioskop) atau spot/kursi stadion langsung dari peta. */
 function selectPosition(selector) {
-  if (state.layout.kind !== 'cinema') {
-    const blockId = selector.block_id || String(selector.seat_id).split(':')[0];
-    if (!picker.block || picker.block.id !== blockId) picker.open(blockId, state.layout);
-    if (selector.spot) picker.choice.spot = selector.spot;
-  }
-  state.selector = selector;
-  requestPov('glide');
+  preserveScroll(() => {
+    if (state.layout.kind !== 'cinema') {
+      const blockId = selector.block_id || String(selector.seat_id).split(':')[0];
+      if (!picker.block || picker.block.id !== blockId) picker.open(blockId, state.layout);
+      if (selector.spot) picker.choice.spot = selector.spot;
+    }
+    state.selector = selector;
+    requestPov('glide');
+  });
 }
 
 /** Klik blok kategori → buka Sub-Position Picker dan tampilkan posisi bawaannya. */
 function openBlock(blockId) {
-  const selector = picker.open(blockId, state.layout);
-  if (!selector) return;
-  state.selector = selector;
-  requestPov('glide');
+  preserveScroll(() => {
+    const selector = picker.open(blockId, state.layout);
+    if (!selector) return;
+    state.selector = selector;
+    requestPov('glide');
+  });
 }
 
-/* -------------------------------------------------------------------------- */
-/* Tombol target & lensa                                                      */
-/* -------------------------------------------------------------------------- */
-function renderTargets(layout) {
-  const host = $('target-buttons');
-  host.replaceChildren();
-  for (const target of layout.targets) {
-    host.append(h('button', {
-      class: 'btn', type: 'button', 'data-target': target.id, 'aria-pressed': 'false',
-      onclick: () => {
-        state.targetId = target.id;
-        if (scene) scene.resetLook();
-        requestPov('glide');
-      },
-    }, icon('target'), target.button_label));
-  }
-  host.append(h('button', {
-    class: 'btn btn--icon', type: 'button', 'aria-label': 'Kembalikan arah pandang',
-    title: 'Kembalikan arah pandang', onclick: () => scene && scene.resetLook(),
-  }, icon('reset')));
-}
+/* •••••••••••• */
+/* Lensa kamera                                                               */
+/* •••••••••••• */
 
 function renderLenses(layout) {
   const host = $('lens-buttons');
@@ -299,9 +491,9 @@ function renderLenses(layout) {
   }
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Seat Insight: cincin skor, 5 bar, baterai halangan (konser), spesifikasi   */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function updateInsight(pov) {
   const target = pov.targets[pov.active_target];
   const sound = pov.acoustics;
@@ -313,8 +505,9 @@ function updateInsight(pov) {
   $('score-grade').textContent = pov.score.grade;
 
   const parts = Object.fromEntries(pov.score.breakdown.map((item) => [item.key, item.value]));
-  parts.screen = parts.fov ?? parts.visibility;                      // bioskop: layar · konser: LED & panggung
+  parts.screen = parts.fov ?? parts.visibility;                      // bioskop: layar & konser: LED & panggung
   parts.obstruction = pov.clear_view_pct;                            // kepala penonton + struktur panggung
+  updateQuickHudMetrics(pov, target, parts);
   for (const row of $('bars').children) {
     const key = row.dataset.key;
     row.querySelector('.bars__fill').style.transform = `scaleX(${parts[key] / 100})`;
@@ -348,9 +541,9 @@ function updateInsight(pov) {
   $('spec-list').replaceChildren(...rows.flatMap(([term, text]) => [h('dt', { text: term }), h('dd', { text })]));
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Keranjang                                                                  */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function syncCart() {
   const pov = state.pov;
   const count = state.cart.count;
@@ -359,37 +552,91 @@ function syncCart() {
     badge.hidden = count === 0;
   }
   const checkout = $('btn-checkout');
-  checkout.setAttribute('aria-disabled', String(count === 0));
+  const clearBtn = $('btn-clear');
+  const summaryLbl = $('cta-summary-label');
   $('checkout-count').textContent = count;
   $('checkout-count').hidden = count === 0;
+  if (clearBtn) clearBtn.textContent = count > 0 ? 'Bersihkan Keranjang' : 'Hapus Pilihan';
   map.setCart(state.cart.keys);
 
   const button = $('btn-cart');
   if (!pov) {
     button.disabled = true;
+    checkout.setAttribute('aria-disabled', String(count === 0));
+    if (clearBtn) clearBtn.disabled = count === 0;
     return;
   }
   const standing = isStandingPov(pov);
   const inCart = state.cart.keys.includes(`${state.venueId}|${pov.seat.seat_id}`);
   const sold = pov.seat.status === 'sold';
-  $('cta-seat').textContent = standing
-    ? `${pov.seat.label} (Free Standing)`
-    : `${pov.seat.label} (Duduk Bernomor)`;
-  $('cta-price').textContent = formatRupiah(pov.seat.price);
+  const hasCart = count > 0;
+
+  const seatEl = $('cta-seat');
+  if (hasCart) {
+    if (summaryLbl) {
+      summaryLbl.textContent = `${count} ${standing ? 'Tiket Terpilih' : (state.layout && state.layout.kind === 'concert' ? 'Tiket Terpilih' : 'Kursi Terpilih')}`;
+    }
+    if (seatEl) {
+      const chips = (state.cart.items || []).map((item) => h('span', { class: 'seat-chip', text: item.seat_label }));
+      seatEl.replaceChildren(...chips);
+    }
+    $('cta-price').textContent = formatRupiah(state.cart.subtotal);
+  } else {
+    if (summaryLbl) summaryLbl.textContent = standing ? 'Posisi Terpilih' : 'Kursi Terpilih';
+    if (seatEl) {
+      seatEl.textContent = standing
+        ? `${pov.seat.label} (Free Standing)`
+        : `${pov.seat.label} (Duduk Bernomor)`;
+    }
+    $('cta-price').textContent = formatRupiah(pov.seat.price);
+  }
+
   button.disabled = sold;
+  if (clearBtn) clearBtn.disabled = !hasCart && !inCart;
+  checkout.setAttribute('aria-disabled', String(!hasCart && sold));
   if (standing) {
-    $('btn-cart-label').textContent = inCart ? 'Hapus Tiket dari Keranjang' : 'Tambah Tiket ke Keranjang';
+    $('btn-cart-label').textContent = inCart ? 'Hapus Tiket dari Keranjang' : 'Simpan Pilihan';
     $('btn-checkout-label').textContent = 'Pilih Tiket & Lanjut ke Checkout';
-    checkout.setAttribute('aria-disabled', 'false');
   } else {
     $('btn-cart-label').textContent = sold
       ? 'Kursi sudah terjual'
-      : inCart ? 'Hapus Kursi dari Keranjang' : 'Tambah Kursi ke Keranjang';
+      : inCart ? 'Hapus dari Keranjang' : 'Tambah Kursi ke Keranjang';
     $('btn-checkout-label').textContent = 'Lanjut ke Checkout';
   }
-  // Satu CTA utama: "Tambah" sebelum masuk keranjang, "Checkout" sesudahnya.
-  button.classList.toggle('btn--primary', !inCart);
-  checkout.classList.toggle('btn--primary', inCart);
+}
+
+function handleCartConflict(error) {
+  const data = error && error.data ? error.data : {};
+  if (Array.isArray(data.keys)) state.cart = data;
+  if (data.conflict_seat_id) map.flashCollision(data.conflict_seat_id);
+  if (data.conflict_kind === 'collision' && window.TitiketModals) {
+    window.TitiketModals.showSeatCollisionToast({
+      seatId: data.conflict_seat_id,
+      label: data.conflict_label,
+      standing: Boolean(data.conflict_standing),
+      message: error.message,
+    });
+    return;
+  }
+  toast(error.message, 'error');
+}
+
+async function clearCartChoices() {
+  const pov = state.pov;
+  const standing = isStandingPov(pov);
+  const items = Array.isArray(state.cart.items) ? [...state.cart.items] : [];
+  if (items.length === 0) {
+    toast(standing ? 'Belum ada pilihan tiket di keranjang.' : 'Belum ada kursi tersimpan di keranjang.', 'error');
+    return;
+  }
+  try {
+    state.cart = await postJson('/visualizer/api/cart/clear', {});
+    toast(standing ? 'Semua pilihan tiket dikosongkan.' : 'Pilihan kursi berhasil dihapus.');
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    syncCart();
+  }
 }
 
 async function toggleCart() {
@@ -400,24 +647,29 @@ async function toggleCart() {
   const payload = {
     venue_id: state.venueId, seat_id: pov.seat.seat_id,
     body_height_cm: state.body, front_height_cm: state.front, film: boot.film,
+    schedule: boot.schedule,
   };
   const inCart = state.cart.keys.includes(`${state.venueId}|${pov.seat.seat_id}`);
   button.disabled = true;
   try {
     const data = await postJson(inCart ? boot.api.cartRemove : boot.api.cart, payload);
     state.cart = data;
+    if (Number(data.lock_seconds_left) > 0) {
+      seatLockRemaining = Number(data.lock_seconds_left);
+      seatLockExpiredShown = false;
+      renderSeatLockClock();
+    }
     toast(data.message || (standing ? 'Tiket dihapus dari keranjang.' : 'Kursi dihapus dari keranjang.'));
   } catch (error) {
-    if (error.data && Array.isArray(error.data.keys)) state.cart = error.data;
-    toast(error.message, 'error');
+    handleCartConflict(error);
   } finally {
     syncCart();
   }
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Rekomendasi kursi                                                          */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function renderPresets(layout) {
   const host = $('preset-list');
   host.replaceChildren();
@@ -488,9 +740,9 @@ async function recommend() {
   }
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Heatmap                                                                    */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 async function refreshHeatmap() {
   if (!state.heatmap) {
     map.setHeatmap(null);
@@ -507,9 +759,9 @@ async function refreshHeatmap() {
 
 const refreshHeatmapSoon = debounce(refreshHeatmap, 320);
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Bandingkan dengan foto asli                                                */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function renderCompare() {
   const stage = $('viewport-stage');
   const photos = (state.pov && state.pov.reference_photos) || (state.layout && state.layout.reference_photos) || [];
@@ -522,7 +774,8 @@ function renderCompare() {
   stage.dataset.compare = active ? state.compareMode : 'off';
   $('compare').hidden = !active;
   $('compare-mode').hidden = !state.compareOn;
-  $('btn-compare').setAttribute('aria-pressed', String(state.compareOn));
+  const compareBtn = $('btn-compare');
+  if (compareBtn) compareBtn.setAttribute('aria-pressed', String(state.compareOn));
   if (!active) return;
 
   const photo = photos[state.photoIndex % photos.length];
@@ -549,18 +802,15 @@ function stepPhoto(delta) {
   renderCompare();
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Video & audio                                                              */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function setButtonIcon(button, name) {
   button.querySelector('use').setAttribute('href', `#i-${name}`);
 }
 
 function syncMedia() {
-  if (!scene) {
-    $('media-note').textContent = 'Kontrol video nonaktif karena WebGL tidak tersedia.';
-    return;
-  }
+  if (!scene) return;
   const media = scene.media;
   const play = $('btn-play');
   setButtonIcon(play, media.playing ? 'pause' : 'play');
@@ -573,13 +823,11 @@ function syncMedia() {
   const slider = $('range-volume');
   if (slider.value !== pct) slider.value = pct;
   slider.style.setProperty('--fill', `${pct}%`);
-  $('media-note').textContent = media.note
-    || (media.muted ? `${media.label} · suara masih mati, tekan tombol speaker.` : `${media.label} · suara menyesuaikan posisi ini.`);
 }
 
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 /* Pengikatan event                                                           */
-/* -------------------------------------------------------------------------- */
+/* •••••••••••• */
 function reportFatal(error) {
   setVeil(true, `Gagal memuat venue: ${error.message}`, true);
 }
@@ -611,7 +859,13 @@ function bindEvents() {
   const tabs = [...document.querySelectorAll('.venue-tab')];
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => {
-      if (tab.dataset.venue !== state.venueId) loadVenue(tab.dataset.venue, true).catch(reportFatal);
+      if (tab.dataset.concertBlock) {
+        if (state.layout && state.layout.kind !== 'cinema') openBlock(tab.dataset.concertBlock);
+        return;
+      }
+      if (tab.dataset.venue && tab.dataset.venue !== state.venueId) {
+        loadVenue(tab.dataset.venue, true).catch(reportFatal);
+      }
     });
     tab.addEventListener('keydown', (event) => {
       const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
@@ -628,28 +882,105 @@ function bindEvents() {
   });
 
   $('btn-cart').addEventListener('click', toggleCart);
+  const btnClear = $('btn-clear');
+  if (btnClear) btnClear.addEventListener('click', clearCartChoices);
+
+  document.addEventListener('titiket:cart-collision', (event) => {
+    const detail = event.detail || {};
+    if (detail.conflict_seat_id) map.flashCollision(detail.conflict_seat_id);
+    if (Array.isArray(detail.keys)) {
+      state.cart = detail;
+      syncCart();
+    }
+  });
+
   $('btn-checkout').addEventListener('click', async (event) => {
     const pov = state.pov;
     const inCart = Boolean(pov) && state.cart.keys.includes(`${state.venueId}|${pov.seat.seat_id}`);
-    if (isStandingPov(pov) && !inCart) {
-      // "Pilih Tiket & Lanjut ke Checkout": spot yang sedang dilihat masuk keranjang dulu, baru pindah halaman.
+    const canAutoAdd = state.cart.count === 0 && pov && pov.seat.status !== 'sold' && !inCart;
+    if (state.cart.count === 0 && !canAutoAdd) {
       event.preventDefault();
-      try {
-        state.cart = await postJson(boot.api.cart, {
-          venue_id: state.venueId, seat_id: pov.seat.seat_id,
-          body_height_cm: state.body, front_height_cm: state.front, film: boot.film,
-        });
-        window.location.assign(boot.urls.checkout);      // event.currentTarget sudah null setelah await
-      } catch (error) {
-        if (error.data && Array.isArray(error.data.keys)) state.cart = error.data;
-        syncCart();
-        toast(error.message, 'error');
-      }
+      toast('Pilih posisi tersedia terlebih dahulu sebelum checkout.', 'error');
       return;
     }
-    if (state.cart.count === 0) {
+
+    const pendingPayload = canAutoAdd ? {
+      venue_id: state.venueId, seat_id: pov.seat.seat_id,
+      body_height_cm: state.body, front_height_cm: state.front, film: boot.film,
+      schedule: boot.schedule,
+    } : null;
+
+    if (window.TitiketAuth && !window.TitiketAuth.isAuthenticated()) {
       event.preventDefault();
-      toast('Tambahkan minimal satu kursi ke keranjang dulu.', 'error');
+      window.TitiketAuth.requireAuth({
+        nextUrl: boot.urls.checkout,
+        pendingCartPayload: pendingPayload,
+      });
+      return;
+    }
+
+    if (canAutoAdd) {
+      // Pilih seat atau spot aktif otomatis masuk keranjang sebelum berpindah ke halaman checkout.
+      event.preventDefault();
+      try {
+        state.cart = await postJson(boot.api.cart, pendingPayload);
+        window.location.assign(boot.urls.checkout);
+      } catch (error) {
+        handleCartConflict(error);
+        syncCart();
+      }
+    }
+  });
+
+  const spotlightModal = $('seat-spotlight-modal');
+  const spotlightBody = $('seat-spotlight-body');
+  const spotlightAnchor = $('map-spotlight-anchor');
+  const btnSpotlight = $('btn-map-spotlight');
+  const btnCloseSpotlight = $('btn-close-spotlight');
+  const spotlightScrim = $('seat-spotlight-scrim');
+  let spotlightOpen = false;
+
+  function openSpotlight() {
+    if (!spotlightModal || !spotlightBody || !spotlightAnchor || spotlightOpen) return;
+    const legend = $('map-legend');
+    const banner = $('cinema-screen-banner');
+    const mapWrap = spotlightAnchor.parentElement.querySelector('.map-wrap');
+    spotlightBody.replaceChildren(...[legend, banner, mapWrap].filter(Boolean));
+    spotlightModal.hidden = false;
+    spotlightOpen = true;
+    document.body.style.overflow = 'hidden';
+    if (btnSpotlight) btnSpotlight.setAttribute('aria-expanded', 'true');
+    window.requestAnimationFrame(() => spotlightModal.classList.add('is-open'));
+    if (btnCloseSpotlight) btnCloseSpotlight.focus({ preventScroll: true });
+  }
+
+  function closeSpotlight() {
+    if (!spotlightModal || !spotlightBody || !spotlightAnchor || !spotlightOpen) return;
+    spotlightOpen = false;
+    spotlightModal.classList.remove('is-open');
+    if (btnSpotlight) btnSpotlight.setAttribute('aria-expanded', 'false');
+    const restore = [
+      spotlightBody.querySelector('#map-legend'),
+      spotlightBody.querySelector('#cinema-screen-banner'),
+      spotlightBody.querySelector('.map-wrap'),
+    ].filter(Boolean);
+    let cursor = spotlightAnchor;
+    for (const node of restore) {
+      cursor.after(node);
+      cursor = node;
+    }
+    spotlightModal.hidden = true;
+    document.body.style.overflow = '';
+    if (btnSpotlight) btnSpotlight.focus({ preventScroll: true });
+  }
+
+  if (btnSpotlight) btnSpotlight.addEventListener('click', openSpotlight);
+  if (btnCloseSpotlight) btnCloseSpotlight.addEventListener('click', closeSpotlight);
+  if (spotlightScrim) spotlightScrim.addEventListener('click', closeSpotlight);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && spotlightOpen) {
+      event.preventDefault();
+      closeSpotlight();
     }
   });
   $('btn-recommend').addEventListener('click', recommend);
@@ -660,10 +991,13 @@ function bindEvents() {
   });
 
   // Pembanding foto.
-  $('btn-compare').addEventListener('click', () => {
-    state.compareOn = !state.compareOn;
-    renderCompare();
-  });
+  const compareBtn = $('btn-compare');
+  if (compareBtn) {
+    compareBtn.addEventListener('click', () => {
+      state.compareOn = !state.compareOn;
+      renderCompare();
+    });
+  }
   for (const button of $('compare-mode').children) {
     button.addEventListener('click', () => {
       state.compareMode = button.dataset.mode;
@@ -676,9 +1010,54 @@ function bindEvents() {
   $('compare-prev').addEventListener('click', () => stepPhoto(-1));
   $('compare-next').addEventListener('click', () => stepPhoto(1));
 
+  const onTheaterResize = () => {
+    if (state.fullscreen && scene) scene.resize(window.innerWidth, window.innerHeight);
+  };
+
+  function setTheaterFullscreen(on) {
+    const vp = $('viewport');
+    const fsHud = $('fullscreen-hud');
+    const expandBtn = $('btn-fullscreen');
+    if (!vp) return;
+    state.fullscreen = Boolean(on);
+    vp.classList.toggle('is-fullscreen-theater', state.fullscreen);
+    document.body.classList.toggle('is-theater-open', state.fullscreen);
+    if (fsHud) fsHud.hidden = !state.fullscreen;
+    if (expandBtn) expandBtn.setAttribute('aria-pressed', String(state.fullscreen));
+    if (state.fullscreen) {
+      window.addEventListener('resize', onTheaterResize);
+      window.requestAnimationFrame(() => {
+        if (scene) scene.resize(window.innerWidth, window.innerHeight);
+      });
+      window.setTimeout(() => {
+        if (state.fullscreen && scene) scene.resize(window.innerWidth, window.innerHeight);
+      }, 60);
+      const exitBtn = $('btn-exit-fullscreen');
+      if (exitBtn) exitBtn.focus({ preventScroll: true });
+    } else {
+      window.removeEventListener('resize', onTheaterResize);
+      window.requestAnimationFrame(() => {
+        if (scene) scene.resize();
+      });
+      window.setTimeout(() => {
+        if (!state.fullscreen && scene) scene.resize();
+      }, 60);
+      if (expandBtn) expandBtn.focus({ preventScroll: true });
+    }
+  }
+
   $('btn-fullscreen').addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else if ($('viewport').requestFullscreen) $('viewport').requestFullscreen();
+    setTheaterFullscreen(!state.fullscreen);
+  });
+  const exitFsBtn = $('btn-exit-fullscreen');
+  if (exitFsBtn) {
+    exitFsBtn.addEventListener('click', () => setTheaterFullscreen(false));
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.fullscreen) {
+      event.preventDefault();
+      setTheaterFullscreen(false);
+    }
   });
 
   if (!scene) return;

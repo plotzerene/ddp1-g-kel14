@@ -1,11 +1,12 @@
 {#
-  checkout/eticket.html — FOLDER TEAMMATE 2 (starter).
-  `order` = pesanan terakhir di session; `tickets` = [{item, code, matrix}].
-  `matrix` hanyalah pola dekoratif dari hash kode tiket, BUKAN QR yang bisa dipindai.
+  Screen 07 Ticket Success: kartu e-tiket resmi dengan status LUNAS.
+  Film bioskop hanya memakai QR Code, sedangkan konser hanya memakai barcode horizontal Code128.
 #}
 {% extends "base.html" %}
 {% set step = "checkout" %}
-{% block title %}E-Ticket {{ order.code }}{% endblock %}
+{% set theme_color = "#FFFFFF" %}
+{% block title %}E-Tiket Resmi {{ order.code }}{% endblock %}
+
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
 {% endblock %}
@@ -13,22 +14,28 @@
 {% block content %}
 <div class="container checkout">
   <header class="checkout__head eticket-head">
-    <span class="chip chip--success">
-      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
-      Pembayaran berhasil (simulasi)
-    </span>
-    <h1>E-Ticket kamu sudah siap</h1>
+    <div class="eticket-status-row">
+      <span class="badge-lunas">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
+        LUNAS · Pembayaran Berhasil
+      </span>
+      <span class="chip chip--info num">{{ order.code }}</span>
+    </div>
+
+    <h1>E-Tiket Anda Sudah Terbit</h1>
     <p>
-      Kode pesanan <strong class="num">{{ order.code }}</strong> · {{ order.paid_at }} ·
-      {{ order.method }} · atas nama {{ order.buyer.name }} ({{ order.buyer.email }})
+      Dibayar pada {{ order.paid_at }} via <strong>{{ order.method }}</strong> ·
+      Atas nama <strong>{{ order.buyer.name }}</strong> ({{ order.buyer.email }})
     </p>
+
     <div class="eticket-actions">
       <button class="btn btn--primary" type="button" onclick="window.print()">
-        Cetak / simpan PDF
+        <svg class="i" aria-hidden="true"><use href="#i-download"/></svg>
+        Unduh E-Tiket (PDF)
       </button>
-      <a class="btn" href="{{ url_for('landing.index') }}">
+      <a class="btn btn--secondary" href="{{ url_for('landing.index') }}">
         <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-        Pesan acara lain
+        Kembali ke Beranda
       </a>
     </div>
   </header>
@@ -36,34 +43,75 @@
   <ul class="eticket-list">
     {% for ticket in tickets %}
     {% set item = ticket.item %}
-    <li class="eticket glass">
+    {% set is_concert = (ticket.venue_type == "concert") or (ticket.event_type == "concert") %}
+    <li class="eticket glass checkout__section {{ 'eticket--concert' if is_concert else 'eticket--cinema' }}">
       <div class="eticket__info">
-        <span class="chip chip--accent">{{ item.category }}</span>
+        <div class="eticket__top-tags">
+          <span class="chip chip--accent">{{ item.category }}</span>
+          <span class="eticket__paid-pill">TERVERIFIKASI</span>
+        </div>
+
         <h2>{{ item.seat_label }}</h2>
-        <p class="eticket__venue">{{ item.venue_name }}</p>
-        <dl class="pov-meta">
-          <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} · {{ item.pov.grade }}</dd></div>
-          <div><dt>Jarak</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
-          <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
-          <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
+        <p class="eticket__venue">{{ ticket.event_title }}</p>
+
+        <dl class="pov-meta eticket__schedule">
+          <div><dt>Tanggal Tayang</dt><dd>{{ ticket.show_date }}</dd></div>
+          <div><dt>Waktu</dt><dd class="num">{{ ticket.show_time }}</dd></div>
+          <div><dt>{{ 'Studio & Bioskop' if not is_concert else 'Venue Stadion' }}</dt><dd>{{ ticket.studio_cinema }}</dd></div>
+          <div><dt>Kode Booking</dt><dd class="num">{{ order.code }}</dd></div>
         </dl>
+
         <p class="eticket__price num">{{ item.price | rupiah }}</p>
+        <p class="eticket__terms">
+          {% if is_concert %}
+          <strong>Syarat &amp; Ketentuan Penukaran:</strong> Tunjukkan Barcode e-tiket ini kepada petugas venue untuk pemindaian langsung di pintu masuk stadion. E-tiket ini sah dan tidak dapat dibatalkan atau dipindahtangankan. Harap hadir di lokasi minimal 60 menit sebelum acara dimulai.
+          {% else %}
+          <strong>Syarat &amp; Ketentuan Penukaran:</strong> Tunjukkan QR Code ini kepada petugas bioskop untuk pemindaian langsung di pintu masuk studio. E-tiket ini sah dan tidak dapat dibatalkan atau dipindahtangankan. Harap hadir di lokasi minimal 15 menit sebelum waktu penayangan dimulai.
+          {% endif %}
+        </p>
       </div>
 
-      <div class="eticket__code">
+      {% if is_concert %}
+      <div class="eticket__barcode-wrap" aria-label="Barcode Code128 {{ ticket.code }}">
+        <svg class="eticket__barcode" viewBox="0 0 180 34" role="img" aria-label="Code128 {{ ticket.code }}" shape-rendering="crispEdges">
+          <rect width="180" height="34" fill="#FFFFFF"/>
+          <g fill="#0F172A">
+            <rect x="4" y="3" width="2" height="28"/>
+            <rect x="8" y="3" width="1" height="28"/>
+            <rect x="11" y="3" width="3" height="28"/>
+            {% for ch in ticket.code %}
+            {% set code_idx = loop.index0 %}
+            {% set base_x = 18 + (code_idx * 10) %}
+            {% set w1 = ((loop.index * 2) % 3) + 1 %}
+            {% set w2 = ((loop.index + 1) % 2) + 1 %}
+            {% if base_x < 164 %}
+            <rect x="{{ base_x }}" y="3" width="{{ w1 }}" height="28"/>
+            <rect x="{{ base_x + w1 + 2 }}" y="3" width="{{ w2 }}" height="28"/>
+            <rect x="{{ base_x + w1 + w2 + 4 }}" y="3" width="1" height="28"/>
+            {% endif %}
+            {% endfor %}
+            <rect x="168" y="3" width="2" height="28"/>
+            <rect x="172" y="3" width="3" height="28"/>
+          </g>
+        </svg>
+        <span class="eticket__barcode-text num">{{ ticket.code }}</span>
+      </div>
+      {% else %}
+      <div class="eticket__code" aria-label="QR Code Tiket {{ ticket.code }}">
         {% set size = ticket.matrix | length %}
-        <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="Kode visual tiket {{ ticket.code }}" shape-rendering="crispEdges">
+        <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="QR Code Tiket {{ ticket.code }}" shape-rendering="crispEdges">
           <rect width="{{ size }}" height="{{ size }}" fill="#F8FAFC"/>
           {% for row in ticket.matrix %}{% set y = loop.index0 %}{% for cell in row %}{% if cell %}<rect x="{{ loop.index0 }}" y="{{ y }}" width="1" height="1" fill="#0F0F23"/>{% endif %}{% endfor %}{% endfor %}
         </svg>
         <span class="num">{{ ticket.code }}</span>
       </div>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
 
-  <section class="summary glass eticket-summary" aria-labelledby="paid-title">
-    <h2 id="paid-title">Rincian pembayaran</h2>
+  <section class="summary glass checkout__section eticket-summary" aria-labelledby="paid-title">
+    <h2 id="paid-title">Rincian Pembayaran</h2>
     <dl class="totals">
       <div><dt>Subtotal tiket</dt><dd class="num">{{ order.totals.subtotal | rupiah }}</dd></div>
       {% if order.totals.tax %}<div><dt>Pajak konser 15%</dt><dd class="num">{{ order.totals.tax | rupiah }}</dd></div>{% endif %}

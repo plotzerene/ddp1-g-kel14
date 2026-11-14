@@ -90,13 +90,13 @@ class PageIntegrationTests(unittest.TestCase):
                 self.assertTrue(movie.get("embed_id"))
 
     def test_light_theme_stylesheet_is_loaded_everywhere(self):
-        html = self.get_text("/checkout/")
+        html = self.get_text("/cart")
         self.assertIn("theme-light.css", html)
         css = (ROOT / "app/static/css/theme-light.css").read_text(encoding="utf-8")
         self.assertIn('html[data-theme="light"] .panel', css)
 
     def test_visualizer_and_checkout_still_render(self):
-        self.get_text("/checkout/")
+        self.get_text("/cart")
         self.get_text("/visualizer/api/venues")
 
 

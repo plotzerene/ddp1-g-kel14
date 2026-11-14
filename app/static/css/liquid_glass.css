@@ -1,0 +1,371 @@
+/* ==========================================================================
+   liquid_glass.css: material Liquid Glass (gaya Apple iOS 26) untuk titiket.com.
+
+   Dimuat global di base.html SETELAH CSS khusus halaman, jadi kelas utilitas
+   di sini menang atas gaya komponen yang spesifisitasnya setara.
+
+   Material:
+     Terang (milky / frosted)  : landing, promo, keranjang, checkout, profil
+     Gelap (obsidian)          : HUD & telemetri kanvas 3D (selalu gelap)
+
+   Utilitas:
+     .liquid-glass             permukaan kaca dasar
+     .liquid-glass-pill        tombol pil (Tonton Trailer, Beli Tiket, chip filter)
+     .liquid-glass-switch      tombol ganti tema terang/gelap
+     .liquid-glass-dock        wadah telemetri melayang di atas kanvas 3D
+     .liquid-glass-modal       cangkang dialog dengan latar buram
+     .liquid-glass--obsidian   paksa material gelap di dalam halaman terang
+
+   Lapisan optik tiap permukaan:
+     1. isi transparan + backdrop-filter blur & saturate (pembiasan latar)
+     2. bayangan dalam (inset) atas terang & bawah gelap (efek lensa cair)
+     3. garis tepi 1px bergradien: kilau specular kiri atas, memudar ke tepi bawah gelap
+     4. bayangan luar lembut (kedalaman)
+   ========================================================================== */
+
+/* Token: bawaan gelap (obsidian) */
+body,
+.liquid-glass--obsidian,
+.viewport {
+  --lg-fill: rgba(8, 9, 12, 0.52);
+  --lg-fill-hover: rgba(22, 25, 32, 0.62);
+  --lg-fill-strong: rgba(12, 14, 19, 0.80);
+  --lg-fill-active: rgba(0, 104, 117, 0.55);
+  --lg-filter: blur(28px) saturate(160%);
+  --lg-rim: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.40) 0%,
+      rgba(255, 255, 255, 0.10) 38%,
+      rgba(255, 255, 255, 0.04) 62%,
+      rgba(0, 0, 0, 0.55) 100%);
+  --lg-rim-flat: inset 1px 1px 0 rgba(255, 255, 255, 0.22), inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  --lg-inset: inset 0 1px 1px rgba(255, 255, 255, 0.18), inset 0 -1px 1px rgba(0, 0, 0, 0.45);
+  --lg-shadow: 0 12px 40px rgba(0, 0, 0, 0.50), 0 2px 6px rgba(0, 0, 0, 0.30);
+  --lg-text: #F8FAFC;
+  --lg-text-muted: #CBD5E1;
+  --lg-scrim: rgba(2, 3, 6, 0.55);
+}
+
+/* Token: terang (milky), untuk tema terang eksplisit dan halaman yang bawaannya terang */
+html[data-theme="light"] body,
+html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
+  --lg-fill: rgba(255, 255, 255, 0.58);
+  --lg-fill-hover: rgba(255, 255, 255, 0.76);
+  --lg-fill-strong: rgba(255, 255, 255, 0.82);
+  --lg-fill-active: rgba(0, 104, 117, 0.88);
+  --lg-filter: blur(24px) saturate(180%);
+  --lg-rim: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.40) 0%,
+      rgba(255, 255, 255, 0.85) 18%,
+      rgba(255, 255, 255, 0.20) 55%,
+      rgba(15, 23, 42, 0.14) 100%);
+  --lg-rim-flat: inset 1px 1px 0 rgba(255, 255, 255, 0.95), inset -1px -1px 0 rgba(15, 23, 42, 0.10);
+  --lg-inset: inset 0 1px 1px rgba(255, 255, 255, 0.90), inset 0 -1px 1px rgba(15, 23, 42, 0.06);
+  --lg-shadow: 0 8px 32px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --lg-text: #0F172A;
+  --lg-text-muted: #475569;
+  --lg-scrim: rgba(15, 23, 42, 0.32);
+}
+
+/* Kanvas 3D selalu obsidian, apa pun tema halamannya. Token gelap di atas
+   dipasang ulang pada .viewport, jadi HUD di dalamnya tetap kaca gelap. */
+.viewport,
+.viewport__stage,
+#viewport-stage {
+  background: #08090C;
+}
+
+/* Halaman terang: latar #F8FAFC memudar ke #FFFFFF */
+html[data-theme="light"] body,
+html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
+  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 640px) no-repeat, #FFFFFF;
+}
+
+/* Tipografi: tumpukan Helvetica Neue sudah dipaksa untuk semua elemen di
+   tokens.css (selektor *, !important), jadi tidak diulang di sini. */
+
+/* 1. Permukaan dasar
+   ========================================================================== */
+
+/* :where() = spesifisitas nol, jadi elemen yang sudah absolute/fixed tetap begitu. */
+:where(.liquid-glass, .liquid-glass-pill, .liquid-glass-switch, .liquid-glass-dock) {
+  position: relative;
+}
+
+.liquid-glass,
+.liquid-glass-pill,
+.liquid-glass-switch,
+.liquid-glass-dock {
+  isolation: isolate;
+  background: var(--lg-fill);
+  -webkit-backdrop-filter: var(--lg-filter);
+  backdrop-filter: var(--lg-filter);
+  border: 0;
+  color: var(--lg-text);
+  box-shadow: var(--lg-inset), var(--lg-shadow);
+}
+
+/* Garis tepi specular 1px: gradien di-mask sehingga hanya cincin luarnya yang terlihat. */
+.liquid-glass::before,
+.liquid-glass-pill::before,
+.liquid-glass-switch::before,
+.liquid-glass-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--lg-rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* Kilau lensa: sorotan lembut di setengah atas permukaan */
+.liquid-glass::after,
+.liquid-glass-dock::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px 50% 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.liquid-glass {
+  border-radius: 22px;
+}
+
+/* Squircle asli jika peramban mendukung (Chrome 139+); selain itu radius biasa. */
+@supports (corner-shape: squircle) {
+  .liquid-glass,
+  .liquid-glass-dock,
+  .liquid-glass-modal {
+    corner-shape: squircle;
+  }
+}
+
+/* 2. Tombol pil
+   ========================================================================== */
+.liquid-glass-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.liquid-glass-pill:hover {
+  background: var(--lg-fill-hover);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  text-decoration: none;
+  color: var(--lg-text);
+}
+
+.liquid-glass-pill:active {
+  transform: scale(0.97);
+  filter: brightness(0.98);
+}
+
+.liquid-glass-pill:focus-visible,
+.liquid-glass-switch:focus-visible {
+  outline: 2px solid var(--color-primary, #006875);
+  outline-offset: 3px;
+}
+
+/* Pil aktif (chip filter terpilih, aksi utama): kaca bertinta teal */
+.liquid-glass-pill[aria-pressed="true"],
+.liquid-glass-pill--tinted,
+.liquid-glass-pill[aria-pressed="true"]:hover,
+.liquid-glass-pill--tinted:hover {
+  background: var(--lg-fill-active);
+  color: #FFFFFF;
+}
+
+/* Aksi beli: kaca bertinta kuning aksen titiket */
+.liquid-glass-pill--accent,
+.liquid-glass-pill--accent:hover {
+  background: rgba(250, 204, 21, 0.92);
+  color: #0F172A;
+}
+
+.liquid-glass-pill--accent:hover {
+  background: rgba(234, 179, 8, 0.95);
+}
+
+/* 3. Tombol ganti tema
+   ========================================================================== */
+.liquid-glass-switch {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 180ms ease, background-color 240ms ease;
+}
+
+.liquid-glass-switch:hover {
+  background: var(--lg-fill-hover);
+  filter: brightness(1.06);
+}
+
+.liquid-glass-switch:active {
+  transform: scale(0.94);
+}
+
+.liquid-glass-switch svg {
+  transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.liquid-glass-switch[data-current="light"] svg {
+  transform: rotate(-28deg) scale(0.92);
+}
+
+/* Transisi warna saat tema berganti (kelas dipasang theme.js selama 320ms) */
+html.is-theme-switching body,
+html.is-theme-switching body * {
+  transition:
+    background-color 320ms ease,
+    border-color 320ms ease,
+    color 320ms ease,
+    fill 320ms ease !important;
+}
+
+/* 4. Dock telemetri melayang
+   ========================================================================== */
+.liquid-glass-dock {
+  border-radius: 22px;
+  padding: 10px 14px;
+}
+
+/* HUD kanvas 3D: spesifisitas dinaikkan (:root .viewport + kelas ganda = 0,4,0)
+   agar menang atas aturan HUD di visualizer.css & theme-light.css
+   (html[data-theme="light"] .viewport .hud--tl = 0,3,1). */
+:root .viewport .liquid-glass-dock.liquid-glass-dock,
+:root .viewport .liquid-glass-pill.liquid-glass-pill {
+  background: var(--lg-fill);
+  -webkit-backdrop-filter: var(--lg-filter);
+  backdrop-filter: var(--lg-filter);
+  color: var(--lg-text);
+  border-color: transparent;
+  box-shadow: var(--lg-inset), var(--lg-shadow);
+}
+
+:root .viewport .liquid-glass-pill.liquid-glass-pill:hover {
+  background: var(--lg-fill-hover);
+}
+
+:root .viewport .liquid-glass-dock .hud__sub,
+:root .viewport .liquid-glass-dock span:not(.hud__title) {
+  color: var(--lg-text-muted);
+}
+
+:root .viewport .score-pill.liquid-glass-dock strong {
+  color: var(--lg-text);
+}
+
+:root .viewport .hud--hint.liquid-glass-dock {
+  border-radius: 9999px;
+  padding: 6px 14px;
+}
+
+/* 5. Cangkang modal
+   Modal bisa digulir, jadi tepi specular memakai bayangan inset (tidak ikut
+   tergulir) alih-alih pseudo-elemen. */
+.liquid-glass-modal {
+  background: var(--lg-fill-strong);
+  -webkit-backdrop-filter: var(--lg-filter);
+  backdrop-filter: var(--lg-filter);
+  border: 0;
+  border-radius: 28px;
+  color: var(--lg-text);
+  box-shadow: var(--lg-rim-flat), var(--lg-inset), var(--lg-shadow), 0 32px 80px rgba(0, 0, 0, 0.18);
+}
+
+.liquid-glass-modal::backdrop {
+  background: rgba(15, 23, 42, 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+/* Header modal auth menempel saat digulir: beri kaca yang sama supaya menyatu. */
+.liquid-glass-modal .auth-modal__head {
+  background: transparent;
+  -webkit-backdrop-filter: var(--lg-filter);
+  backdrop-filter: var(--lg-filter);
+}
+
+/* Scrim modal auth (bukan <dialog>, jadi tidak punya ::backdrop) */
+.auth-modal__scrim {
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+
+/* Muncul dari pemicu: skala + pudar */
+@keyframes lgModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+dialog.liquid-glass-modal[open],
+.auth-modal:not([hidden]) .liquid-glass-modal {
+  animation: lgModalIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Cadangan: peramban tanpa backdrop-filter memakai isi yang lebih pekat */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass,
+  .liquid-glass-pill,
+  .liquid-glass-switch,
+  .liquid-glass-dock,
+  .liquid-glass-modal {
+    background: var(--lg-fill-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass-pill,
+  .liquid-glass-switch,
+  .liquid-glass-switch svg {
+    transition: none;
+  }
+
+  .liquid-glass-pill:hover,
+  .liquid-glass-pill:active,
+  .liquid-glass-switch:active {
+    transform: none;
+  }
+
+  dialog.liquid-glass-modal[open],
+  .auth-modal:not([hidden]) .liquid-glass-modal {
+    animation: none;
+  }
+
+  html.is-theme-switching body,
+  html.is-theme-switching body * {
+    transition: none !important;
+  }
+}

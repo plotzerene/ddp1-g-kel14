@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+  <!-- Foreground Martian ridge & terrain silhouettes -->
+  <path d="M-80 1000 L-80 760 L180 690 L420 790 L690 830 L960 770 L1270 670 L1680 740 L1680 1000 Z" fill="#171717" />
+  <polygon points="260,720 310,630 375,745" fill="#261310" />
+  <polygon points="1180,700 1245,595 1320,720" fill="#261310" />
+  <circle cx="800" cy="500" r="6" fill="none" stroke="#fafafa" stroke-opacity="0.45" stroke-width="1.5" />
+</svg>

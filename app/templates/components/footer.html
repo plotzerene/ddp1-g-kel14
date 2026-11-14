@@ -1,0 +1,100 @@
+{% set pay_logos = [
+  ("bca", "BCA"), ("mandiri", "Mandiri"), ("bni", "BNI"), ("bri", "BRI"),
+  ("qris", "QRIS"), ("gopay", "GoPay"), ("ovo", "OVO"), ("dana", "DANA"),
+  ("shopeepay", "ShopeePay"), ("indomaret", "Indomaret"), ("alfamart", "Alfamart"), ("alfamidi", "Alfamidi"),
+] %}
+{% set social_channels = [
+  ("youtube", "YouTube resmi titiket.com", "https://www.youtube.com/@titiketcom"),
+  ("instagram", "Instagram resmi titiket.com", "https://www.instagram.com/titiket.com"),
+  ("tiktok", "TikTok resmi titiket.com", "https://www.tiktok.com/@titiket.com"),
+  ("x", "X resmi titiket.com", "https://x.com/titiketcom"),
+  ("linkedin", "LinkedIn resmi titiket.com", "https://www.linkedin.com/company/titiket-com"),
+] %}
+{% set footer_ns = namespace(has_standing=false) %}
+{% for item in items | default([]) %}
+  {% if item.seat_id and (item.seat_id.startswith('festival:') or item.seat_id.startswith('my_universe:')) %}
+    {% set footer_ns.has_standing = true %}
+  {% endif %}
+{% endfor %}
+<footer class="site-footer official-footer" aria-label="Footer titiket.com">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col footer-col-brand">
+        <a href="{{ url_for('landing.index') }}" class="brand-logo footer-brand" aria-label="titiket.com">
+          <span class="brand-logo__name">titiket</span>
+          <span class="brand-logo__dot" aria-hidden="true"></span>
+          <span class="brand-logo__tld">com</span>
+        </a>
+        <h3 class="footer-subhead">Perusahaan &amp; Legalitas</h3>
+        <p class="footer-desc">
+          {% if footer_ns.has_standing %}
+          Platform reservasi tiket bioskop &amp; konser interaktif pertama di Indonesia dengan visualisasi sudut pandang 3D presisi.
+          {% else %}
+          Platform reservasi tiket bioskop &amp; konser interaktif pertama di Indonesia dengan visualisasi sudut pandang kursi 3D presisi.
+          {% endif %}
+        </p>
+        <p class="footer-legal">PT Titiket Hiburan Nusantara &middot; Terdaftar PSE Kominfo RI.</p>
+        <p class="footer-address">Gedung Fasilkom UI, Kampus UI Depok, Jawa Barat 16424.</p>
+        <span class="footer-badge" id="sso-footer-badge" hidden>
+          <svg class="icon icon-xs" aria-hidden="true"><use href="#i-shield"/></svg>
+          Mahasiswa UI Terverifikasi
+        </span>
+      </div>
+
+      <div class="footer-col">
+        <h3>Jelajahi Hiburan</h3>
+        <ul>
+          <li><a href="{{ url_for('landing.index') }}#lagi-tayang">Film Sedang Tayang (XXI, IMAX, CGV)</a></li>
+          <li><a href="{{ url_for('landing.index') }}#coming-soon">Film Segera Tayang</a></li>
+          <li><a href="{{ url_for('events.coldplay_overview') }}">Konser Musik &amp; Festival GBK</a></li>
+          <li><a href="{{ url_for('visualizer.index', type='cinema') }}">{{ 'Simulasi POV 3D Spot & Area' if footer_ns.has_standing else 'Simulasi POV 3D Kursi' }}</a></li>
+          <li><a href="{{ url_for('visualizer.studio', venue_id='xxi-premiere') }}">Sewa Studio &amp; Event Organizer</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h3>Pusat Bantuan &amp; Layanan CS</h3>
+        <ul>
+          <li><a href="https://wa.me/6281284845387" target="_blank" rel="noopener noreferrer">Layanan CS WhatsApp: +62 812-8484-5387 (24/7)</a></li>
+          <li><a href="mailto:bantuan@titiket.com">Email: bantuan@titiket.com</a></li>
+          <li><a href="{{ url_for('intro.index') }}">Pusat Bantuan &amp; FAQ</a></li>
+          <li><a href="{{ url_for('landing.promo') }}">Promo &amp; Syarat Ketentuan</a></li>
+          <li><a href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Tiket Konser GBK</a></li>
+          <li><a href="{{ url_for('landing.promo') }}#ketentuan">Kebijakan Privasi &amp; Pengembalian Dana</a></li>
+          <li><a href="{{ url_for('checkout.profile') }}">Keamanan Akun &amp; Verifikasi E-Tiket</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-payments">
+        <h3>Saluran Pembayaran Resmi</h3>
+        <ul class="payment-logo-grid" aria-label="Logo saluran pembayaran resmi">
+          {% for code, name in pay_logos %}
+          {% set logo_src = asset_url("payment_logos/" ~ code ~ ".png") %}
+          <li class="payment-logo-tile" title="{{ name }}">
+            {% if logo_src %}
+            <img src="{{ logo_src }}" alt="{{ name }}" loading="lazy" width="56" height="24">
+            {% else %}
+            <span>{{ name }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="footer-security-note">
+          <svg class="icon icon-xs" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Seluruh transaksi diamankan dengan enkripsi 256-bit SSL &amp; standar Bank Indonesia.</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2026 titiket.com &middot; PT Titiket Hiburan Nusantara. Seluruh hak cipta dilindungi.</p>
+      <nav class="footer-social-links" aria-label="Media sosial resmi titiket.com">
+        {% for slug, label, href in social_channels %}
+        <a class="footer-social-btn" href="{{ href }}" target="_blank" rel="noopener noreferrer" aria-label="{{ label }}" title="{{ label }}">
+          <img src="{{ url_for('static', filename='images/icons/social/' ~ slug ~ '.svg') }}" alt="" width="18" height="18" loading="lazy">
+        </a>
+        {% endfor %}
+      </nav>
+    </div>
+  </div>
+</footer>

@@ -36,9 +36,9 @@ POV_CART_FIELDS = ("score", "grade", "distance_m", "h_fov_deg", "neck_pitch_deg"
 LIMITS = {"body_min_cm": MIN_BODY_CM, "body_max_cm": MAX_BODY_CM, "body_default_cm": DEFAULT_BODY_CM}
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Helper
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 def _payload() -> dict:
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else {}
@@ -101,11 +101,14 @@ def _cart_state() -> dict:
     _prune_expired_cart()
     cart = Cart()
     items = cart.items()
+    locks = _seat_locks()
+    lock_seconds_left = int(round(min((locks.seconds_left(i.key) for i in items), default=0)))
     return {
         "count": len(items),
         "max": MAX_CART_ITEMS,
         "keys": [item.key for item in items],
         "subtotal": sum(item.price for item in items),
+        "lock_seconds_left": lock_seconds_left,
         "items": [item.to_dict() for item in items],
     }
 
@@ -122,16 +125,57 @@ def handle_bad_request(error: ValueError):
     return jsonify(error=str(error)), 400
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # Halaman
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
+CONCERT_ZONE_ORDER: tuple[str, ...] = (
+    "Festival",
+    "Ultimate Experience",
+    "My Universe",
+    "CAT 1",
+    "CAT 2",
+    "CAT 3",
+    "CAT 4",
+    "CAT 5",
+    "CAT 6",
+    "CAT 7",
+    "CAT 8",
+)
+
+
+def _concert_zone_tabs(venue) -> list[dict]:
+    """Bangun daftar tab zona stadion GBK terurut tanpa mencampur studio bioskop."""
+    grouped: dict[str, list[dict]] = {}
+    for block in venue.layout().get("blocks", []):
+        cat = block.get("category") or block.get("label") or ""
+        if cat:
+            grouped.setdefault(cat, []).append(block)
+
+    ordered_cats = [cat for cat in CONCERT_ZONE_ORDER if cat in grouped]
+    for cat in grouped:
+        if cat not in ordered_cats:
+            ordered_cats.append(cat)
+
+    tabs: list[dict] = []
+    for cat in ordered_cats:
+        blocks = grouped[cat]
+        tabs.append({
+            "category": cat,
+            "label": "Festival Standing" if cat == "Festival" else cat,
+            "block_id": blocks[0]["id"],
+            "block_ids": [b["id"] for b in blocks],
+            "price": blocks[0]["price"],
+        })
+    return tabs
+
+
 @visualizer_bp.get("/")
 def index():
     """Pintu masuk dari landing: terjemahkan ?type/film/event/studio menjadi halaman studio."""
     args = request.args
     event = get_event(args.get("film") or args.get("event"))
     studio_venue = f"xxi-{args.get('studio')}"
-    if studio_venue in venue_registry():
+    if studio_venue in venue_registry() and (event is None or studio_venue in event.venues):
         venue_id = studio_venue
     elif event is not None:
         venue_id = event.venues[0]
@@ -146,14 +190,58 @@ def index():
 @visualizer_bp.get("/studio/<venue_id>")
 def studio(venue_id: str):
     venue = get_venue(venue_id)
-    film = get_event(request.args.get("film"))
-    event = event_for_venue(venue_id, film.event_id if film else None)
+    is_concert = venue.kind.value == "concert"
+    requested_film = None if is_concert else get_event(request.args.get("film"))
+    if requested_film is not None and requested_film.kind != "film":
+        requested_film = None
+
+    cinema_arg = (request.args.get("cinema") or "").strip()
+    date_arg = (request.args.get("date") or "").strip()
+    time_arg = (request.args.get("time") or "").strip()
+
+    if not is_concert and requested_film is not None and venue_id not in requested_film.venues:
+        target_venue = requested_film.venues[0]
+        return redirect(url_for(
+            "visualizer.studio",
+            venue_id=target_venue,
+            film=requested_film.event_id,
+            cinema=cinema_arg or None,
+            date=date_arg or None,
+            time=time_arg or None,
+        ))
+
+    event = event_for_venue(venue_id, requested_film.event_id if requested_film else None)
+    film = event if not is_concert and event is not None and event.kind == "film" else requested_film
+
+    if is_concert:
+        venue_tabs = []
+        concert_zones = _concert_zone_tabs(venue)
+        boot_venues = []
+    else:
+        registry = venue_registry()
+        allowed_ids = event.venues if event is not None else tuple(registry.keys())
+        venue_tabs = [
+            registry[vid] for vid in allowed_ids
+            if vid in registry and registry[vid].kind.value == "cinema"
+        ]
+        concert_zones = []
+        boot_venues = [{**v.summary(), "price_from": v.price_from} for v in venue_tabs]
+
+    schedule = {
+        "cinema": cinema_arg or ("Stadion Utama GBK" if is_concert else "AGORA MALL XXI"),
+        "date": date_arg or ("19 Des 2026" if is_concert else "Sabtu, 14 Nov 2026"),
+        "time": (
+            time_arg if ("WIB" in time_arg) else (f"{time_arg} WIB" if time_arg else ("19:30 WIB" if is_concert else "19:00 WIB"))
+        ),
+    }
+    event_poster = asset_url(event.poster) if event is not None and event.poster else ""
     placeholder = "__VENUE__"
     bootstrap = {
         "venueId": venue.venue_id,
         # Film pilihan ikut dibawa saat berpindah studio, supaya trailernya tetap sama.
-        "film": film.event_id if film is not None and film.kind == "film" else None,
-        "venues": [{**v.summary(), "price_from": v.price_from} for v in venue_registry().values()],
+        "film": film.event_id if not is_concert and film is not None and film.kind == "film" else None,
+        "schedule": schedule,
+        "venues": boot_venues,
         "limits": LIMITS,
         "api": {
             "layout": url_for("visualizer.api_layout", venue_id=placeholder),
@@ -171,12 +259,14 @@ def studio(venue_id: str):
         "cart": _cart_state(),
     }
     return render_template("visualizer/studio_pov.html", venue=venue, event=event,
-                           venues=list(venue_registry().values()), bootstrap=bootstrap)
+                           schedule=schedule, event_poster=event_poster,
+                           venues=venue_tabs, concert_zones=concert_zones,
+                           bootstrap=bootstrap)
 
 
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 # API
-# --------------------------------------------------------------------------- #
+# =========================================================================== #
 @visualizer_bp.get("/api/venues")
 def api_venues():
     return jsonify(venues=[{**v.summary(), "price_from": v.price_from} for v in venue_registry().values()])
@@ -246,14 +336,40 @@ def api_cart_add():
     is_standing = getattr(report.seat, "seat_type", "") == "festival"      # area berdiri: tidak memakai kata "kursi"
     if not report.seat.is_available:
         sold = "Tiket ini sudah habis." if is_standing else "Kursi ini sudah terjual."
-        return jsonify(error=sold, **_cart_state()), 409
+        return jsonify(
+            error=sold,
+            conflict_kind="sold",
+            conflict_seat_id=report.seat.seat_id,
+            conflict_label=report.seat.label,
+            conflict_standing=is_standing,
+            **_cart_state(),
+        ), 409
     seat_key = f"{venue.venue_id}|{report.seat.seat_id}"
     owner = _seat_owner()
     if not _seat_locks().acquire(seat_key, owner):
         busy = "Tiket ini sedang dipilih pembeli lain." if is_standing else "Kursi ini sedang dipilih pembeli lain."
-        return jsonify(error=busy, **_cart_state()), 409
+        return jsonify(
+            error=busy,
+            conflict_kind="collision",
+            conflict_seat_id=report.seat.seat_id,
+            conflict_label=report.seat.label,
+            conflict_standing=is_standing,
+            **_cart_state(),
+        ), 409
     event = event_for_venue(venue.venue_id, data.get("film"))
     summary = report.summary()
+    raw_schedule = data.get("schedule") if isinstance(data.get("schedule"), dict) else {}
+    is_concert_venue = venue.kind.value == "concert"
+    studio_labels = {
+        "xxi-regular": "Studio 1",
+        "xxi-premiere": "Studio Premiere",
+        "xxi-imax": "Studio IMAX",
+        "xxi-4dx": "Studio 4DX",
+    }
+    show_date = str(raw_schedule.get("date") or ("Sabtu, 19 Des 2026" if is_concert_venue else "Sabtu, 14 Nov 2026"))[:60]
+    show_time = str(raw_schedule.get("time") or ("19:30 WIB" if is_concert_venue else "19:00 WIB"))[:30]
+    cinema_name = str(raw_schedule.get("cinema") or ("Stadion Utama GBK" if is_concert_venue else "AGORA MALL XXI"))[:60]
+    studio_label = "Pintu Timur" if is_concert_venue else studio_labels.get(venue.venue_id, venue.short_label)
     item = CartItem(
         event_id=event.event_id if event else "",
         venue_id=venue.venue_id,
@@ -263,7 +379,9 @@ def api_cart_add():
         category=report.seat.category,
         price=report.seat.price,
         pov={**{key: summary[key] for key in POV_CART_FIELDS},
-             "body_height_cm": report.viewer.stature_cm, "front_height_cm": report.front.stature_cm},
+             "body_height_cm": report.viewer.stature_cm, "front_height_cm": report.front.stature_cm,
+             "show_date": show_date, "show_time": show_time,
+             "cinema_name": cinema_name, "studio_label": studio_label},
     )
     status = Cart().add(item)
     if status == "full":
@@ -287,3 +405,10 @@ def api_cart_remove():
     if removed:
         _seat_locks().release(key, _seat_owner())
     return jsonify(status="removed" if removed else "missing", **_cart_state())
+
+
+@visualizer_bp.post("/api/cart/clear")
+def api_cart_clear():
+    _seat_locks().release_all(_seat_owner())
+    Cart().clear()
+    return jsonify(status="cleared", **_cart_state())

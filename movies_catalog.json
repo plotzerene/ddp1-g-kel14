@@ -20,7 +20,8 @@
         "sound_mix": "Dolby Digital 5.1"
       },
       "poster_file": "reference_assets/images/Poster Film SORE INI YANG REKOMENDASI YA.jpeg",
-      "embed_id": "lY95G24f9E4"
+      "embed_id": "lY95G24f9E4",
+      "studios": ["xxi-regular", "xxi-premiere", "xxi-imax", "xxi-4dx"]
     },
     {
       "id": "jatuh-cinta-seperti-di-film-film",
@@ -40,7 +41,8 @@
         "sound_mix": "Dolby Digital 5.1"
       },
       "poster_file": "reference_assets/images/Jatuh Cinta seperti di Film Film Poster.jpeg",
-      "embed_id": "rP1m0sV_qQc"
+      "embed_id": "rP1m0sV_qQc",
+      "studios": ["xxi-regular", "xxi-premiere"]
     },
     {
       "id": "boboiboy-the-movie",
@@ -60,7 +62,8 @@
         "sound_mix": "Dolby Atmos / 5.1"
       },
       "poster_file": "reference_assets/images/Poster Boboiby Movie .jpg",
-      "embed_id": "yYw3L1j1E0E"
+      "embed_id": "yYw3L1j1E0E",
+      "studios": ["xxi-regular", "xxi-4dx"]
     },
     {
       "id": "ejen-ali-the-movie-2",
@@ -80,7 +83,8 @@
         "sound_mix": "Dolby Atmos"
       },
       "poster_file": "reference_assets/images/Ejen Ali Movie 2 Poster.jpg",
-      "embed_id": "oA_fR3JgYps"
+      "embed_id": "oA_fR3JgYps",
+      "studios": ["xxi-regular", "xxi-imax"]
     },
     {
       "id": "la-la-land",
@@ -100,7 +104,8 @@
         "sound_mix": "Dolby Atmos"
       },
       "poster_file": "reference_assets/images/Poster La La Land.jpg",
-      "embed_id": "0pdqf4P9MB8"
+      "embed_id": "0pdqf4P9MB8",
+      "studios": ["xxi-regular", "xxi-premiere", "xxi-imax"]
     },
     {
       "id": "avengers-endgame",
@@ -120,7 +125,8 @@
         "sound_mix": "Dolby Atmos / DTS:X"
       },
       "poster_file": "reference_assets/images/Poster Avengers ENDGAME.jpeg",
-      "embed_id": "TcMBFSGVi1c"
+      "embed_id": "TcMBFSGVi1c",
+      "studios": ["xxi-regular", "xxi-imax", "xxi-4dx"]
     }
   ]
 }

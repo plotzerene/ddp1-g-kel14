@@ -114,19 +114,19 @@ export class Map2DPicker {
     this.renderLegend();
   }
 
-  /* ---------------------------- Bioskop ---------------------------------- */
+  /* •••••••••••• Bioskop •••••••••••• */
   _renderCinema() {
     const L = this.layout;
     const { room, spec, screen } = L;
     const halfW = room.width / 2;
     const root = svg('svg', {
       class: 'map-svg map-svg--cinema',
-      viewBox: `${-halfW - 1.6} -2.6 ${room.width + 3.2} ${room.depth + 3.4}`,
+      viewBox: `${-halfW - 1.4} -0.7 ${room.width + 2.8} ${room.depth + 1.4}`,
       role: 'group',
       'aria-label': `Denah kursi ${L.name}. Layar berada di sisi atas.`,
     });
 
-    svg('rect', { class: 'room', x: -halfW, y: -1, width: room.width, height: room.depth + 1, rx: 0.4 }, root);
+    svg('rect', { class: 'room', x: -halfW, y: -0.5, width: room.width, height: room.depth + 0.65, rx: 0.4 }, root);
 
     const arc = screen.arc;
     const edges = arc
@@ -137,7 +137,6 @@ export class Map2DPicker {
       : `M${edges[0][0]},0 L${edges[1][0]},0`;
     svg('path', { class: 'screen-glow', d: path }, root);
     svg('path', { class: 'screen-line', d: path }, root);
-    svg('text', { class: 'map-label', x: 0, y: -1.5 }, root).textContent = 'LAYAR';
     this.screenEdges = edges;
     this.cone = svg('polygon', { class: 'sight-cone', points: '' }, root);
 
@@ -157,14 +156,19 @@ export class Map2DPicker {
 
     const seatLayer = svg('g', {}, root);
     this.seatGrid = new Map();
+    const rowCount = L.rows.length;
+    const midRowMin = Math.floor(rowCount * 0.28);
+    const midRowMax = Math.ceil(rowCount * 0.72);
+    const sweetHalfW = room.width * 0.17;
     for (const seat of L.seats) {
       const sold = seat.status === 'sold';
+      const isSweet = !sold && seat.row_index >= midRowMin && seat.row_index <= midRowMax && Math.abs(seat.x) <= sweetHalfW;
       const group = svg('g', {
-        class: `seat${sold ? ' is-sold' : ''}`,
+        class: `seat${sold ? ' is-sold' : ''}${isSweet ? ' is-sweet' : ''}`,
         'data-id': seat.id,
         role: 'button',
         tabindex: '-1',
-        'aria-label': `Baris ${seat.row} kursi ${seat.number}, ${sold ? 'terjual' : 'tersedia'}`,
+        'aria-label': `Baris ${seat.row} kursi ${seat.number}, ${sold ? 'terjual' : (isSweet ? 'sweet spot tersedia' : 'tersedia')}`,
       }, seatLayer);
       svg('rect', {
         class: 'seat__shape', x: seat.x - seatW / 2, y: seat.z - seatH / 2,
@@ -189,7 +193,7 @@ export class Map2DPicker {
     this.host.replaceChildren(root);
   }
 
-  /* ---------------------------- Stadion ---------------------------------- */
+  /* •••••••••••• Stadion •••••••••••• */
   _renderStadium() {
     const L = this.layout;
     const { bowl, stage } = L;
@@ -324,14 +328,34 @@ export class Map2DPicker {
     this.host.replaceChildren(root);
   }
 
-  /* ---------------------------- Interaksi -------------------------------- */
+  _runNoScroll(fn) {
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    const scroller = document.getElementById('seat-map-scroll');
+    const msx = scroller ? scroller.scrollLeft : 0;
+    const msy = scroller ? scroller.scrollTop : 0;
+    fn();
+    window.scrollTo(sx, sy);
+    if (scroller) scroller.scrollTo(msx, msy);
+    window.requestAnimationFrame(() => {
+      window.scrollTo(sx, sy);
+      if (scroller) scroller.scrollTo(msx, msy);
+    });
+  }
+
+  /* •••••••••••• Interaksi •••••••••••• */
   _bindEvents() {
     const root = this.root;
     const pick = (event) => event.target.closest('.seat, .block, .spot, .landmark');
 
+    root.addEventListener('pointerdown', (event) => {
+      if (pick(event)) event.preventDefault();
+    });
     root.addEventListener('click', (event) => {
       const node = pick(event);
-      if (node && !node.classList.contains('landmark')) this._activate(node);
+      if (node && !node.classList.contains('landmark')) {
+        this._runNoScroll(() => this._activate(node));
+      }
     });
     root.addEventListener('keydown', (event) => {
       const node = pick(event);
@@ -418,7 +442,7 @@ export class Map2DPicker {
     this.tooltip.hidden = true;
   }
 
-  /* ---------------------------- State dari luar --------------------------- */
+  /* •••••••••••• State dari luar •••••••••••• */
   /** Sorot kursi/blok aktif dan gambar garis pandang memakai angka dari Python. */
   setSelection(pov) {
     if (!this.layout || !this.root) return;
@@ -530,7 +554,24 @@ export class Map2DPicker {
     this.renderLegend();
   }
 
-  /* ---------------------------- Legenda ---------------------------------- */
+  flashCollision(seatId) {
+    if (!seatId || !this.root) return;
+    let target = null;
+    if (this.seatNodes.has(seatId)) {
+      target = this.seatNodes.get(seatId).node;
+    } else if (String(seatId).includes(':')) {
+      const [blockId, spotKey] = String(seatId).split(':');
+      const spotNum = spotKey && spotKey.replace('spot', '');
+      target = this.root.querySelector(`.spot[data-spot="${spotNum}"]`) || this.blockNodes.get(blockId) || null;
+    }
+    if (!target) return;
+    target.classList.remove('is-collision');
+    void target.getBoundingClientRect();
+    target.classList.add('is-collision');
+    window.setTimeout(() => target.classList.remove('is-collision'), 1900);
+  }
+
+  /* •••••••••••• Legenda •••••••••••• */
   renderLegend() {
     const host = this.legendHost;
     const L = this.layout;
@@ -542,14 +583,14 @@ export class Map2DPicker {
         h('span', { class: 'num', text: `${this.heatRange[1]}` })));
     }
     if (L.kind === 'cinema') {
-      const item = (color, label, border) => h('span', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch', style: `background:${color};${border ? `border-color:${border}` : ''}` }), label);
+      const swatch = (cls, label) => h('span', { class: 'legend-item' },
+        h('span', { class: `legend-swatch ${cls}` }), label);
       host.append(
-        item('#3A3F6B', 'Tersedia'),
-        item('#27273B', 'Terjual (bergaris)'),
-        item('#818CF8', 'Kursi kamu', '#fff'),
-        item('#CA8A04', 'Di keranjang'),
-        item('#EAB308', 'Rekomendasi 1–3'),
+        swatch('legend-swatch--avail', 'Tersedia'),
+        swatch('legend-swatch--chosen', 'Dipilih'),
+        swatch('legend-swatch--taken', 'Terisi'),
+        swatch('legend-swatch--sweet', 'Sweet Spot'),
+        swatch('legend-swatch--cart', 'Di keranjang'),
         h('span', { class: 'legend-note', text:
           `Semua kursi ${formatRupiah(L.price)}. Baris A = paling belakang (konvensi XXI), layar di sisi atas peta.` }),
       );
@@ -568,11 +609,13 @@ export class Map2DPicker {
       list.append(h('li', {},
         h('button', {
           class: 'category-btn', type: 'button', 'data-category': category, 'aria-pressed': 'false',
-          onclick: () => this.onBlock(block.id),
+          onclick: () => this._runNoScroll(() => this.onBlock(block.id)),
         },
         h('span', { class: 'legend-swatch', style: `background:${block.color}` }),
-        h('span', { class: 'category-btn__name', text: category }),
-        h('span', { class: 'category-btn__meta num', text: `${formatRupiah(block.price)} · ${tags.join(' · ')}` }))));
+        h('span', { class: 'category-btn__content' },
+          h('span', { class: 'category-btn__name', text: category }),
+          h('span', { class: 'category-btn__price num', text: formatRupiah(block.price) }),
+          h('span', { class: 'category-btn__type', text: tags.join(' · ') })))));
     }
     host.append(list, h('p', {
       class: 'legend-note',
@@ -646,7 +689,7 @@ export class SubPositionPicker {
       h('div', {},
         h('div', { class: 'picker__title' },
           h('span', { class: 'picker__swatch', style: `background:${block.color}` }),
-          h('h2', { id: 'picker-title', text: block.standing ? `${block.label} — Pilih Kategori / Area` : `${block.label} — Pilih Kursi` }),
+          h('h2', { id: 'picker-title', text: block.standing ? `${block.label} — Pilih Spot Berdiri` : `${block.label} — Pilih Kursi` }),
           ...chips),
         h('p', { class: 'panel__hint', text: detail })),
       h('button', {
@@ -728,7 +771,7 @@ export class SubPositionPicker {
     }
     const perks = block.perks.length ? `Termasuk: ${block.perks.join(', ')}.` : 'Area berdiri bebas di lapangan.';
     return [
-      h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'Pilih Kategori / Area' }), this.ticketGroup,
+      h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'Pilih Kategori (CAT)' }), this.ticketGroup,
         h('p', { class: 'panel__hint', text: perks })),
       h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'Pilih Spot Berdiri' }), this.spotHost),
     ];

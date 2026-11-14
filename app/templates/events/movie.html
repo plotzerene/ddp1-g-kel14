@@ -1,64 +1,323 @@
 {% extends "base.html" %}
-{% set step = "landing" %}
 {% block title %}{{ movie.title }}{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+<script src="{{ url_for('static', filename='js/movie_trailer.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/movie_schedule.js') }}" defer></script>
+{% endblock %}
+
+{% block sub_header %}
+<div class="stepper-bar">
+  <div class="container stepper-bar__inner">
+    <nav aria-label="Langkah pemesanan">
+      <ol class="stepper detail-stepper">
+        <li class="stepper__item is-done">
+          <a class="stepper__link" href="{{ url_for('landing.index') }}">
+            <span class="stepper__dot num" aria-hidden="true">&#10003;</span>
+            <span>1. Pilih Acara</span>
+          </a>
+        </li>
+        <li class="stepper__item" aria-current="step">
+          <span class="stepper__link">
+            <span class="stepper__dot num">2</span>
+            <span>Detail Acara</span>
+          </span>
+        </li>
+        <li class="stepper__item">
+          <a class="stepper__link" href="{{ buy_url }}">
+            <span class="stepper__dot num">3</span>
+            <span>Jadwal &amp; Kursi</span>
+          </a>
+        </li>
+        <li class="stepper__item">
+          <a class="stepper__link" href="{{ url_for('checkout.index') }}">
+            <span class="stepper__dot num">4</span>
+            <span>Pembayaran</span>
+          </a>
+        </li>
+      </ol>
+    </nav>
+  </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<article class="detail">
-  <div class="detail__hero">
-    <div class="detail__poster">
-      {% if poster_url %}
-      <img src="{{ poster_url }}" alt="Poster {{ movie.title }}" width="320" height="480">
-      {% else %}
-      <div class="detail__poster-fallback" aria-hidden="true">{{ movie.title }}</div>
+{% set prod = production | default({}) %}
+{% set date_list = dates | default([]) %}
+{% set cinema_list = schedules | default([]) %}
+{% set city_list = cities | default([]) %}
+{% set format_list = available_formats | default(['Regular 2D']) %}
+{% set movie_slug = movie.id | default('sore') %}
+
+<main class="detail detail-movie" id="main-content" data-movie-slug="{{ movie_slug }}">
+  <nav class="detail__crumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('landing.index') }}">Beranda</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('landing.index') }}#sedang-tayang">Film</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ movie.title }}</span>
+  </nav>
+
+  {# Detail Navigation Tabs (FigCraft 02A #1223 / #3805) #}
+  <nav class="detail__navtabs" aria-label="Navigasi detail film" id="movie-detail-tabs">
+    <button type="button" class="detail__navtab is-active" data-tab-target="overview" aria-selected="true">Deskripsi / Sinopsis</button>
+    <button type="button" class="detail__navtab" data-tab-target="schedule" aria-selected="false">Tiket &amp; Jadwal</button>
+    <button type="button" class="detail__navtab" data-tab-target="terms" aria-selected="false">Syarat &amp; Ketentuan</button>
+  </nav>
+
+  {# Movie Detail Body (FigCraft 02A #658 / #3812) #}
+  <section class="movie-body" id="detail-sinopsis" aria-label="Detail Film">
+    <div class="movie-poster-col">
+      <div class="detail__poster-wrap movie-poster-slot">
+        {% if poster_url %}
+        <img class="detail__poster" src="{{ poster_url }}" alt="Poster {{ movie.title }}" width="340" height="450">
+        {% else %}
+        <div class="detail__poster detail__poster-empty" aria-hidden="true">{{ movie.title[:1] }}</div>
+        {% endif %}
+        {% if movie.age_rating %}
+        <span class="detail__age-badge">{{ movie.age_rating }}</span>
+        {% endif %}
+      </div>
+      <div class="status-tayang-pill">
+        <span class="status-tayang-pill__dot" aria-hidden="true"></span>
+        <span>Sedang Tayang di Bioskop</span>
+      </div>
+    </div>
+
+    <div class="movie-content-col">
+      <header class="movie-title-section">
+        <h1 class="detail__title">{{ movie.title }}</h1>
+        {% if movie.tagline %}
+        <p class="detail__tagline">{{ movie.tagline }}</p>
+        {% endif %}
+      </header>
+
+      <div class="movie-badges-row">
+        {% if movie.rating %}
+        <span class="meta-badge meta-badge-rating rating-star">
+          <svg class="i" aria-hidden="true"><use href="#i-star"/></svg>
+          <span>IMDb <strong>{{ movie.rating }}</strong> / 10</span>
+        </span>
+        {% endif %}
+        {% if movie.duration %}
+        <span class="meta-badge meta-badge-neutral">
+          <svg class="i" aria-hidden="true"><use href="#i-clock"/></svg>
+          <span>Durasi: {{ movie.duration }}</span>
+        </span>
+        {% endif %}
+        {% if movie.age_rating %}
+        <span class="meta-badge meta-badge-teal">
+          <span>Usia: {{ movie.age_rating }}</span>
+        </span>
+        {% endif %}
+        {% if movie.genres %}
+        <span class="meta-badge meta-badge-muted">
+          <span>Genre: {{ movie.genres | join(' • ') }}</span>
+        </span>
+        {% endif %}
+      </div>
+
+      {% if movie.synopsis %}
+      <article class="synopsis-card" aria-labelledby="sinopsis-heading">
+        <h2 class="synopsis-card__heading" id="sinopsis-heading">Sinopsis Film</h2>
+        <p class="synopsis-card__body">{{ movie.synopsis }}</p>
+      </article>
       {% endif %}
-    </div>
 
-    <div class="detail__info">
-      <p class="detail__eyebrow">Film</p>
-      <h1>{{ movie.title }}</h1>
-      <p class="detail__tagline">{{ movie.tagline }}</p>
-      <ul class="detail__chips" aria-label="Ringkasan film">
-        <li>Rating {{ movie.rating }}</li>
-        <li>{{ movie.duration }}</li>
-        <li>{{ movie.age_rating }}</li>
-      </ul>
-      <p class="detail__genres">{{ movie.genres | join(" · ") }}</p>
-      <div class="detail__actions">
-        <a class="detail__cta" href="{{ buy_url }}">Beli Tiket</a>
-        <button type="button" class="detail__cta-secondary" id="trailer-open">Tonton Trailer</button>
-        <a class="detail__cta-secondary" href="{{ url_for('landing.index') }}">Kembali</a>
+      {% if prod.trivia %}
+      <aside class="trivia-card" aria-label="Did You Know? (Trivia Film)">
+        <div class="trivia-card__head">
+          <svg class="i" aria-hidden="true"><use href="#i-lightbulb"/></svg>
+          <strong>Did You Know? (Trivia Film)</strong>
+        </div>
+        <p class="trivia-card__body">{{ prod.trivia }}</p>
+      </aside>
+      {% endif %}
+
+      <div class="produksi-section">
+        <h2 class="produksi-section__heading">Detail Produksi</h2>
+        <div class="produksi-grid">
+          <div class="spec-card">
+            <span class="spec-card__label">SUTRADARA &amp; PENULIS</span>
+            <strong class="spec-card__value">{{ prod.director | default('Partner Resmi') }}{% if prod.writer and prod.writer != prod.director %} &bull; {{ prod.writer }}{% endif %}</strong>
+          </div>
+          <div class="spec-card">
+            <span class="spec-card__label">RUMAH PRODUKSI</span>
+            <strong class="spec-card__value">{{ prod.studio | default('Studio Produksi Resmi') }}</strong>
+          </div>
+          <div class="spec-card">
+            <span class="spec-card__label">BAHASA &amp; NEGARA ASAL</span>
+            <strong class="spec-card__value">{{ prod.language | default('Indonesia') }}{% if prod.origin %} &bull; {{ prod.origin }}{% endif %}</strong>
+          </div>
+        </div>
+        {% if prod.cast %}
+        <div class="movie-cast-row">
+          <span class="movie-cast-row__label">Pemeran Utama:</span>
+          <div class="detail__cast-list">
+            {% for actor in prod.cast %}
+            <span class="detail__cast-chip">{{ actor }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Bottom CTA Bar (FigCraft 02A #694) #}
+      <div class="movie-bottom-bar">
+        <div class="movie-price-summary">
+          <div class="movie-format-row">
+            <span class="movie-format-row__label">Format Studio Tersedia:</span>
+            <span class="movie-format-row__badge">{{ format_list | join(' • ') }}</span>
+          </div>
+          <strong class="movie-price-label">Mulai dari Rp 50.000 / kursi <span class="detail__discount-tag">(Hemat 15% SSO UI)</span></strong>
+        </div>
+        <div class="movie-bottom-bar__actions">
+          <button type="button" class="detail__cta-secondary liquid-glass-pill" id="trailer-open">
+            <svg class="i" aria-hidden="true"><use href="#i-film"/></svg>
+            Tonton Trailer
+          </button>
+          <a class="detail__cta liquid-glass-pill liquid-glass-pill--accent" href="{{ buy_url }}">
+            <svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg>
+            Pilih Jadwal &amp; Kursi &rarr;
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-
-  <section class="detail__section" aria-labelledby="sinopsis">
-    <h2 id="sinopsis">Sinopsis</h2>
-    <p>{{ movie.synopsis }}</p>
   </section>
 
-  <section class="detail__section" aria-labelledby="spesifikasi">
-    <h2 id="spesifikasi">Spesifikasi</h2>
-    <dl class="detail__specs">
-      {% for key, value in movie.tech_specs.items() %}
-      <div>
-        <dt>{{ key }}</dt>
-        <dd>{{ value }}</dd>
+  {# Schedule & Location View (FigCraft 02B #2208 / #3944) #}
+  {% if date_list and cinema_list %}
+  <section class="schedule-section" id="jadwal-lokasi" aria-labelledby="jadwal-heading">
+    <header class="schedule-movie-bar">
+      <div class="schedule-movie-bar__meta">
+        <h2 class="schedule-title" id="jadwal-heading">{{ movie.title }} &bull; Pilih Jadwal &amp; Bioskop</h2>
+        <p class="schedule-sub">Durasi: {{ movie.duration | default('2h') }} &bull; Usia {{ movie.age_rating | default('SU') }}{% if movie.genres %} &bull; {{ movie.genres | join(', ') }}{% endif %}</p>
       </div>
+      <span class="status-badge-inline">
+        <span class="status-tayang-pill__dot" aria-hidden="true"></span>
+        <span>Sedang Tayang &bull; {{ format_list | join(' • ') }}</span>
+      </span>
+    </header>
+
+    <div class="schedule-filter-row">
+      <div class="schedule-dropdowns">
+        <label class="filter-dropdown" aria-label="Filter Kota">
+          <svg class="i" aria-hidden="true"><use href="#i-pin"/></svg>
+          <span>Kota:</span>
+          <select id="filter-city">
+            <option value="all">Semua Kota</option>
+            {% for city in city_list %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="filter-dropdown filter-dropdown-wide" aria-label="Filter Format Bioskop">
+          <span>Bioskop:</span>
+          <select id="filter-format">
+            <option value="all">Semua Studio Tersedia ({{ format_list | join(', ') }})</option>
+            {% for fmt in format_list %}
+            <option value="{{ fmt }}">{{ fmt }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="schedule-dates" role="radiogroup" aria-label="Pilih Tanggal Penayangan">
+        {% for d in date_list %}
+        <button
+          type="button"
+          class="date-chip{% if loop.first %} is-active{% endif %}"
+          data-date-id="{{ d.id }}"
+          data-date-label="{{ d.day }}, {{ d.date }}"
+          aria-pressed="{{ 'true' if loop.first else 'false' }}"
+        >{{ d.chip | default(d.day ~ ' • ' ~ d.date) }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="cinema-list" id="cinema-list">
+      {% for cinema in cinema_list %}
+      {% set outer_first = loop.first %}
+      <article class="cinema-card{% if outer_first %} is-selected{% endif %}" data-city="{{ cinema.city }}">
+        <header class="cinema-card__head">
+          <div class="cinema-card__left">
+            <h3 class="cinema-card__name">{{ cinema.name }}</h3>
+            <p class="cinema-card__addr">
+              <svg class="i" aria-hidden="true"><use href="#i-pin"/></svg>
+              <span>{{ cinema.address }}{% if cinema.distance %} &bull; {{ cinema.distance }}{% endif %}</span>
+            </p>
+          </div>
+          <span class="cinema-card__brand">{{ cinema.formats_label | default('Bioskop Mitra Resmi') }}</span>
+        </header>
+
+        <div class="cinema-studios">
+          {% for st in cinema.studios %}
+          <div class="studio-row{% if st.vip %} studio-row-vip{% endif %}" data-format="{{ st.type }}">
+            <div class="studio-row__info">
+              <strong class="studio-row__type">{{ st.type }}{% if st.room %} &bull; {{ st.room }}{% endif %}</strong>
+              <span class="studio-row__price num">{{ st.price | rupiah }} / kursi{% if st.audio %} &bull; {{ st.audio }}{% endif %}</span>
+            </div>
+            <div class="studio-times">
+              {% set studio_first = outer_first and loop.first %}
+              {% for tm in st.times %}
+              {% set is_limited = st.limited_time and tm == st.limited_time %}
+              <button
+                type="button"
+                class="time-pill{% if studio_first and loop.first %} is-active{% endif %}{% if is_limited %} is-limited{% endif %}{% if st.vip %} is-vip{% endif %}"
+                data-venue-id="{{ st.venue_id }}"
+                data-studio-type="{{ st.type }}"
+                data-studio-room="{{ st.room | default('') }}"
+                data-price-text="{{ st.price | rupiah }}"
+                data-cinema-name="{{ cinema.name }}"
+                data-time="{{ tm }}"
+                data-href="{{ url_for('visualizer.studio', venue_id=st.venue_id, film=movie_slug) }}"
+              >{{ tm }} &bull; {{ 'Sisa 4 Kursi' if is_limited else (st.price | rupiah) }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
       {% endfor %}
-    </dl>
+    </div>
+
+    <div class="schedule-selection-bar" id="schedule-summary" aria-live="polite">
+      <div class="schedule-selection-bar__info">
+        <span class="schedule-selection-bar__eyebrow">JADWAL DIPILIH</span>
+        <strong class="schedule-selection-bar__value" id="summary-value">
+          <span id="summary-cinema">{{ cinema_list[0].name }}</span>
+          <span id="summary-meta">{{ date_list[0].day }}, {{ date_list[0].date }} &bull; {{ cinema_list[0].studios[0].type }}{% if cinema_list[0].studios[0].room %} ({{ cinema_list[0].studios[0].room }}){% endif %} &bull; {{ cinema_list[0].studios[0].times[0] }} WIB &bull; {{ cinema_list[0].studios[0].price | rupiah }}</span>
+        </strong>
+      </div>
+      <a
+        class="detail__cta schedule-selection-bar__cta"
+        id="schedule-seat-cta"
+        href="{{ url_for('visualizer.studio', venue_id=cinema_list[0].studios[0].venue_id, film=movie_slug, cinema=cinema_list[0].name, date=date_list[0].id, time=cinema_list[0].studios[0].times[0]) }}"
+      >Lanjut Pilih Kursi &amp; POV 3D &rarr;</a>
+    </div>
   </section>
+  {% endif %}
 
-</article>
+  <section class="detail__panel movie-terms-panel" id="syarat-bioskop" aria-labelledby="terms-bioskop-title" hidden>
+    <h2 class="detail__section-title" id="terms-bioskop-title">Syarat &amp; Ketentuan Penonton Bioskop</h2>
+    <ul class="movie-terms-list">
+      <li>Tiket yang telah dibayar dan diterbitkan tidak dapat dibatalkan atau dijadwalkan ulang setelah pintu studio dibuka.</li>
+      <li>Penonton di bawah klasifikasi usia minimum film wajib didampingi orang tua atau wali sesuai regulasi Lembaga Sensor Film (LSF).</li>
+      <li>Dilarang merekam isi film di dalam studio dalam bentuk foto, video, maupun audio demi menjaga hak cipta pembuat film.</li>
+      <li>Diskon Mahasiswa UI (15%) berlaku otomatis pada akun yang telah memverifikasi SSO UI di halaman Checkout.</li>
+    </ul>
+  </section>
+</main>
 
-<dialog class="trailer-modal" id="trailer-modal" aria-labelledby="trailer-modal-title" data-embed="{{ trailer_embed }}">
+<dialog class="trailer-modal liquid-glass-modal" id="trailer-modal" aria-labelledby="trailer-modal-title" data-embed="{{ trailer_embed or '' }}">
   <div class="trailer-modal__head">
-    <h2 id="trailer-modal-title">Trailer {{ movie.title }}</h2>
-    <form method="dialog">
-      <button type="submit" class="trailer-modal__close" aria-label="Tutup trailer">
-        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
-      </button>
-    </form>
+    <strong id="trailer-modal-title">Trailer Resmi &bull; {{ movie.title }}</strong>
+    <button type="button" class="trailer-modal__close" id="trailer-close" aria-label="Tutup trailer">
+      <svg class="i" aria-hidden="true"><use href="#i-x"/></svg>
+      <span>Tutup</span>
+    </button>
   </div>
   <div class="trailer-modal__frame">
     {% if trailer_local %}
@@ -71,5 +330,3 @@
   </div>
 </dialog>
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='js/movie_trailer.js') }}" defer></script>{% endblock %}

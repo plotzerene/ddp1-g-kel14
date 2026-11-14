@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% set step = "profile" %}
+{% set theme_color = "#FFFFFF" %}
+{% block title %}Profil &amp; Pesanan Saya{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+<script src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container checkout profile-shell">
+  {% if not user %}
+  <section class="empty-state cart-empty-card" aria-labelledby="profile-guest-title">
+    <span class="cart-empty-card__icon" aria-hidden="true">
+      <svg class="icon icon--lg" aria-hidden="true"><use href="#i-user"/></svg>
+    </span>
+    <h1 id="profile-guest-title">Masuk ke Akun Member</h1>
+    <p>Masuk atau daftar terlebih dahulu untuk melihat daftar pesanan, melanjutkan pembayaran, dan membuka e-tiket Anda.</p>
+    <div class="eticket-actions">
+      <button type="button" class="btn btn--primary" data-auth-open="login">Masuk Akun</button>
+      <button type="button" class="btn btn--secondary" data-auth-open="register">Daftar Akun Baru</button>
+    </div>
+  </section>
+  {% else %}
+  <section class="profile-hero profile-card" aria-labelledby="profile-name">
+    <div class="profile-identity">
+      <span class="profile-avatar" aria-hidden="true">{{ user.name[:1] | upper }}</span>
+      <div>
+        <h1 id="profile-name">{{ user.name }}</h1>
+        <p>{{ user.email }}</p>
+      </div>
+    </div>
+    <div class="profile-badges">
+      {% if user.is_ui_student %}
+      <span class="chip chip--info">Mahasiswa UI &bull; Diskon 15%</span>
+      {% else %}
+      <span class="chip chip--info">Akun Member &bull; {{ user.provider | default('Email') }}</span>
+      {% endif %}
+      <button type="button" class="btn btn--outline-danger btn--sm" data-auth-logout>
+        Keluar Akun
+      </button>
+    </div>
+  </section>
+
+  <nav class="profile-tabs" role="tablist" aria-label="Kategori status pesanan">
+    <button type="button" class="profile-tab" role="tab" data-profile-tab="pending"
+            aria-selected="{{ 'true' if active_tab == 'pending' else 'false' }}">
+      Menunggu Pembayaran (<span id="pending-tab-count">{{ pending_orders | length }}</span>)
+    </button>
+    <button type="button" class="profile-tab" role="tab" data-profile-tab="completed"
+            aria-selected="{{ 'true' if active_tab == 'completed' else 'false' }}">
+      Riwayat Pemesanan (<span id="completed-tab-count">{{ completed_orders | length }}</span>)
+    </button>
+    <button type="button" class="profile-tab" role="tab" data-profile-tab="cancelled"
+            aria-selected="{{ 'true' if active_tab == 'cancelled' else 'false' }}">
+      Dibatalkan (<span id="cancelled-tab-count">{{ cancelled_orders | length }}</span>)
+    </button>
+  </nav>
+
+  {# Tab 1: Menunggu Pembayaran #}
+  <section class="order-list" id="panel-pending" role="tabpanel" {% if active_tab != 'pending' %}hidden{% endif %}>
+    {% if not pending_orders %}
+    <div class="checkout__section">
+      <h2>Belum ada pembayaran tertunda</h2>
+      <p>Pilih kursi bioskop atau area konser untuk memulai pemesanan baru.</p>
+      <a class="btn btn--primary" href="{{ url_for('landing.index') }}">Jelajahi Acara</a>
+    </div>
+    {% else %}
+      {% for ord in pending_orders %}
+      <article class="order-card checkout__section" data-order-code="{{ ord.code }}">
+        <div class="order-card__head">
+          <div>
+            <span class="order-card__code num">No. Pesanan: {{ ord.code }}</span>
+            <h2>{{ ord.tickets[0].event_title if ord.tickets else 'Pemesanan Tiket' }}</h2>
+          </div>
+          <span class="order-status-pill order-status-pill--pending num">
+            Menunggu Bayar &bull; <span data-countdown-sec="{{ ord.remaining_seconds }}">{{ '%02d:%02d' | format(ord.remaining_seconds // 60, ord.remaining_seconds % 60) }}</span>
+          </span>
+        </div>
+        <div class="order-card__meta">
+          <span>Metode: <strong>{{ ord.method }}</strong></span>
+          {% if ord.payment_code %}<span>Kode Bayar / VA: <strong class="num">{{ ord.payment_code }}</strong></span>{% endif %}
+          <span>Posisi: <strong>{% for t in ord.tickets %}{{ t.item.seat_label }}{% if not loop.last %}, {% endif %}{% endfor %}</strong></span>
+        </div>
+        <div class="order-card__footer">
+          <strong class="num">{{ ord.totals.total | rupiah }}</strong>
+          <div class="order-card__actions">
+            <a class="btn btn--primary btn--sm" href="{{ url_for('checkout.resume_order', code=ord.code) }}">Lanjutkan Pembayaran</a>
+            <button type="button" class="btn btn--outline-danger btn--sm" data-profile-cancel="{{ ord.code }}">Batalkan</button>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    {% endif %}
+  </section>
+
+  {# Tab 2: Riwayat Pemesanan #}
+  <section class="order-list" id="panel-completed" role="tabpanel" {% if active_tab != 'completed' %}hidden{% endif %}>
+    {% if not completed_orders %}
+    <div class="checkout__section">
+      <h2>Belum ada riwayat pemesanan</h2>
+      <p>E-tiket dari transaksi yang telah lunas akan tersimpan otomatis di sini.</p>
+    </div>
+    {% else %}
+      {% for ord in completed_orders %}
+      <article class="order-card checkout__section" data-order-code="{{ ord.code }}">
+        <div class="order-card__head">
+          <div>
+            <span class="order-card__code num">Kode Booking: {{ ord.code }}</span>
+            <h2>{{ ord.tickets[0].event_title if ord.tickets else 'Pemesanan Tiket' }}</h2>
+          </div>
+          <span class="order-status-pill order-status-pill--paid">Lunas &bull; Terverifikasi</span>
+        </div>
+        <div class="order-card__meta">
+          <span>Tanggal Beli: <strong>{{ ord.paid_at }}</strong></span>
+          <span>Metode: <strong>{{ ord.method }}</strong></span>
+          <span>Tiket: <strong>{% for t in ord.tickets %}{{ t.item.seat_label }}{% if not loop.last %}, {% endif %}{% endfor %}</strong></span>
+        </div>
+        <div class="order-card__footer">
+          <strong class="num">{{ ord.totals.total | rupiah }}</strong>
+          <div class="order-card__actions">
+            <button type="button" class="btn btn--primary btn--sm" data-open-eticket="{{ ord.code }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-ticket"/></svg>
+              <span>Lihat E-Tiket</span>
+            </button>
+          </div>
+        </div>
+
+        <template id="eticket-tpl-{{ ord.code }}">
+          <div class="eticket-modal__list">
+            {% for ticket in ord.tickets %}
+            {% set item = ticket.item %}
+            {% set is_concert = (ticket.venue_type == "concert") or (ticket.event_type == "concert") %}
+            <article class="eticket checkout__section {{ 'eticket--concert' if is_concert else 'eticket--cinema' }}">
+              <div class="eticket__info">
+                <div class="eticket__top-tags">
+                  <span class="chip chip--accent">{{ item.category }}</span>
+                  <span class="eticket__paid-pill">TERVERIFIKASI</span>
+                </div>
+                <h3>{{ item.seat_label }}</h3>
+                <p class="eticket__venue">{{ ticket.event_title }}</p>
+                <dl class="pov-meta eticket__schedule">
+                  <div><dt>Tanggal Tayang</dt><dd>{{ ticket.show_date }}</dd></div>
+                  <div><dt>Waktu</dt><dd class="num">{{ ticket.show_time }}</dd></div>
+                  <div><dt>{{ 'Studio & Bioskop' if not is_concert else 'Venue Stadion' }}</dt><dd>{{ ticket.studio_cinema }}</dd></div>
+                  <div><dt>Kode Booking</dt><dd class="num">{{ ord.code }}</dd></div>
+                </dl>
+              </div>
+              {% if is_concert %}
+              <div class="eticket__barcode-wrap" aria-label="Barcode Code128 {{ ticket.code }}">
+                <svg class="eticket__barcode" viewBox="0 0 180 34" role="img" aria-label="Code128 {{ ticket.code }}" shape-rendering="crispEdges">
+                  <rect width="180" height="34" fill="#FFFFFF"/>
+                  <g fill="#0F172A">
+                    <rect x="4" y="3" width="2" height="28"/>
+                    <rect x="8" y="3" width="1" height="28"/>
+                    <rect x="11" y="3" width="3" height="28"/>
+                    {% for ch in ticket.code %}
+                    {% set base_x = 18 + (loop.index0 * 10) %}
+                    {% set w1 = ((loop.index * 2) % 3) + 1 %}
+                    {% set w2 = ((loop.index + 1) % 2) + 1 %}
+                    {% if base_x < 164 %}
+                    <rect x="{{ base_x }}" y="3" width="{{ w1 }}" height="28"/>
+                    <rect x="{{ base_x + w1 + 2 }}" y="3" width="{{ w2 }}" height="28"/>
+                    <rect x="{{ base_x + w1 + w2 + 4 }}" y="3" width="1" height="28"/>
+                    {% endif %}
+                    {% endfor %}
+                    <rect x="168" y="3" width="2" height="28"/>
+                    <rect x="172" y="3" width="3" height="28"/>
+                  </g>
+                </svg>
+                <span class="eticket__barcode-text num">{{ ticket.code }}</span>
+              </div>
+              {% else %}
+              <div class="eticket__code" aria-label="QR Code Tiket {{ ticket.code }}">
+                {% set size = ticket.matrix | length %}
+                <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="QR Code Tiket {{ ticket.code }}" shape-rendering="crispEdges">
+                  <rect width="{{ size }}" height="{{ size }}" fill="#F8FAFC"/>
+                  {% for row in ticket.matrix %}{% set y = loop.index0 %}{% for cell in row %}{% if cell %}<rect x="{{ loop.index0 }}" y="{{ y }}" width="1" height="1" fill="#0F0F23"/>{% endif %}{% endfor %}{% endfor %}
+                </svg>
+                <span class="num">{{ ticket.code }}</span>
+              </div>
+              {% endif %}
+            </article>
+            {% endfor %}
+          </div>
+        </template>
+      </article>
+      {% endfor %}
+    {% endif %}
+  </section>
+
+  {# Tab 3: Dibatalkan #}
+  <section class="order-list" id="panel-cancelled" role="tabpanel" {% if active_tab != 'cancelled' %}hidden{% endif %}>
+    {% if not cancelled_orders %}
+    <div class="checkout__section">
+      <h2>Tidak ada pesanan yang dibatalkan</h2>
+      <p>Pesanan yang dibatalkan atau melewati batas waktu pembayaran akan tercatat di sini.</p>
+    </div>
+    {% else %}
+      {% for ord in cancelled_orders %}
+      <article class="order-card checkout__section" data-order-code="{{ ord.code }}">
+        <div class="order-card__head">
+          <div>
+            <span class="order-card__code num">No. Pesanan: {{ ord.code }}</span>
+            <h2>{{ ord.tickets[0].event_title if ord.tickets else 'Pemesanan Tiket' }}</h2>
+          </div>
+          <span class="order-status-pill order-status-pill--cancelled">{{ 'Kedaluwarsa' if ord.status == 'EXPIRED' else 'Dibatalkan' }}</span>
+        </div>
+        <div class="order-card__meta">
+          <span>Waktu: <strong>{{ ord.cancelled_at | default(ord.created_at) }}</strong></span>
+          <span>Alasan: <strong>{{ ord.cancel_reason | default('Dibatalkan pengguna') }}</strong></span>
+          <span>Posisi: <strong>{% for t in ord.tickets %}{{ t.item.seat_label }}{% if not loop.last %}, {% endif %}{% endfor %}</strong></span>
+        </div>
+        <div class="order-card__footer">
+          <strong class="num">{{ ord.totals.total | rupiah }}</strong>
+          <a class="btn btn--secondary btn--sm" href="{{ ord.viz_href | default(url_for('landing.index')) }}">Pesan Lagi</a>
+        </div>
+      </article>
+      {% endfor %}
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+
+<dialog class="eticket-modal" id="profile-eticket-modal" aria-labelledby="profile-eticket-title">
+  <div class="eticket-modal__head">
+    <h2 id="profile-eticket-title">Detail E-Tiket Resmi</h2>
+    <button type="button" class="btn btn--secondary btn--sm" id="profile-eticket-close">Tutup</button>
+  </div>
+  <div id="profile-eticket-body"></div>
+</dialog>
+{% endblock %}

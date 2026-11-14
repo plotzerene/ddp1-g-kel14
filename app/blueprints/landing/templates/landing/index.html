@@ -1,9 +1,4 @@
-{#
-  landing/index.html — FOLDER TEAMMATE 1.
-  Tata letak titiket.com, tema terang bersih (#F8FAFC - #F1F5F9).
-  Data: `events` dari shared_state.EVENTS, `studios` dari landing/routes.py.
-  Interaksi (carousel, filter, modal trailer): static/js/landing.js.
-#}
+{# landing/index.html: Rekonstruksi Halaman Utama sesuai Artboard FigCraft 01_Home (Light) & 01_Home_Dark_Theme (Dark). #}
 {% extends "base.html" %}
 {% set step = "landing" %}
 {% set theme_color = "#FFFFFF" %}
@@ -12,190 +7,311 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}
 
-{% block header_center %}
-<div class="nav-tools">
-  <label class="nav-location">
-    <svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg>
-    <span class="visually-hidden">Lokasi</span>
-    {# ponytail: pilihan lokasi belum memfilter jadwal; sambungkan saat ada data bioskop per kota. #}
-    <select aria-label="Lokasi">
-      <option>JABODETABEK</option>
-      <option>BANDUNG</option>
-      <option>SURABAYA</option>
-      <option>YOGYAKARTA</option>
-    </select>
-  </label>
-  <label class="nav-search">
-    <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-    <input type="search" id="catalog-search" placeholder="Cari film, bioskop, atau konser..."
-           aria-label="Cari film, bioskop, atau konser" autocomplete="off">
-  </label>
-</div>
-{% endblock %}
-
-{% block header_actions %}
-{% include "_theme_toggle.html" %}
-<button type="button" class="btn auth-entry" data-auth-open="login">Masuk</button>
-<button type="button" class="btn auth-entry" data-auth-open="register">Daftar</button>
-<a class="nav-link" href="{{ url_for('checkout.index') }}">
-  <svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>
-  <span>Pesanan Saya</span>
-  <span class="badge-count num" {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
-</a>
-<a class="nav-link" href="#promo">
-  <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
-  <span>Promo</span>
-</a>
-<span class="nav-avatar" role="img" aria-label="Profil pengguna">
-  <svg class="icon icon--lg" aria-hidden="true"><use href="#i-user"/></svg>
-</span>
-{% endblock %}
-
 {% block content %}
 {% set categories = [
-  ("bioskop", "Bioskop", "ticket"),
-  ("konser", "Konser", "music"),
-  ("film", "Film", "film"),
-  ("mfood", "m.food", "food"),
-  ("sewa", "Sewa Tempat", "seat"),
+  ("bioskop", "Bioskop", "screen", "gold"),
+  ("konser", "Konser", "music", "teal"),
+  ("film", "Film", "film", "neutral"),
+  ("food", "titiket.food", "food", "neutral"),
+  ("sewa", "Sewa Tempat", "building", "neutral"),
 ] %}
+{% set makara_url = asset_url("makara_ui.png") %}
 
-<section class="hero" aria-labelledby="hero-title">
-  <div class="container hero__inner">
-    <h1 id="hero-title">Feel the moments beyond</h1>
-    <a class="pill pill--solid hero__cta" href="{{ url_for('intro.index') }}">Masuk Pengalaman Sinematik Imersif &rarr;</a>
-    <div class="category-pills" role="group" aria-label="Kategori">
-      {% for key, label, icon_name in categories %}
-      <button class="category-pill" type="button" data-filter="{{ key }}"
-              aria-pressed="false">
-        <span class="category-pill__icon"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-{{ icon_name }}"/></svg></span>
-        {{ label }}
-      </button>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+<div class="landing-shell">
+  {# 1. HERO & 5 CATEGORY CARDS + FEATURED MINI CAROUSEL #}
+  <section class="hero-stage" aria-labelledby="hero-title">
+    <div class="container hero-stage__inner">
+      <div class="hero-heading">
+        <h1 id="hero-title">Feel the moments beyond</h1>
+        <p class="hero-subhead">Pilih kursi terbaik dengan pratinjau pandangan 3D sebelum membeli tiket.</p>
+      </div>
 
-<div class="container landing">
-
-  {# ---------- Carousel promo: bergeser otomatis tiap 4 detik ---------- #}
-  <section class="promo" id="promo" aria-roledescription="carousel" aria-label="Promo">
-    <button class="promo__arrow promo__arrow--prev" type="button" id="promo-prev" aria-label="Promo sebelumnya">
-      <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
-    </button>
-    <ul class="promo__track" id="promo-track">
-      {% for event in events %}
-      {% set poster = asset_url(event.poster) %}
-      {% set concert = event.kind == "concert" %}
-      <li class="promo__slide">
-        <a class="promo-card" href="{{ url_for('visualizer.index', type='concert', event=event.event_id) if concert
-                                       else url_for('visualizer.index', type='cinema', film=event.event_id) }}">
-          {% if poster %}<img src="{{ poster }}" alt="" loading="lazy">{% endif %}
-          <span class="promo-card__text">
-            <small>{{ "Konser · tiket tersedia" if concert else "Sedang tayang" }}</small>
-            <strong>{{ event.title }}</strong>
-            <span>{{ "Pilih kategori dan lihat pandangannya dalam 3D" if concert else "Pilih kursi dan lihat pandangannya dalam 3D" }}</span>
+      <div class="quick-categories" role="group" aria-label="Kategori utama">
+        {% for key, label, icon_name, tone in categories %}
+        <button class="quick-cat quick-cat--{{ tone }}" type="button" data-category="{{ key }}" aria-pressed="false">
+          <span class="quick-cat__icon">
+            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-{{ icon_name }}"/></svg>
           </span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-    <button class="promo__arrow promo__arrow--next" type="button" id="promo-next" aria-label="Promo berikutnya">
-      <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-    </button>
-    <div class="promo__dots" id="promo-dots"></div>
+          <span class="quick-cat__label">{{ label }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="featured-carousel" id="promo" aria-roledescription="carousel" aria-label="Sorotan sedang tayang">
+        <button class="slider-arrow slider-arrow--prev" type="button" id="promo-prev" aria-label="Sorotan sebelumnya">
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+        </button>
+        <ul class="featured-track" id="promo-track">
+          {% for item in featured_slides %}
+          {% set ev = item.event %}
+          {% set poster = asset_url(ev.poster) %}
+          {% set href = url_for('events.coldplay_overview') if item.is_concert
+                        else url_for('events.movie_detail', slug=ev.event_id) %}
+          <li class="featured-slide">
+            <a class="featured-card{% if item.is_concert %} featured-card--concert{% endif %}" href="{{ href }}">
+              <div class="featured-card__thumb">
+                {% if poster %}
+                <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="96" height="136">
+                {% endif %}
+              </div>
+              <div class="featured-card__info">
+                <span class="featured-card__tag{% if item.is_concert %} featured-card__tag--gold{% endif %}">{{ item.carousel_tag }}</span>
+                <strong class="featured-card__title">{{ ev.title }}</strong>
+                <span class="featured-card__sub">{{ item.meta_line }}</span>
+              </div>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        <button class="slider-arrow slider-arrow--next" type="button" id="promo-next" aria-label="Sorotan berikutnya">
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+        <div class="promo__dots" id="promo-dots" aria-hidden="true"></div>
+      </div>
+    </div>
   </section>
 
-  {# ---------- Katalog ---------- #}
-  <section class="section" id="katalog" aria-labelledby="catalog-title">
-    <h2 id="catalog-title">Lagi tayang</h2>
-    <ul class="film-grid" id="film-grid">
-      {% for event in events %}
-      {% set poster = asset_url(event.poster) %}
-      {% set trailer = asset_url(event.trailer) %}
-      {% set concert = event.kind == "concert" %}
-      <li class="film-card" data-tags="{{ 'konser' if concert else 'bioskop film' }}"
-          data-title="{{ (event.title ~ ' ' ~ event.meta) | lower }}">
-        <div class="film-card__poster">
-          {% if poster %}
-          <img src="{{ poster }}" alt="Poster {{ event.title }}" loading="lazy" width="300" height="450">
-          {% else %}
-          <div class="film-card__missing" role="img" aria-label="Poster belum tersedia">
-            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-film"/></svg>
-          </div>
+  {# 2. SLIM SSO UI PROMO BANNER (Target #promo-mahasiswa & Artboard 01_Home_Dark_Theme) #}
+  <section class="sso-strip-wrap" id="promo-mahasiswa" aria-labelledby="sso-banner-title">
+    <div class="container">
+      <div class="sso-strip">
+        <div class="sso-strip__left">
+          {% if makara_url %}
+          <img class="sso-strip__logo" src="{{ makara_url }}" alt="Makara Universitas Indonesia" width="34" height="34">
           {% endif %}
-          <span class="film-card__rank num" aria-hidden="true">{{ loop.index }}</span>
-          <div class="film-card__actions">
-            {% if trailer %}
-            <button class="pill pill--light" type="button" data-trailer="{{ trailer }}" data-title="{{ event.title }}">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-play"/></svg>
-              Lihat trailer
-            </button>
-            {% endif %}
-            <a class="pill pill--solid" href="{{ url_for('visualizer.index', type='concert', event=event.event_id) if concert
-                                              else url_for('visualizer.index', type='cinema', film=event.event_id) }}">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-ticket"/></svg>
-              Beli tiket
+          <div class="sso-strip__copy">
+            <h2 id="sso-banner-title">Promo Sivitas Akademika Universitas Indonesia</h2>
+            <p>Masuk via SSO UI (@ui.ac.id) untuk klaim Diskon Khusus Mahasiswa UI 15% tiket bioskop &amp; konser.</p>
+          </div>
+        </div>
+        <div class="sso-strip__right">
+          <a class="sso-strip__cta" href="{{ sso_ui_login_url }}" rel="noopener">Masuk dengan SSO UI</a>
+          <a class="sso-strip__all" href="{{ url_for('landing.promo') }}">Semua Promo &amp; S&amp;K &rsaquo;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# 2b. SHOWCASE POV 3D: parallax Martian 3 lapis + panel Liquid Glass (static/js/parallax.js) #}
+  <section class="pov-showcase" id="pov-showcase" aria-labelledby="pov-showcase-title">
+    <div class="container">
+      <div class="pov-showcase__stage" data-parallax-stage data-max-offset="48">
+        <div class="pov-showcase__layers" aria-hidden="true">
+          <img class="pov-showcase__layer" data-parallax-layer data-depth="0.35" data-scale="1.08"
+               src="{{ url_for('static', filename='images/parallax/background.svg') }}" alt="" width="1600" height="1000">
+          <img class="pov-showcase__layer" data-parallax-layer data-depth="0.70" data-scale="1.05"
+               src="{{ url_for('static', filename='images/parallax/frame.svg') }}" alt="" width="1600" height="1000">
+          <img class="pov-showcase__layer" data-parallax-layer data-depth="1.25" data-scale="1.12"
+               src="{{ url_for('static', filename='images/parallax/foreground.svg') }}" alt="" width="1600" height="1000">
+        </div>
+
+        <div class="pov-showcase__panel liquid-glass">
+          <span class="pov-showcase__eyebrow">Pratinjau POV 3D</span>
+          <h2 id="pov-showcase-title">Lihat pandanganmu sebelum membeli</h2>
+          <p>Gerakkan kursor untuk merasakan kedalaman. Di visualizer, setiap posisi dihitung jarak, halangan kepala, dan delay suaranya.</p>
+          <div class="pov-showcase__actions">
+            <a class="liquid-glass-pill liquid-glass-pill--accent" href="{{ url_for('visualizer.index', type='cinema') }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-screen"/></svg>
+              <span>Coba POV Bioskop</span>
+            </a>
+            <a class="liquid-glass-pill" href="{{ url_for('events.coldplay_overview') }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-music"/></svg>
+              <span>Lihat Area Konser</span>
             </a>
           </div>
         </div>
-        <h3 class="film-card__title">{{ event.title }}</h3>
-        <p class="film-card__meta">
-          {% for part in event.meta.split(" · ") %}<span class="chip">{{ part }}</span>{% endfor %}
-        </p>
-      </li>
-      {% endfor %}
-    </ul>
-    <p class="catalog-empty" id="catalog-empty" hidden>Belum ada yang cocok di sini. Coba kategori atau kata kunci lain.</p>
+
+        <dl class="pov-showcase__dock liquid-glass-dock liquid-glass--obsidian" aria-label="Contoh telemetri pandangan">
+          <div><dt>Skor sightline</dt><dd class="num">92 &middot; A</dd></div>
+          <div><dt>Jarak ke layar</dt><dd class="num">14,2 m</dd></div>
+          <div><dt>Halangan kepala</dt><dd class="num">3%</dd></div>
+        </dl>
+      </div>
+    </div>
   </section>
 
-  {# ---------- Studio ---------- #}
-  <section class="section" aria-labelledby="studio-title">
-    <h2 id="studio-title">Cari tau studio XXI, yuk!</h2>
-    <ul class="studio-grid">
-      {% for studio_type, title, text, image in studios %}
-      {% set photo = asset_url(image) %}
-      <li class="studio-card">
-        {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
-        <h3>{{ title }}</h3>
-        <p>{{ text }}</p>
-        <a class="pill pill--solid" href="{{ url_for('visualizer.index', type='cinema', studio=studio_type) }}"
-           aria-label="Baca lebih lanjut tentang {{ title }}">Baca lebih lanjut</a>
-      </li>
-      {% endfor %}
-    </ul>
+  {# 3. SECTION "Lagi tayang" (GRID 5 KOLOM) #}
+  <section class="catalog-section" id="lagi-tayang" aria-labelledby="now-playing-title">
+    <div class="container">
+      <div class="section-bar">
+        <div class="section-bar__left">
+          <h2 id="now-playing-title">Lagi tayang</h2>
+          <div class="filter-tabs" role="group" aria-label="Filter Lagi tayang" data-filter-group="now-playing">
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="all" aria-pressed="true">Semua</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="film" aria-pressed="false">Film Bioskop</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="concert" aria-pressed="false">Konser Live</button>
+          </div>
+        </div>
+        <button class="lihat-semua-btn" type="button" id="now-playing-expand" aria-expanded="false">
+          <span>Lihat semua &rsaquo;</span>
+        </button>
+      </div>
+
+      <ul class="poster-grid" id="now-playing-grid">
+        {% for item in now_playing_cards %}
+        {% set ev = item.event %}
+        {% set poster = asset_url(ev.poster) %}
+        {% set trailer = asset_url(ev.trailer) %}
+        {% set detail_url = url_for('events.coldplay_overview') if item.is_concert
+                              else url_for('events.movie_detail', slug=ev.event_id) %}
+        {% set viz_url = url_for('visualizer.index', type='concert', event=ev.event_id) if item.is_concert
+                           else url_for('visualizer.index', type='cinema', film=ev.event_id) %}
+        <li class="poster-card{% if item.is_concert %} poster-card--concert{% endif %}{% if item.is_extra %} is-extra-card{% endif %}"
+            data-grid="now-playing"
+            data-kind="{{ item.kind }}"
+            data-extra="{{ 'true' if item.is_extra else 'false' }}"
+            data-search="{{ (ev.title ~ ' ' ~ ev.meta ~ ' ' ~ item.meta_line) | lower }}">
+          <div class="poster-card__media">
+            <a class="poster-card__cover-link" href="{{ detail_url }}" aria-label="Detail {{ ev.title }}">
+              {% if poster %}
+              <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402">
+              {% else %}
+              <div class="poster-card__missing" role="img" aria-label="Poster belum tersedia">
+                <svg class="icon icon--lg" aria-hidden="true"><use href="#i-film"/></svg>
+              </div>
+              {% endif %}
+            </a>
+            <a class="poster-card__fab" href="{{ detail_url }}"
+               title="Detail &amp; jadwal {{ ev.title }}" aria-label="Buka detail {{ ev.title }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-up-right"/></svg>
+            </a>
+            <div class="poster-card__hover-bar">
+              {% if trailer %}
+              <button class="poster-hover-btn" type="button" data-trailer="{{ trailer }}" data-title="{{ ev.title }}">
+                <svg class="icon icon--xs" aria-hidden="true"><use href="#i-play"/></svg>
+                <span>Lihat trailer</span>
+              </button>
+              {% endif %}
+              <a class="poster-hover-btn poster-hover-btn--primary" href="{{ viz_url }}">
+                <span>Beli tiket</span>
+              </a>
+            </div>
+          </div>
+          <div class="poster-card__body">
+            <h3 class="poster-card__title">
+              <a href="{{ detail_url }}">{{ ev.title }}</a>
+            </h3>
+            <div class="poster-card__meta-row">
+              <span class="age-badge age-badge--{{ item.badge_variant }}">{{ item.badge }}</span>
+              <span class="poster-card__meta-text">{{ item.meta_line }}</span>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="catalog-empty" id="catalog-empty" hidden>Tidak ada acara yang cocok.</p>
+    </div>
+  </section>
+
+  {# 4. SECTION "Coming Soon" (GRID 5 KOLOM + CTA INGATKAN SAYA) #}
+  <section class="catalog-section" id="coming-soon" aria-labelledby="coming-soon-title">
+    <div class="container">
+      <div class="section-bar">
+        <div class="section-bar__left">
+          <h2 id="coming-soon-title">Coming Soon</h2>
+          <div class="filter-tabs" role="group" aria-label="Filter Coming Soon" data-filter-group="coming-soon">
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="all" aria-pressed="true">Semua</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="film" aria-pressed="false">Film Bioskop</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="concert" aria-pressed="false">Konser Live</button>
+          </div>
+        </div>
+        <a class="lihat-semua-link" href="#lagi-tayang">Lihat semua &rsaquo;</a>
+      </div>
+
+      <ul class="poster-grid" id="coming-soon-grid">
+        {% for item in coming_soon_cards %}
+        {% set ev = item.event %}
+        {% set poster = asset_url(ev.poster) %}
+        {% set detail_url = url_for('events.coldplay_overview') if item.is_concert
+                              else url_for('events.movie_detail', slug=ev.event_id) %}
+        {% set viz_url = url_for('visualizer.index', type='concert', event=ev.event_id) if item.is_concert
+                           else url_for('visualizer.index', type='cinema', film=ev.event_id) %}
+        <li class="poster-card poster-card--upcoming{% if item.is_concert %} poster-card--concert{% endif %}"
+            data-grid="coming-soon"
+            data-kind="{{ item.kind }}"
+            data-search="{{ (ev.title ~ ' ' ~ ev.meta ~ ' ' ~ item.meta_line) | lower }}">
+          <div class="poster-card__media">
+            <a class="poster-card__cover-link" href="{{ detail_url }}" aria-label="Detail {{ ev.title }}">
+              {% if poster %}
+              <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402">
+              {% endif %}
+            </a>
+            <a class="poster-card__fab" href="{{ detail_url }}"
+               title="Detail &amp; jadwal {{ ev.title }}" aria-label="Buka detail {{ ev.title }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-up-right"/></svg>
+            </a>
+          </div>
+          <div class="poster-card__body">
+            <h3 class="poster-card__title">
+              <a href="{{ detail_url }}">{{ ev.title }}</a>
+            </h3>
+            <div class="poster-card__meta-row">
+              <span class="age-badge age-badge--{{ item.badge_variant }}">{{ item.badge }}</span>
+              <span class="poster-card__meta-text">{{ item.meta_line }}</span>
+            </div>
+            <button type="button" class="remind-btn" data-remind-id="cs-{{ ev.event_id }}" data-remind-title="{{ ev.title }}" aria-pressed="false">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-bell"/></svg>
+              <span>Ingatkan Saya</span>
+            </button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
   </section>
 </div>
 
-<dialog class="trailer-dialog" id="trailer-dialog" aria-labelledby="trailer-title">
+{# Modal Trailer Native #}
+<dialog class="trailer-dialog liquid-glass-modal" id="trailer-dialog" aria-labelledby="trailer-title">
   <div class="trailer-dialog__head">
-    <h2 id="trailer-title"></h2>
-    <form method="dialog">
-      <button class="btn btn--icon btn--ghost" aria-label="Tutup trailer">
-        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
-      </button>
-    </form>
+    <h2 id="trailer-title">Trailer</h2>
+    <button type="button" class="btn btn--icon btn--ghost" id="landing-trailer-close" aria-label="Tutup trailer">
+      <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </div>
   <video id="trailer-video" controls playsinline preload="none"></video>
 </dialog>
-{% endblock %}
 
-{% block footer %}
-<footer class="site-footer landing-footer">
-  <div class="container">
-    <nav class="landing-footer__links" aria-label="Tautan kaki">
-      <a href="{{ url_for('landing.index') }}">Beranda</a>
-      <a href="{{ url_for('visualizer.index') }}">Pilih Kursi & POV 3D</a>
-      <a href="{{ url_for('checkout.index') }}">Pesanan Saya</a>
-    </nav>
-    <p>
-      Copyright © 2026 titiket.com. Proyek tugas kuliah Dasar-Dasar Pemrograman 1, tidak berafiliasi dengan
-      Cinema XXI maupun penyelenggara konser resmi. Poster dan trailer adalah milik pemegang hak cipta masing-masing.
-    </p>
+{# Modal Cepat untuk Kategori titiket.food & Sewa Tempat / Studio Bioskop #}
+<dialog class="quick-info-dialog liquid-glass-modal" id="quick-info-modal" aria-labelledby="quick-info-title">
+  <div class="quick-info-dialog__head">
+    <h2 id="quick-info-title">Informasi Layanan</h2>
+    <button type="button" class="btn btn--icon btn--ghost" id="quick-info-close" aria-label="Tutup dialog">
+      <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </div>
-</footer>
+  <div class="quick-info-dialog__body" id="quick-info-food" hidden>
+    <p class="quick-info-sub">Pesan camilan dan minuman sebelum masuk studio.</p>
+    <div class="quick-info-list">
+      {% for name, desc, price in food_items %}
+      <article class="quick-info-item">
+        <div>
+          <strong>{{ name }}</strong>
+          <p>{{ desc }}</p>
+        </div>
+        <span class="quick-info-price num">{{ price | rupiah }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="quick-info-dialog__body" id="quick-info-sewa" hidden>
+    <p class="quick-info-sub">Pilih tipe studio bioskop atau ajukan sewa tempat.</p>
+    <div class="quick-info-list">
+      {% for studio_type, title, text, image in studios %}
+      <article class="quick-info-item">
+        <div>
+          <strong>{{ title }}</strong>
+          <p>{{ text }}</p>
+        </div>
+        <a class="quick-info-link" href="{{ url_for('visualizer.index', type='cinema', studio=studio_type) }}">Cek 3D POV &rsaquo;</a>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</dialog>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/parallax.js') }}" defer></script>
 <script type="module" src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}
