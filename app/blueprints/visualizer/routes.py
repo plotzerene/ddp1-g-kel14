@@ -16,14 +16,16 @@ routes.py (visualizer) — halaman peta 2D + POV 3D dan JSON API-nya.
 from __future__ import annotations
 
 import math
+import secrets
 
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
 
 from ...assets_sync import asset_url
 from ...shared_state import MAX_CART_ITEMS, Cart, CartItem, event_for_venue, format_rupiah, get_event
 from .engine.geometry_3d import LENSES
 from .engine.obstruction import DEFAULT_BODY_CM, MAX_BODY_CM, MIN_BODY_CM
 from .engine.pov_engine import PovReport, engine_for
+from .engine.seat_lock import SeatLockStore
 from .engine.sightline_ai import SmartSeatRecommender
 from .models import SeatNotFoundError, Venue, get_venue, venue_registry
 
@@ -68,7 +70,35 @@ def _evaluate(data: dict) -> tuple[Venue, PovReport]:
     return venue, report
 
 
+SEAT_OWNER_KEY = "tiketpov_seat_owner"
+
+
+def _seat_locks() -> SeatLockStore:
+    """Kunci kursi disimpan per aplikasi, sehingga tiap instance aplikasi (dan tiap tes) terisolasi."""
+    return current_app.config.setdefault("SEAT_LOCKS", SeatLockStore())
+
+
+def _seat_owner() -> str:
+    """Token pemilik kunci untuk sesi browser ini."""
+    owner = session.get(SEAT_OWNER_KEY)
+    if not owner:
+        owner = secrets.token_hex(16)
+        session[SEAT_OWNER_KEY] = owner
+    return owner
+
+
+def _prune_expired_cart() -> None:
+    """Buang item keranjang yang kuncinya sudah kedaluwarsa, supaya kursi tidak dibayar setelah dilepas."""
+    cart = Cart()
+    locks, owner = _seat_locks(), _seat_owner()
+    items = cart.items()
+    for index in reversed(range(len(items))):
+        if not locks.is_locked_by(items[index].key, owner):
+            cart.remove(index)
+
+
 def _cart_state() -> dict:
+    _prune_expired_cart()
     cart = Cart()
     items = cart.items()
     return {
@@ -217,6 +247,11 @@ def api_cart_add():
     if not report.seat.is_available:
         sold = "Tiket ini sudah habis." if is_standing else "Kursi ini sudah terjual."
         return jsonify(error=sold, **_cart_state()), 409
+    seat_key = f"{venue.venue_id}|{report.seat.seat_id}"
+    owner = _seat_owner()
+    if not _seat_locks().acquire(seat_key, owner):
+        busy = "Tiket ini sedang dipilih pembeli lain." if is_standing else "Kursi ini sedang dipilih pembeli lain."
+        return jsonify(error=busy, **_cart_state()), 409
     event = event_for_venue(venue.venue_id, data.get("film"))
     summary = report.summary()
     item = CartItem(
@@ -231,6 +266,8 @@ def api_cart_add():
              "body_height_cm": report.viewer.stature_cm, "front_height_cm": report.front.stature_cm},
     )
     status = Cart().add(item)
+    if status == "full":
+        _seat_locks().release(seat_key, owner)  # kursi tidak jadi masuk keranjang, jadi kunci dilepas
     messages = {
         "added": f"{item.seat_label} masuk keranjang ({format_rupiah(item.price)}).",
         "exists": "Tiket ini sudah ada di keranjang." if is_standing else "Kursi ini sudah ada di keranjang.",
@@ -247,4 +284,6 @@ def api_cart_remove():
     cart = Cart()
     index = next((i for i, item in enumerate(cart.items()) if item.key == key), None)
     removed = index is not None and cart.remove(index)
+    if removed:
+        _seat_locks().release(key, _seat_owner())
     return jsonify(status="removed" if removed else "missing", **_cart_state())
