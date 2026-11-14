@@ -11,6 +11,7 @@ app/static/reference_assets/
 # Konfigurasi lokal
 .env
 instance/
+.claude/settings.local.json
 
 # Editor & OS
 .vscode/
