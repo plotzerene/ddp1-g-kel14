@@ -1,25 +1,16 @@
 /* landing.css — FOLDER TEAMMATE 1. Tata letak titiket.com, TEMA TERANG. */
 
-/* ---------- Tema terang: hanya halaman landing ----------
-   Komponen memakai token dari tokens.css, jadi cukup menimpa nilainya di sini.
-   Visualizer & checkout tetap memakai tema gelap bawaan. */
-:root:has(body[data-step="landing"]) {
+/* ---------- Tema terang landing ----------
+   Warna token terang ada di tokens.css. Di sini hanya penyesuaian khusus landing.
+   Jika pengguna memilih tema gelap, aturan ini tidak berlaku. */
+html:not([data-theme="dark"]):has(body[data-step="landing"]) {
   color-scheme: light;
 }
 
-body[data-step="landing"] {
-  --color-background: #F8FAFC;
-  --color-card: #FFFFFF;
-  --color-muted: #E2E8F0;
-  --color-foreground: #0F172A;
-  --color-muted-fg: #475569;
-  --color-hairline: rgba(0, 0, 0, 0.06);
-  --color-hairline-strong: rgba(15, 23, 42, 0.14);
+html:not([data-theme="dark"]) body[data-step="landing"] {
   --color-info: #4338CA;               /* tautan & cincin fokus: kontras di atas putih */
   --color-brand: #0364D3;              /* biru logo titiket */
-  --shadow-1: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-  --shadow-2: 0 12px 28px -6px rgba(15, 23, 42, 0.14);
-  background: linear-gradient(to bottom, #F8FAFC, #F1F5F9) fixed;
+  background: var(--color-background);
 }
 
 /* ---------- Navbar ---------- */

@@ -34,6 +34,7 @@
 {% endblock %}
 
 {% block header_actions %}
+{% include "_theme_toggle.html" %}
 <a class="nav-link" href="{{ url_for('checkout.index') }}">
   <svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>
   <span>Pesanan Saya</span>
