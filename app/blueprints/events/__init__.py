@@ -19,6 +19,11 @@ events_bp = Blueprint("events", __name__)
 
 CATALOG_PATH = Path(__file__).resolve().parents[3] / "movies_catalog.json"
 COLDPLAY_ID = "coldplay-gbk"
+COLDPLAY_INFO = {
+    "schedule": "Sabtu, 19 Des 2026 • 18:30 WIB (Open Gate 16:00 WIB)",
+    "location": "Stadion Utama Gelora Bung Karno, Jakarta",
+    "promoter": "PK Entertainment • Promotor Resmi",
+}
 COLDPLAY_TABS = (
     ("overview", "Ringkasan", "events.coldplay_overview"),
     ("tickets", "Tiket", "events.coldplay_tickets"),
@@ -61,6 +66,7 @@ def _render_coldplay(tab: str):
         poster_url=asset_url(event.poster),
         buy_url=url_for("visualizer.studio", venue_id=venue.venue_id),
         categories=[{"label": b.label, "standing": b.standing} for b in venue.blocks.values()],
+        info=COLDPLAY_INFO,
     )
 
 

@@ -34,6 +34,20 @@
   {% if tab == "overview" %}
   <section class="detail__section" aria-labelledby="ringkasan">
     <h2 id="ringkasan">Ringkasan</h2>
+    <dl class="detail__specs">
+      <div>
+        <dt>Tanggal &amp; Waktu</dt>
+        <dd>{{ info.schedule }}</dd>
+      </div>
+      <div>
+        <dt>Lokasi</dt>
+        <dd>{{ info.location }}</dd>
+      </div>
+      <div>
+        <dt>Promotor</dt>
+        <dd>{{ info.promoter }}</dd>
+      </div>
+    </dl>
     <p>{{ venue.tagline }}</p>
     <p>{{ venue.name }}. Pilih posisi dan lihat sudut pandang dari tribun atau lapangan lewat visualizer 3D sebelum membeli.</p>
   </section>
@@ -57,11 +71,13 @@
   <section class="detail__section" aria-labelledby="syarat">
     <h2 id="syarat">Syarat dan Ketentuan</h2>
     <ol class="detail__list detail__list-ordered">
-      <li>Tiket yang sudah dibeli tidak dapat dikembalikan atau ditukar, kecuali acara dibatalkan oleh penyelenggara.</li>
-      <li>Setiap e-tiket berlaku untuk satu orang dan wajib ditunjukkan saat masuk stadion.</li>
-      <li>Penonton wajib membawa identitas diri yang sesuai dengan data pemesanan.</li>
-      <li>Barang terlarang mengikuti ketentuan pengelola Stadion Utama Gelora Bung Karno.</li>
-      <li>Penyelenggara berhak mengubah jadwal atau lineup dengan pemberitahuan kepada pembeli.</li>
+      <li><strong>Kuota Pembelian &amp; Identitas:</strong> 1 (satu) akun &amp; NIK/paspor hanya dapat membeli maksimal 4 (empat) tiket dalam satu transaksi.</li>
+      <li><strong>Aturan Usia:</strong> Anak di bawah usia 14 tahun wajib didampingi orang tua atau wali dewasa (minimal 18 tahun). Area Standing tidak disarankan untuk balita.</li>
+      <li><strong>Penukaran Wristband:</strong> E-Tiket QR wajib ditukarkan menjadi gelang resmi di Booth GBK pada H-1 atau Hari-H dengan menunjukkan KTP/SIM/Paspor asli.</li>
+      <li><strong>Kebijakan Refund &amp; Penjualan Kembali:</strong> Seluruh tiket bersifat final (non-refundable) serta tidak dapat dibatalkan atau dipindahtangankan, kecuali konser dibatalkan promotor.</li>
+      <li><strong>Barang Terlarang:</strong> Dilarang membawa kamera profesional DSLR, tongkat swafoto, laser pointer, makanan/minuman luar, atau tas berukuran melebihi ukuran A4.</li>
+      <li><strong>Keamanan &amp; Kenyamanan:</strong> Promotor berhak menolak masuk atau mengeluarkan pengunjung yang melanggar tata tertib keamanan area Stadion GBK.</li>
+      <li><strong>Perubahan Jadwal:</strong> Jadwal Open Gate atau akses gate kategori dapat diperbarui secara berkala melalui email terdaftar pemegang E-Tiket.</li>
     </ol>
   </section>
   {% endif %}

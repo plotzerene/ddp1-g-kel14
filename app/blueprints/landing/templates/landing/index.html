@@ -35,6 +35,8 @@
 
 {% block header_actions %}
 {% include "_theme_toggle.html" %}
+<button type="button" class="btn auth-entry" data-auth-open="login">Masuk</button>
+<button type="button" class="btn auth-entry" data-auth-open="register">Daftar</button>
 <a class="nav-link" href="{{ url_for('checkout.index') }}">
   <svg class="icon" aria-hidden="true"><use href="#i-ticket"/></svg>
   <span>Pesanan Saya</span>
@@ -61,6 +63,7 @@
 <section class="hero" aria-labelledby="hero-title">
   <div class="container hero__inner">
     <h1 id="hero-title">Feel the moments beyond</h1>
+    <a class="pill pill--solid hero__cta" href="{{ url_for('intro.index') }}">Masuk Pengalaman Sinematik Imersif &rarr;</a>
     <div class="category-pills" role="group" aria-label="Kategori">
       {% for key, label, icon_name in categories %}
       <button class="category-pill" type="button" data-filter="{{ key }}"
