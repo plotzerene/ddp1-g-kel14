@@ -26,6 +26,7 @@
       <p class="detail__genres">{{ movie.genres | join(" · ") }}</p>
       <div class="detail__actions">
         <a class="detail__cta" href="{{ buy_url }}">Beli Tiket</a>
+        <button type="button" class="detail__cta-secondary" id="trailer-open">Tonton Trailer</button>
         <a class="detail__cta-secondary" href="{{ url_for('landing.index') }}">Kembali</a>
       </div>
     </div>
@@ -48,11 +49,25 @@
     </dl>
   </section>
 
-  {% if trailer_url %}
-  <section class="detail__section" aria-labelledby="trailer">
-    <h2 id="trailer">Trailer</h2>
-    <video class="detail__video" controls preload="metadata" playsinline src="{{ trailer_url }}"></video>
-  </section>
-  {% endif %}
 </article>
+
+<dialog class="trailer-modal" id="trailer-modal" aria-labelledby="trailer-modal-title" data-embed="{{ trailer_embed }}">
+  <div class="trailer-modal__head">
+    <h2 id="trailer-modal-title">Trailer {{ movie.title }}</h2>
+    <form method="dialog">
+      <button type="submit" class="trailer-modal__close" aria-label="Tutup trailer">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </form>
+  </div>
+  <div class="trailer-modal__frame">
+    {% if trailer_embed %}
+    <iframe id="trailer-frame" title="Trailer {{ movie.title }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    {% else %}
+    <p class="trailer-modal__empty">Trailer belum tersedia.</p>
+    {% endif %}
+  </div>
+</dialog>
 {% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/movie_trailer.js') }}" defer></script>{% endblock %}

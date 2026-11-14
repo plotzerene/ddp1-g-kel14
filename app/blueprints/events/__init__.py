@@ -37,6 +37,11 @@ def _catalog() -> dict[str, dict]:
     return {movie["id"]: movie for movie in data["movies"]}
 
 
+def _youtube_embed(embed_id: str | None) -> str:
+    """URL embed YouTube tanpa cookie, atau string kosong jika ID trailer belum diisi."""
+    return f"https://www.youtube-nocookie.com/embed/{embed_id}" if embed_id else ""
+
+
 @events_bp.get("/movie/<slug>")
 def movie(slug: str):
     details = _catalog().get(slug)
@@ -47,7 +52,7 @@ def movie(slug: str):
         "events/movie.html",
         movie=details,
         poster_url=asset_url(event.poster),
-        trailer_url=asset_url(event.trailer),
+        trailer_embed=_youtube_embed(details.get("embed_id")),
         buy_url=url_for("visualizer.index", film=slug),
     )
 

@@ -1,0 +1,49 @@
+/* theme-light.css: penyelarasan UI di luar kanvas 3D saat tema terang aktif.
+   Semua aturan hanya berlaku di html[data-theme="light"], jadi tema gelap tidak berubah.
+   Kanvas 3D dan HUD di atasnya tetap gelap agar mode bioskop tetap terasa. */
+
+html[data-theme="light"] .panel,
+html[data-theme="light"] .picker,
+html[data-theme="light"] .insight,
+html[data-theme="light"] .cta-bar,
+html[data-theme="light"] .venue-tabs,
+html[data-theme="light"] .venue-tab,
+html[data-theme="light"] .map-wrap,
+html[data-theme="light"] .map-legend,
+html[data-theme="light"] .deck,
+html[data-theme="light"] .viz-left,
+html[data-theme="light"] .viz-right,
+html[data-theme="light"] .reco-results,
+html[data-theme="light"] .preset-list,
+html[data-theme="light"] .summary,
+html[data-theme="light"] .buyer-form,
+html[data-theme="light"] .ticket-row,
+html[data-theme="light"] .totals,
+html[data-theme="light"] .method,
+html[data-theme="light"] .eticket,
+html[data-theme="light"] .checkout__section {
+  background: var(--color-card);
+  border-color: var(--color-hairline-strong);
+  color: var(--color-foreground);
+}
+
+html[data-theme="light"] .panel__hint,
+html[data-theme="light"] .eyebrow,
+html[data-theme="light"] .cta-bar__info,
+html[data-theme="light"] .insight__body,
+html[data-theme="light"] .deck__note,
+html[data-theme="light"] .eye-note,
+html[data-theme="light"] .legend-note,
+html[data-theme="light"] .map-tooltip {
+  color: var(--color-muted-fg);
+}
+
+/* Teks aksen kuning di atas latar putih perlu versi yang lebih gelap agar terbaca. */
+html[data-theme="light"] .insight__score,
+html[data-theme="light"] .score-pill {
+  color: #92400E;
+}
+
+html[data-theme="light"] .map-svg {
+  background: var(--color-card);
+}
