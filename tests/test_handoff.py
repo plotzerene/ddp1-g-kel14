@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -51,13 +52,42 @@ class PageIntegrationTests(unittest.TestCase):
         finally:
             response.close()
 
-    def test_movie_page_has_trailer_modal_without_local_video(self):
+    def test_movie_page_prefers_local_trailer_video(self):
         html = self.get_text("/movie/sore")
         self.assertIn('id="trailer-modal"', html)
         self.assertIn('id="trailer-open"', html)
         self.assertIn("Tonton Trailer", html)
-        self.assertIn("Trailer belum tersedia.", html)
-        self.assertNotIn("<video", html)
+        self.assertIn('<video id="trailer-video"', html)
+        self.assertIn("videos/sore_istri_dari_masa_depan_official_trailer.mp4", html)
+        self.assertNotIn('<iframe id="trailer-frame"', html)
+
+    def test_youtube_fallback_renders_when_local_video_is_missing(self):
+        from flask import render_template
+
+        from app.blueprints.events import _youtube_embed
+
+        embed = _youtube_embed("lY95G24f9E4")
+        self.assertEqual(embed, "https://www.youtube-nocookie.com/embed/lY95G24f9E4")
+        self.assertEqual(_youtube_embed(None), "")
+        with self.client.application.test_request_context():
+            html = render_template(
+                "events/movie.html",
+                movie={"title": "Uji", "tagline": "", "rating": 0, "duration": "",
+                       "age_rating": "", "genres": [], "synopsis": "", "tech_specs": {}},
+                poster_url=None,
+                trailer_local=None,
+                trailer_embed=embed,
+                buy_url="/visualizer/",
+            )
+        self.assertIn('<iframe id="trailer-frame"', html)
+        self.assertIn(embed, html)
+        self.assertNotIn('<video id="trailer-video"', html)
+
+    def test_catalog_has_youtube_embed_ids_for_all_films(self):
+        catalog = json.loads((ROOT / "movies_catalog.json").read_text(encoding="utf-8"))
+        for movie in catalog["movies"]:
+            with self.subTest(movie=movie["id"]):
+                self.assertTrue(movie.get("embed_id"))
 
     def test_light_theme_stylesheet_is_loaded_everywhere(self):
         html = self.get_text("/checkout/")

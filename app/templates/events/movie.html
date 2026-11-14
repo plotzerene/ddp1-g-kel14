@@ -61,7 +61,9 @@
     </form>
   </div>
   <div class="trailer-modal__frame">
-    {% if trailer_embed %}
+    {% if trailer_local %}
+    <video id="trailer-video" class="trailer-modal__video" controls playsinline preload="metadata" src="{{ trailer_local }}"></video>
+    {% elif trailer_embed %}
     <iframe id="trailer-frame" title="Trailer {{ movie.title }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     {% else %}
     <p class="trailer-modal__empty">Trailer belum tersedia.</p>

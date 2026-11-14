@@ -52,6 +52,7 @@ def movie(slug: str):
         "events/movie.html",
         movie=details,
         poster_url=asset_url(event.poster),
+        trailer_local=asset_url(event.trailer),
         trailer_embed=_youtube_embed(details.get("embed_id")),
         buy_url=url_for("visualizer.index", film=slug),
     )

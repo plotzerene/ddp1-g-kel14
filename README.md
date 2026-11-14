@@ -194,8 +194,17 @@ push ke `main`.
 
 ## Rubrik penilaian
 
-Bagian ini belum terisi. Dokumen rubrik resmi dari dosen tidak tersimpan di repositori.
-Salin poin-poin rubrik ke sini, lalu tandai bagian mana yang sudah dipenuhi dan oleh siapa.
+Sumber: panduan resmi Authentic Assessment DDP 1 Fasilkom UI. Kolom status menjelaskan kondisi
+kode saat README ini ditulis. Pembaruan status dilakukan bersama setiap commit besar.
+
+| Komponen | Bobot | Kriteria | Status di repositori |
+|---|---|---|---|
+| Masalah yang diangkat | 20% | Mengatasi "blind buying" tiket: penonton tidak tahu sudut pandang nyata (POV), halangan tiang atau penonton di depan, dan kenyamanan leher sebelum membeli | Terpenuhi sebagian. Visualizer 3D POV, skor sightline, dan perhitungan halangan sudah berjalan. Penjelasan masalah di landing belum ada. |
+| Solusi unik dan menarik | 10% | Simulasi interaktif 3D POV (Three.js), kalkulasi sudut pandang matematis, dan ekosistem pemesanan makanan (titiket.food) | Simulasi 3D dan kalkulasi sudah ada. titiket.food baru berupa kerangka `engines/food_engine.py`, belum berfungsi. |
+| Hal baru di luar kelas | 20% | 3D WebGL dan proyeksi FOV kamera (Three.js). Concurrency dan state locking dengan timeout reservasi kursi 10 menit. E-ticket PDF dinamis dengan barcode (ReportLab, Pillow). Simulasi SSO UI (@ui.ac.id). | 3D WebGL dan proyeksi FOV sudah ada. Timeout reservasi 10 menit belum dibuat. PDF baru berupa stub, dan Pillow belum dipakai. SSO UI baru berupa tombol dan modal placeholder, belum ada verifikasi. |
+| Kompleksitas program | 20% | Arsitektur modular Python OOP dengan pemisahan `engines/` yang ketat, application factory Flask, dan lebih dari 60 tes unit otomatis | Application factory `create_app` sudah ada. OOP sudah dipakai di mesin visualizer. `engines/` masih berupa kerangka. Tes unit: lihat output `python -m unittest discover -s tests`. |
+| Kualitas repositori GitHub | 20% | Riwayat commit terisolasi dan merata untuk 3 anggota, Conventional Commits, branch terpisah per fitur, dan README lengkap | Conventional Commits dan README sudah ada. Riwayat per anggota dan branch per fitur belum ada, karena sejauh ini semua commit dibuat dari satu akun. |
+| Kualitas video presentasi | 10% | Demonstrasi alur aplikasi dan penjelasan arsitektur backend oleh seluruh anggota, maksimal 15 menit | Di luar repositori. Belum dibuat. |
 
 ## Konsep Python yang dipakai
 

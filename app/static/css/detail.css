@@ -253,7 +253,8 @@
   background: var(--color-background);
 }
 
-.trailer-modal__frame iframe {
+.trailer-modal__frame iframe,
+.trailer-modal__video {
   position: absolute;
   inset: 0;
   width: 100%;

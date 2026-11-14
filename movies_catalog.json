@@ -9,12 +9,18 @@
       "rating": 7.5,
       "duration": "1h 48m",
       "age_rating": "13+",
-      "genres": ["Drama", "Fantasy", "Romance", "Sci-Fi"],
+      "genres": [
+        "Drama",
+        "Fantasy",
+        "Romance",
+        "Sci-Fi"
+      ],
       "tech_specs": {
         "aspect_ratio": "2.39:1 (CinemaScope)",
         "sound_mix": "Dolby Digital 5.1"
       },
-      "poster_file": "reference_assets/images/Poster Film SORE INI YANG REKOMENDASI YA.jpeg"
+      "poster_file": "reference_assets/images/Poster Film SORE INI YANG REKOMENDASI YA.jpeg",
+      "embed_id": "lY95G24f9E4"
     },
     {
       "id": "jatuh-cinta-seperti-di-film-film",
@@ -24,12 +30,17 @@
       "rating": 8.2,
       "duration": "1h 58m",
       "age_rating": "13+",
-      "genres": ["Romance", "Comedy", "Drama"],
+      "genres": [
+        "Romance",
+        "Comedy",
+        "Drama"
+      ],
       "tech_specs": {
         "aspect_ratio": "1.85:1 (Flat)",
         "sound_mix": "Dolby Digital 5.1"
       },
-      "poster_file": "reference_assets/images/Jatuh Cinta seperti di Film Film Poster.jpeg"
+      "poster_file": "reference_assets/images/Jatuh Cinta seperti di Film Film Poster.jpeg",
+      "embed_id": "rP1m0sV_qQc"
     },
     {
       "id": "boboiboy-the-movie",
@@ -39,12 +50,17 @@
       "rating": 7.5,
       "duration": "1h 40m",
       "age_rating": "SU",
-      "genres": ["Animation", "Action", "Adventure"],
+      "genres": [
+        "Animation",
+        "Action",
+        "Adventure"
+      ],
       "tech_specs": {
         "aspect_ratio": "1.85:1 (Flat)",
         "sound_mix": "Dolby Atmos / 5.1"
       },
-      "poster_file": "reference_assets/images/Poster Boboiby Movie .jpg"
+      "poster_file": "reference_assets/images/Poster Boboiby Movie .jpg",
+      "embed_id": "yYw3L1j1E0E"
     },
     {
       "id": "ejen-ali-the-movie-2",
@@ -54,12 +70,17 @@
       "rating": 8.1,
       "duration": "1h 45m",
       "age_rating": "SU",
-      "genres": ["Animation", "Action", "Sci-Fi"],
+      "genres": [
+        "Animation",
+        "Action",
+        "Sci-Fi"
+      ],
       "tech_specs": {
         "aspect_ratio": "2.39:1 (Scope)",
         "sound_mix": "Dolby Atmos"
       },
-      "poster_file": "reference_assets/images/Ejen Ali Movie 2 Poster.jpg"
+      "poster_file": "reference_assets/images/Ejen Ali Movie 2 Poster.jpg",
+      "embed_id": "oA_fR3JgYps"
     },
     {
       "id": "la-la-land",
@@ -69,12 +90,17 @@
       "rating": 8.0,
       "duration": "2h 8m",
       "age_rating": "13+",
-      "genres": ["Musical", "Romance", "Drama"],
+      "genres": [
+        "Musical",
+        "Romance",
+        "Drama"
+      ],
       "tech_specs": {
         "aspect_ratio": "2.55:1 (CinemaScope)",
         "sound_mix": "Dolby Atmos"
       },
-      "poster_file": "reference_assets/images/Poster La La Land.jpg"
+      "poster_file": "reference_assets/images/Poster La La Land.jpg",
+      "embed_id": "0pdqf4P9MB8"
     },
     {
       "id": "avengers-endgame",
@@ -84,12 +110,17 @@
       "rating": 8.4,
       "duration": "3h 2m",
       "age_rating": "13+",
-      "genres": ["Action", "Adventure", "Sci-Fi"],
+      "genres": [
+        "Action",
+        "Adventure",
+        "Sci-Fi"
+      ],
       "tech_specs": {
         "aspect_ratio": "2.39:1 (IMAX 1.90:1)",
         "sound_mix": "Dolby Atmos / DTS:X"
       },
-      "poster_file": "reference_assets/images/Poster Avengers ENDGAME.jpeg"
+      "poster_file": "reference_assets/images/Poster Avengers ENDGAME.jpeg",
+      "embed_id": "TcMBFSGVi1c"
     }
   ]
 }
