@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Selamat datang{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">{% endblock %}
+{% block header_center %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+{% set silhouette_url = asset_url("person_silhouette_clean.png") %}
+<section class="intro" aria-labelledby="intro-title">
+  <div class="intro__stage" id="intro-stage">
+    {# Lapis 1: frame pintu bioskop #}
+    <div class="intro__layer" data-depth="18">
+      <div class="intro__inner intro__door" aria-hidden="true"></div>
+    </div>
+    {# Lapis 2: siluet penonton dari reference_assets #}
+    <div class="intro__layer" data-depth="34">
+      <div class="intro__inner intro__audience" aria-hidden="true">
+        {% if silhouette_url %}<img src="{{ silhouette_url }}" alt="" width="900" height="600">{% endif %}
+      </div>
+    </div>
+    {# Lapis 3: teks masif #}
+    <div class="intro__layer" data-depth="-14">
+      <div class="intro__inner intro__title-wrap">
+        <h1 class="intro__title" id="intro-title">FEEL THE MOMENTS</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="intro__cta">
+    <button type="button" class="intro__start" id="intro-start" aria-controls="intro-gate" aria-expanded="false">Mulai Eksplorasi</button>
+  </div>
+
+  <div class="intro__gate" id="intro-gate" role="group" aria-label="Pilihan masuk" hidden>
+    <p class="intro__gate-title">Masuk untuk pengalaman terbaik</p>
+    <div class="intro__gate-actions">
+      <button type="button" class="intro__option" data-auth-open="login">Masuk Akun</button>
+      <button type="button" class="intro__option" data-auth-open="register">Buat Akun</button>
+      <a class="intro__option intro__option-guest" href="{{ url_for('landing.index') }}">Lanjut sebagai Tamu</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/intro.js') }}" defer></script>{% endblock %}

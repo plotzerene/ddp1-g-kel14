@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set step = "landing" %}
+{% block title %}{{ movie.title }}{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">{% endblock %}
+
+{% block content %}
+<article class="detail">
+  <div class="detail__hero">
+    <div class="detail__poster">
+      {% if poster_url %}
+      <img src="{{ poster_url }}" alt="Poster {{ movie.title }}" width="320" height="480">
+      {% else %}
+      <div class="detail__poster-fallback" aria-hidden="true">{{ movie.title }}</div>
+      {% endif %}
+    </div>
+
+    <div class="detail__info">
+      <p class="detail__eyebrow">Film</p>
+      <h1>{{ movie.title }}</h1>
+      <p class="detail__tagline">{{ movie.tagline }}</p>
+      <ul class="detail__chips" aria-label="Ringkasan film">
+        <li>Rating {{ movie.rating }}</li>
+        <li>{{ movie.duration }}</li>
+        <li>{{ movie.age_rating }}</li>
+      </ul>
+      <p class="detail__genres">{{ movie.genres | join(" · ") }}</p>
+      <div class="detail__actions">
+        <a class="detail__cta" href="{{ buy_url }}">Beli Tiket</a>
+        <a class="detail__cta-secondary" href="{{ url_for('landing.index') }}">Kembali</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="detail__section" aria-labelledby="sinopsis">
+    <h2 id="sinopsis">Sinopsis</h2>
+    <p>{{ movie.synopsis }}</p>
+  </section>
+
+  <section class="detail__section" aria-labelledby="spesifikasi">
+    <h2 id="spesifikasi">Spesifikasi</h2>
+    <dl class="detail__specs">
+      {% for key, value in movie.tech_specs.items() %}
+      <div>
+        <dt>{{ key }}</dt>
+        <dd>{{ value }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  {% if trailer_url %}
+  <section class="detail__section" aria-labelledby="trailer">
+    <h2 id="trailer">Trailer</h2>
+    <video class="detail__video" controls preload="metadata" playsinline src="{{ trailer_url }}"></video>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}

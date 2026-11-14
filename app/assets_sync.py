@@ -68,6 +68,11 @@ def normalize_name(filename: str) -> str:
 def plan_sync(source_dir: Path = SOURCE_DIR) -> dict[Path, str]:
     """Petakan tiap file sumber ke path tujuan relatif (mis. 'videos/trailer_cinema.mp4')."""
     plan: dict[Path, str] = {}
+    # File langsung di root (mis. person_silhouette_clean.png) ikut disalin ke root static.
+    for path in sorted(p for p in source_dir.iterdir() if p.is_file() and not p.name.startswith(".")):
+        name = normalize_name(path.name)
+        if Path(name).suffix in ALLOWED_SUFFIXES:
+            plan[path] = name
     for folder in sorted(p for p in source_dir.iterdir() if p.is_dir()):
         files = sorted(p for p in folder.iterdir() if p.is_file() and not p.name.startswith("."))
         names = {path: normalize_name(path.name) for path in files}

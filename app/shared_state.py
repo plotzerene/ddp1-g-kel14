@@ -97,7 +97,7 @@ EVENTS: dict[str, Event] = {
         _film("sore", "SORE: Istri dari Masa Depan", "2D · 1h 48m · Drama / Romance · R13+",
               "poster_film_sore_ini_yang_rekomendasi_ya.jpg",
               "sore_istri_dari_masa_depan_official_trailer.mp4"),
-        _film("jatuh-cinta-seperti-di-film-film", "Jatuh Cinta Seperti di Film-Film",
+        _film("jatuh-cinta-seperti-di-film-film", "Jatuh Cinta Seperti di Film Film",
               "2D · 1h 58m · Romance / Comedy · R13+",
               "jatuh_cinta_seperti_di_film_film_poster.jpg",
               "jatuh_cinta_seperti_di_film_film_official_trailer.mp4"),

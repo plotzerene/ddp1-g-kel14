@@ -35,9 +35,13 @@ def create_app(config: dict | None = None) -> Flask:
     app.logger.info(report.summary())
 
     from .blueprints.checkout import checkout_bp
+    from .blueprints.events import events_bp
+    from .blueprints.intro import intro_bp
     from .blueprints.landing import landing_bp
     from .blueprints.visualizer import visualizer_bp
 
+    app.register_blueprint(intro_bp)
+    app.register_blueprint(events_bp)
     app.register_blueprint(landing_bp)
     app.register_blueprint(visualizer_bp, url_prefix="/visualizer")
     app.register_blueprint(checkout_bp, url_prefix="/checkout")

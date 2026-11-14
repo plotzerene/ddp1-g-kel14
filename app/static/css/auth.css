@@ -1,0 +1,79 @@
+/* auth.css: kerangka modal autentikasi. Placeholder sampai modul auth mengisi form. */
+
+.auth-entry {
+  white-space: nowrap;
+}
+
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.auth-modal__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+}
+
+.auth-modal__panel {
+  position: relative;
+  width: min(420px, 100%);
+  padding: var(--space-5);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+}
+
+.auth-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.auth-modal__head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.auth-modal__close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-foreground);
+  cursor: pointer;
+}
+
+.auth-modal__note {
+  margin: var(--space-4) 0;
+  color: var(--color-muted-fg);
+}
+
+.auth-modal__sso {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-foreground);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-modal__close:focus-visible,
+.auth-modal__sso:focus-visible,
+.auth-entry:focus-visible {
+  outline: 3px solid var(--color-info);
+  outline-offset: 2px;
+}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% set step = "landing" %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">{% endblock %}
+
+{% block content %}
+<article class="detail">
+  <div class="detail__hero">
+    <div class="detail__poster">
+      {% if poster_url %}
+      <img src="{{ poster_url }}" alt="Poster {{ event.title }}" width="320" height="480">
+      {% else %}
+      <div class="detail__poster-fallback" aria-hidden="true">{{ event.title }}</div>
+      {% endif %}
+    </div>
+
+    <div class="detail__info">
+      <p class="detail__eyebrow">Konser</p>
+      <h1>{{ event.title }}</h1>
+      <p class="detail__genres">{{ event.meta }}</p>
+      <p class="detail__tagline">Harga tiket mulai {{ venue.price_from | rupiah }}</p>
+      <div class="detail__actions">
+        <a class="detail__cta" href="{{ buy_url }}">Pilih Kursi</a>
+      </div>
+    </div>
+  </div>
+
+  <nav class="detail__tabs" aria-label="Menu konser">
+    {% for item in tabs %}
+    <a href="{{ item.href }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if tab == "overview" %}
+  <section class="detail__section" aria-labelledby="ringkasan">
+    <h2 id="ringkasan">Ringkasan</h2>
+    <p>{{ venue.tagline }}</p>
+    <p>{{ venue.name }}. Pilih posisi dan lihat sudut pandang dari tribun atau lapangan lewat visualizer 3D sebelum membeli.</p>
+  </section>
+  {% elif tab == "tickets" %}
+  <section class="detail__section" aria-labelledby="kategori">
+    <h2 id="kategori">Kategori Tiket</h2>
+    <ul class="detail__list">
+      {% for category in categories %}
+      <li>
+        <span>{{ category.label }}</span>
+        <span class="detail__muted">{{ "Berdiri" if category.standing else "Duduk" }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="detail__muted">Harga per kategori dapat dilihat di visualizer sebelum checkout.</p>
+    <div class="detail__actions">
+      <a class="detail__cta" href="{{ buy_url }}">Pilih Kursi</a>
+    </div>
+  </section>
+  {% else %}
+  <section class="detail__section" aria-labelledby="syarat">
+    <h2 id="syarat">Syarat dan Ketentuan</h2>
+    <ol class="detail__list detail__list-ordered">
+      <li>Tiket yang sudah dibeli tidak dapat dikembalikan atau ditukar, kecuali acara dibatalkan oleh penyelenggara.</li>
+      <li>Setiap e-tiket berlaku untuk satu orang dan wajib ditunjukkan saat masuk stadion.</li>
+      <li>Penonton wajib membawa identitas diri yang sesuai dengan data pemesanan.</li>
+      <li>Barang terlarang mengikuti ketentuan pengelola Stadion Utama Gelora Bung Karno.</li>
+      <li>Penyelenggara berhak mengubah jadwal atau lineup dengan pemberitahuan kepada pembeli.</li>
+    </ol>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}
