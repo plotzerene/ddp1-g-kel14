@@ -21,6 +21,7 @@ huruf terakhir paling dekat layar. Nomor kursi 1 ada di sisi kiri penonton.
 from __future__ import annotations
 
 import hashlib
+import random
 import string
 from dataclasses import dataclass
 from functools import cached_property
@@ -38,6 +39,14 @@ from .base_venue import (
 )
 
 CINEMA_WEIGHTS = {"fov": 0.28, "neck": 0.24, "off_axis": 0.14, "obstruction": 0.20, "acoustic": 0.14}
+BASE_CATALOG_FILMS = frozenset({
+    "sore",
+    "jatuh-cinta-seperti-di-film-film",
+    "boboiboy-the-movie",
+    "ejen-ali-the-movie-2",
+    "la-la-land",
+    "avengers-endgame",
+})
 
 
 @dataclass(frozen=True)
@@ -240,6 +249,7 @@ class CinemaStudio(Venue):
         self._screen = self._create_screen()
         self._grid = self._build_seats()
         self._seats = {seat.seat_id: seat for row in self._grid for seat in row}
+        self._film_statuses: dict[str, dict[str, SeatStatus]] = {}
         self._obstruction = SeatedRowObstruction()
 
     # === hook yang boleh di-override subclass ================================
@@ -332,9 +342,46 @@ class CinemaStudio(Venue):
 
     def default_selector(self) -> dict:
         """Kursi tersedia terdekat ke tengah baris pada ±60% kedalaman studio."""
+        return self.default_selector_for_film(None)
+
+    def _film_status_map(self, film_id: str | None) -> dict[str, SeatStatus] | None:
+        if not film_id or film_id in BASE_CATALOG_FILMS:
+            return None
+        cached = self._film_statuses.get(film_id)
+        if cached is not None:
+            return cached
+        rng = random.Random(f"titiket-seatmap:{self.venue_id}:{film_id}")
+        rows_count = max(1, self.SPEC.rows - 1)
+        status_map: dict[str, SeatStatus] = {}
+        for row in self._grid:
+            avail_count = 0
+            for seat in row:
+                popularity = 0.4 + 1.2 * seat.row_index / rows_count
+                threshold = min(0.75, max(0.10, self.SPEC.sold_ratio * popularity))
+                st = SeatStatus.SOLD if rng.random() < threshold else SeatStatus.AVAILABLE
+                status_map[seat.seat_id] = st
+                if st is SeatStatus.AVAILABLE:
+                    avail_count += 1
+            if avail_count == 0 and row:
+                pick = row[len(row) // 2]
+                status_map[pick.seat_id] = SeatStatus.AVAILABLE
+        self._film_statuses[film_id] = status_map
+        return status_map
+
+    def seat_status_for(self, seat: SeatNode, film_id: str | None = None) -> SeatStatus:
+        status_map = self._film_status_map(film_id)
+        if status_map is None:
+            return seat.status
+        return status_map.get(seat.seat_id, seat.status)
+
+    def default_selector_for_film(self, film_id: str | None = None) -> dict:
+        """Kursi tersedia terdekat ke tengah baris pada ±60% kedalaman studio untuk film tertentu."""
         row = self._grid[round((self.SPEC.rows - 1) * 0.6)]
         middle = (len(row) - 1) / 2.0
-        available = [seat for seat in row if seat.is_available] or row
+        available = [
+            seat for seat in row
+            if self.seat_status_for(seat, film_id) is SeatStatus.AVAILABLE
+        ] or row
         best = min(available, key=lambda seat: abs((seat.number - 1) - middle))
         return {"seat_id": best.seat_id}
 
@@ -430,6 +477,21 @@ class CinemaStudio(Venue):
 
     def layout(self) -> dict:
         return self._layout
+
+    def layout_for_film(self, film_id: str | None = None, price_override: int | None = None) -> dict:
+        base = self.layout()
+        status_map = self._film_status_map(film_id)
+        if status_map is None and (price_override is None or price_override == base.get("price")):
+            return base
+        copy = dict(base)
+        if price_override is not None:
+            copy["price"] = price_override
+        if status_map is not None:
+            copy["seats"] = [
+                {**s, "status": status_map.get(s["id"], SeatStatus(s["status"])).value}
+                for s in base["seats"]
+            ]
+        return copy
 
 
 # =========================================================================== #

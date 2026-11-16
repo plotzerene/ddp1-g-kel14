@@ -14,8 +14,8 @@ from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request
 
-from .assets_sync import asset_url, sync_reference_assets
-from .shared_state import Cart, current_user, format_rupiah
+from .assets_sync import POSTER_FALLBACK_REL, asset_url, sync_reference_assets
+from .shared_state import Cart, current_user, format_rupiah, format_rupiah_short
 
 SSO_UI_CAS_LOGIN = "https://sso.ui.ac.id/cas2/login"
 
@@ -43,6 +43,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .blueprints.intro import intro_bp
     from .blueprints.landing import landing_bp
     from .blueprints.visualizer import visualizer_bp
+    from .blueprints.visualizer.routes import studio_pov
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(intro_bp)
@@ -50,8 +51,10 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(landing_bp)
     app.register_blueprint(visualizer_bp, url_prefix="/visualizer")
     app.register_blueprint(checkout_bp)
+    app.add_url_rule("/studio_pov/<event_id>", endpoint="studio_pov", view_func=studio_pov)
 
     app.jinja_env.filters["rupiah"] = format_rupiah
+    app.jinja_env.filters["rupiah_short"] = format_rupiah_short
 
     @app.context_processor
     def inject_globals() -> dict:
@@ -65,6 +68,7 @@ def create_app(config: dict | None = None) -> Flask:
         return {
             "cart_count": Cart().count,
             "asset_url": asset_url,
+            "poster_fallback_url": asset_url(POSTER_FALLBACK_REL) or "/static/images/posters/poster_fallback.svg",
             "sso_ui_login_url": sso_ui_login_url,
             "current_user": user,
             "is_authenticated": bool(user),

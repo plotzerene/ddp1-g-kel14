@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Konser Musik &amp; Festival · titiket.com{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="detail" id="main-content">
+  <nav class="detail__crumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('landing.index') }}">Beranda</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">Konser Musik</span>
+  </nav>
+
+  <section class="concert-dir__head" aria-labelledby="concerts-heading">
+    <span class="detail__concert-pill">Direktori Kategori • Konser Musik &amp; Festival</span>
+    <h1 class="detail__title" id="concerts-heading">Konser Musik &amp; Festival</h1>
+    <p class="detail__tagline">
+      Jelajahi konser live dan festival musik terkurasi di seluruh Indonesia lengkap dengan simulasi sudut pandang 3D POV dari tiap tribun dan zona festival sebelum membeli tiket.
+    </p>
+  </section>
+
+  <section class="concert-dir__grid" aria-label="Daftar konser musik tersedia">
+    {% for item in concerts %}
+    {% set ev = item.event %}
+    <article class="concert-dir__card">
+      <a class="concert-dir__poster" href="{{ item.detail_url }}" aria-label="Detail {{ ev.title }}">
+        {% if item.poster_url %}
+        <img src="{{ item.poster_url }}" alt="Poster {{ ev.title }}" width="320" height="480" loading="lazy">
+        {% endif %}
+      </a>
+      <div class="concert-dir__body">
+        <div class="detail__badges">
+          <span class="detail__concert-pill">Sedang Tersedia</span>
+          {% if item.promoter %}
+          <span class="detail__genre-pill">{{ item.promoter }}</span>
+          {% endif %}
+        </div>
+        <h2 class="concert-dir__title">
+          <a href="{{ item.detail_url }}">{{ ev.title }}</a>
+        </h2>
+        {% if ev.subtitle %}
+        <p class="detail__tagline">{{ ev.subtitle }}</p>
+        {% endif %}
+        <dl class="detail__quick-meta">
+          <div>
+            <dt>Venue</dt>
+            <dd>{{ item.venue_label }}</dd>
+          </div>
+          {% if item.schedule %}
+          <div>
+            <dt>Jadwal</dt>
+            <dd>{{ item.schedule }}</dd>
+          </div>
+          {% endif %}
+          <div>
+            <dt>Harga Mulai</dt>
+            <dd class="num">{{ item.min_price | rupiah }}</dd>
+          </div>
+        </dl>
+        <div class="detail__actions">
+          <a class="detail__cta liquid-glass-pill liquid-glass-pill--accent" href="{{ item.viz_url }}">Lihat POV 3D &amp; Pilih Zona</a>
+          <a class="detail__cta-secondary liquid-glass-pill" href="{{ item.tickets_url }}">Kategori Tiket</a>
+          <a class="detail__cta-secondary liquid-glass-pill" href="{{ item.detail_url }}">Detail Konser</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

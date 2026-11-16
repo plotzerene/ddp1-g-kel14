@@ -27,6 +27,10 @@
       if (savedTheme === "light" || savedTheme === "dark") {
         document.documentElement.setAttribute("data-theme", savedTheme);
       }
+      if (sessionStorage.getItem("titiket-fade-in") === "1") {
+        sessionStorage.removeItem("titiket-fade-in");
+        document.documentElement.classList.add("is-page-fading-in");
+      }
     } catch (e) { /* penyimpanan diblokir: pakai tema bawaan halaman */ }
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
@@ -74,6 +78,11 @@
         </form>
       </div>
 
+      <nav class="nav-links" aria-label="Kategori hiburan">
+        <a class="nav-cat-link{% if request.path.startswith('/concerts') or (request.path == '/events' and request.args.get('type') == 'concert') %} is-active{% endif %}"
+           href="{{ url_for('events.concerts') }}">Konser Musik</a>
+      </nav>
+
       <div class="header-actions">
         {% include "_theme_toggle.html" %}
         <a class="btn nav-profile-btn" href="{{ url_for('checkout.profile') }}" aria-label="Pesanan Saya" title="Pesanan Saya" {% if current_step == 'profile' %}aria-current="page"{% endif %}>
@@ -94,7 +103,7 @@
         <a class="btn nav-cart-btn" href="{{ url_for('checkout.cart') }}" aria-label="Keranjang, {{ cart_count }} tiket" {% if current_step == 'cart' %}aria-current="page"{% endif %}>
           <svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg>
           <span class="visually-hidden">Keranjang</span>
-          <span class="badge-count num" data-cart-count {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
+          <span class="badge-count num liquid-glass-badge" data-cart-count {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
         </a>
       </div>
     </div>
@@ -320,6 +329,7 @@
   </div>
   <div id="top-toast-banner" class="top-toast" role="alert" aria-live="assertive" hidden></div>
   <div id="reservation-expired-root"></div>
+  <div class="page-fade-curtain" id="page-fade-curtain" aria-hidden="true"></div>
   <script src="{{ url_for('static', filename='js/auth_modal.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
   {% block scripts %}{% endblock %}

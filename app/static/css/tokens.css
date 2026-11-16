@@ -250,6 +250,37 @@ body {
     radial-gradient(48rem 36rem at 96% 4%, rgba(197, 155, 39, 0.10), transparent 62%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Transisi pudar halus antar halaman (misalnya dari Login/Intro ke Home) */
+html.is-page-fading-in body {
+  opacity: 0;
+}
+
+.page-fade-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  background: #FFFFFF;
+  transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-fade-curtain[data-target-theme="dark"] {
+  background: #0B0F17;
+}
+
+html.is-leaving-to-home .page-fade-curtain {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .page-fade-curtain {
+    transition: none;
+  }
 }
 
 h1, h2, h3, h4, p {
@@ -596,6 +627,41 @@ html[data-theme="dark"] .brand-logo__tld {
   box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.22);
 }
 
+.nav-links {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 900px) {
+  .nav-links {
+    display: inline-flex;
+  }
+}
+
+.nav-cat-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  border: 1px solid #334155;
+  background: #161F30;
+  color: #E2E8F0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.nav-cat-link:hover,
+.nav-cat-link.is-active {
+  border-color: #14B8A6;
+  background: rgba(20, 184, 166, 0.14);
+  color: #2DD4BF;
+  text-decoration: none;
+}
+
 .nav-auth-group {
   display: inline-flex;
   align-items: center;
@@ -708,19 +774,36 @@ html:not([data-theme="dark"]) body[data-step="profile"] .nav-search:focus-within
 
 html[data-theme="light"] .nav-auth-btn,
 html[data-theme="light"] .nav-profile-btn,
+html[data-theme="light"] .nav-cat-link,
 html:not([data-theme="dark"]) body[data-step="landing"] .nav-auth-btn,
 html:not([data-theme="dark"]) body[data-step="landing"] .nav-profile-btn,
+html:not([data-theme="dark"]) body[data-step="landing"] .nav-cat-link,
 html:not([data-theme="dark"]) body[data-step="promo"] .nav-auth-btn,
 html:not([data-theme="dark"]) body[data-step="promo"] .nav-profile-btn,
+html:not([data-theme="dark"]) body[data-step="promo"] .nav-cat-link,
 html:not([data-theme="dark"]) body[data-step="cart"] .nav-auth-btn,
 html:not([data-theme="dark"]) body[data-step="cart"] .nav-profile-btn,
+html:not([data-theme="dark"]) body[data-step="cart"] .nav-cat-link,
 html:not([data-theme="dark"]) body[data-step="checkout"] .nav-auth-btn,
 html:not([data-theme="dark"]) body[data-step="checkout"] .nav-profile-btn,
+html:not([data-theme="dark"]) body[data-step="checkout"] .nav-cat-link,
 html:not([data-theme="dark"]) body[data-step="profile"] .nav-auth-btn,
-html:not([data-theme="dark"]) body[data-step="profile"] .nav-profile-btn {
+html:not([data-theme="dark"]) body[data-step="profile"] .nav-profile-btn,
+html:not([data-theme="dark"]) body[data-step="profile"] .nav-cat-link {
   border-color: #CBD5E1;
   background: #FFFFFF;
   color: #0F172A;
+}
+
+html[data-theme="light"] .nav-cat-link:hover,
+html[data-theme="light"] .nav-cat-link.is-active,
+html:not([data-theme="dark"]) body[data-step="landing"] .nav-cat-link:hover,
+html:not([data-theme="dark"]) body[data-step="landing"] .nav-cat-link.is-active,
+html:not([data-theme="dark"]) body[data-step="promo"] .nav-cat-link:hover,
+html:not([data-theme="dark"]) body[data-step="promo"] .nav-cat-link.is-active {
+  border-color: #006875;
+  background: rgba(0, 104, 117, 0.08);
+  color: #006875;
 }
 
 html[data-theme="light"] .nav-auth-btn:hover,
@@ -1038,13 +1121,14 @@ html:not([data-theme="dark"]) body[data-step="profile"] .stepper-bar {
 .btn--primary {
   border-color: transparent;
   background: var(--color-accent);
-  color: var(--color-on-accent);
+  color: #0F172A;
   box-shadow: var(--glow-accent);
 }
 
-.btn--primary:hover {
+.btn--primary:hover:not([aria-disabled="true"]):not(:disabled) {
   background: var(--color-accent-hover);
-  border-color: transparent;
+  border-color: rgba(202, 138, 4, 0.55);
+  color: #0F172A;
 }
 
 .btn--secondary {
@@ -1088,16 +1172,34 @@ html:not([data-theme="dark"]) body[data-step="profile"] .stepper-bar {
   box-shadow: var(--glow-info);
 }
 
-.badge-count {
-  min-width: 20px;
-  padding: 0 6px;
+.badge-count,
+.liquid-glass-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+  color: #0F172A;
   font-size: var(--text-xs);
   font-weight: 700;
-  line-height: 20px;
+  line-height: 1;
   text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="dark"] .nav-cart-btn .badge-count {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #F8FAFC;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* Kontrol tersegmentasi */
@@ -1394,9 +1496,9 @@ html:not([data-theme="dark"]) body[data-step="profile"] .site-footer {
   color: #475569;
 }
 
-html[data-theme="light"] .btn:hover,
-html:not([data-theme="dark"]) body[data-step="promo"] .btn:hover,
-html:not([data-theme="dark"]) body[data-step="cart"] .btn:hover {
+html[data-theme="light"] .btn:not(.btn--primary):not(.btn--teal-primary):not(.liquid-glass-btn-primary):hover,
+html:not([data-theme="dark"]) body[data-step="promo"] .btn:not(.btn--primary):not(.btn--teal-primary):not(.liquid-glass-btn-primary):hover,
+html:not([data-theme="dark"]) body[data-step="cart"] .btn:not(.btn--primary):not(.btn--teal-primary):not(.liquid-glass-btn-primary):hover {
   background: rgba(15, 23, 42, 0.06);
   border-color: rgba(15, 23, 42, 0.22);
 }
@@ -1811,6 +1913,11 @@ html:not([data-theme="dark"]) body[data-step="profile"] .footer-social-btn:hover
   border: 1.5px solid #D97706;
   background: #FEF3C7;
   color: #B45309;
+}
+
+.resv-expired-card__icon .icon {
+  width: 26px;
+  height: 26px;
 }
 
 .resv-expired-card__title {

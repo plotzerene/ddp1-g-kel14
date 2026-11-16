@@ -12,7 +12,7 @@ from pathlib import Path
 from flask import Blueprint, abort, render_template, url_for
 
 from ...assets_sync import asset_url
-from ...shared_state import EVENTS
+from ...shared_state import EVENTS, price_for_film_venue
 from ..visualizer.models import get_venue
 
 events_bp = Blueprint("events", __name__)
@@ -107,6 +107,72 @@ MOVIE_PRODUCTION: dict[str, dict] = {
         "cast": ["Robert Downey Jr.", "Chris Evans", "Scarlett Johansson", "Mark Ruffalo", "Chris Hemsworth"],
         "trivia": "Seluruh adegan aksi utama film ini direkam penuh menggunakan kamera IMAX digital untuk menghasilkan cakupan layar vertikal yang lebih luas.",
         "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "how-to-lose-a-guy-in-10-days": {
+        "director": "Donald Petrie",
+        "writer": "Kristen Buckley, Brian Regan, Burr Steers",
+        "producer": "Lynda Obst, Robert Evans, Christine Peters",
+        "studio": "Paramount Pictures",
+        "origin": "Amerika Serikat",
+        "cast": ["Kate Hudson", "Matthew McConaughey", "Kathryn Hahn", "Annie Parisse", "Adam Goldberg"],
+        "trivia": "Special Classic Screening menghadirkan salinan restorasi 4K untuk merayakan ikoniknya komedi romantis awal 2000-an.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "the-nun": {
+        "director": "Corin Hardy",
+        "writer": "Gary Dauberman, James Wan",
+        "producer": "Peter Safran, James Wan",
+        "studio": "New Line Cinema & Atomic Monster",
+        "origin": "Amerika Serikat",
+        "cast": ["Demián Bichir", "Taissa Farmiga", "Jonas Bloquet", "Bonnie Aarons", "Charlotte Hope"],
+        "trivia": "Pengambilan gambar dilakukan di Kastil Corvin dan Biara Sighisoara di Transilvania, Rumania, untuk menghadirkan atmosfer gotik autentik.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "the-hunger-games": {
+        "director": "Gary Ross",
+        "writer": "Gary Ross, Suzanne Collins, Billy Ray",
+        "producer": "Nina Jacobson, Jon Kilik",
+        "studio": "Lionsgate & Color Force",
+        "origin": "Amerika Serikat",
+        "cast": ["Jennifer Lawrence", "Josh Hutcherson", "Liam Hemsworth", "Woody Harrelson", "Elizabeth Banks"],
+        "trivia": "Jennifer Lawrence menjalani latihan memanah intensif bersama peraih medali Olimpiade demi keakuratan gerak di arena.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "spiderman-no-way-home": {
+        "director": "Jon Watts",
+        "writer": "Chris McKenna, Erik Sommers",
+        "producer": "Kevin Feige, Amy Pascal",
+        "studio": "Columbia Pictures & Marvel Studios",
+        "origin": "Amerika Serikat",
+        "cast": ["Tom Holland", "Zendaya", "Benedict Cumberbatch", "Jacob Batalon", "Willem Dafoe"],
+        "trivia": "Menjadi film sinematik pertama yang menyatukan lintas generasi penjahat dan sekutu Spider-Man ke dalam format IMAX with Laser dan 4DX.",
+        "language": "Inggris",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "chiikawa-movie": {
+        "director": "Kei Oikawa",
+        "writer": "Nagano",
+        "producer": "Chiikawa Film Committee",
+        "studio": "CygamesPictures • Toho",
+        "origin": "Jepang",
+        "cast": ["Haruka Aoki", "Makoto Tanaka", "Ari Ozawa", "Yuka Iguchi", "Yuma Uchida"],
+        "trivia": "Adaptasi layar lebar pertama karya Nagano yang berfokus pada ekspedisi Pulau Putri Duyung penuh momen hangat dan komedi.",
+        "language": "Jepang",
+        "subtitles": "Bahasa Indonesia",
+    },
+    "zootopia-2": {
+        "director": "Jared Bush, Byron Howard",
+        "writer": "Jared Bush",
+        "producer": "Yvett Merino",
+        "studio": "Walt Disney Animation Studios",
+        "origin": "Amerika Serikat",
+        "cast": ["Ginnifer Goodwin", "Jason Bateman", "Ke Huy Quan", "Fortune Feimster", "Shakira"],
+        "trivia": "Menjelajahi distrik Marsh Market dan dunia reptil Zootopia bersama karakter baru Gary De'Snake dalam format Regular 2D dan IMAX 3D.",
+        "language": "Inggris / Indonesia",
         "subtitles": "Bahasa Indonesia",
     },
 }
@@ -354,12 +420,31 @@ STUDIO_FORMAT_LABELS: dict[str, str] = {
 }
 
 
-def _film_schedules(event) -> tuple[list[dict], list[str]]:
-    """Saring jadwal bioskop sesuai format studio resmi film ini."""
+def _film_schedules(event, details: dict | None = None) -> tuple[list[dict], list[str], int]:
+    """Saring jadwal bioskop sesuai format studio dan tarif resmi film ini."""
     allowed = set(event.venues)
+    details = details or {}
+    format_labels = details.get("format_labels") or {}
     filtered: list[dict] = []
+    min_price: int | None = None
     for cinema in CINEMA_SCHEDULES:
-        studios = [st for st in cinema["studios"] if st["venue_id"] in allowed]
+        studios: list[dict] = []
+        for st in cinema["studios"]:
+            vid = st["venue_id"]
+            if vid not in allowed:
+                continue
+            price = price_for_film_venue(event.event_id, vid, st["price"])
+            label = format_labels.get(vid, st["type"])
+            audio = st["audio"]
+            if "Dolby Atmos" in label:
+                audio = "Dolby Atmos"
+            min_price = price if min_price is None else min(min_price, price)
+            studios.append({
+                **st,
+                "type": label,
+                "audio": audio,
+                "price": price,
+            })
         if not studios:
             continue
         filtered.append({
@@ -368,9 +453,16 @@ def _film_schedules(event) -> tuple[list[dict], list[str]]:
             "formats_label": " • ".join(st["type"] for st in studios),
         })
     available_formats = [
-        STUDIO_FORMAT_LABELS[v] for v in event.venues if v in STUDIO_FORMAT_LABELS
+        format_labels.get(v, STUDIO_FORMAT_LABELS[v])
+        for v in event.venues
+        if v in STUDIO_FORMAT_LABELS
     ]
-    return filtered, available_formats
+    if min_price is None:
+        min_price = min(
+            (price_for_film_venue(event.event_id, v) for v in event.venues),
+            default=50_000,
+        )
+    return filtered, available_formats, min_price
 
 
 @events_bp.get("/movie/<slug>")
@@ -380,7 +472,7 @@ def movie(slug: str):
     event = EVENTS.get(slug)
     if details is None or event is None or event.kind != "film":
         abort(404)
-    filtered_schedules, available_formats = _film_schedules(event)
+    filtered_schedules, available_formats, min_price = _film_schedules(event, details)
     return render_template(
         "events/movie.html",
         movie=details,
@@ -389,10 +481,14 @@ def movie(slug: str):
         schedules=filtered_schedules,
         cities=sorted({c["city"] for c in filtered_schedules}),
         available_formats=available_formats,
+        min_price=min_price,
+        status_badge=details.get("status_badge", "Sedang Tayang di Bioskop"),
+        is_coming_soon=details.get("status") == "coming_soon",
         poster_url=asset_url(event.poster),
         trailer_local=asset_url(event.trailer),
         trailer_embed=_youtube_embed(details.get("embed_id")),
         buy_url=url_for("visualizer.index", film=slug),
+        studio_pov_url=f"/studio_pov/{slug}",
     )
 
 
@@ -443,3 +539,32 @@ def coldplay_tickets():
 @events_bp.get("/event/coldplay/terms")
 def coldplay_terms():
     return _render_coldplay("terms")
+
+
+@events_bp.get("/concerts")
+@events_bp.get("/events", endpoint="events_list")
+def concerts():
+    """Halaman direktori Konser Musik & Festival yang skalabel lintas venue."""
+    concert_cards = []
+    for ev in EVENTS.values():
+        if ev.kind != "concert":
+            continue
+        venue = get_venue(ev.venues[0])
+        min_price = min((b.price for b in venue.blocks.values()), default=800_000)
+        concert_cards.append({
+            "event": ev,
+            "venue": venue,
+            "venue_label": COLDPLAY_INFO["location"] if ev.event_id == COLDPLAY_ID else ev.meta,
+            "schedule": COLDPLAY_INFO["schedule"] if ev.event_id == COLDPLAY_ID else "",
+            "promoter": COLDPLAY_INFO["promoter"] if ev.event_id == COLDPLAY_ID else "",
+            "poster_url": asset_url(ev.poster),
+            "min_price": min_price,
+            "detail_url": url_for("events.coldplay_overview"),
+            "tickets_url": url_for("events.coldplay_tickets"),
+            "viz_url": url_for("visualizer.studio", venue_id=venue.venue_id),
+        })
+    return render_template(
+        "events/concerts.html",
+        concerts=concert_cards,
+        rules=COLDPLAY_OFFICIAL_RULES,
+    )

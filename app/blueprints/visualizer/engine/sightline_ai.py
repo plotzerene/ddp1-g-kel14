@@ -271,7 +271,7 @@ class RecommendationStrategy(ABC):
 class IdealStrategy(RecommendationStrategy):
     key = "ideal_thx"
     labels = {"cinema": "Paling Ideal", "concert": "Paling Ideal"}
-    description = "Skor keseluruhan tertinggi: layar pas, leher nyaman, dan pandangan bebas halangan."
+    description = ""
 
     def utility(self, report, ctx):
         bonus = 0.0
@@ -391,14 +391,20 @@ class SmartSeatRecommender:
     def presets_for(cls, kind: str) -> list[dict]:
         return [s.describe(kind) for s in cls.STRATEGIES.values() if s.supports(kind)]
 
-    def recommend(self, preset: str, top_n: int = 3) -> dict:
+    def recommend(
+        self,
+        preset: str,
+        top_n: int = 3,
+        available_fn: Callable[["SeatNode"], bool] | None = None,
+    ) -> dict:
         strategy = self.STRATEGIES.get(preset)
         kind = self.venue.kind.value
         if strategy is None or not strategy.supports(kind):
             raise ValueError(f"Preset '{preset}' tidak tersedia untuk venue ini.")
 
         ctx = RecommendContext(kind=kind, scoring=self.venue.scoring_profile())
-        reports = [self.evaluate(seat) for seat in self.venue.candidate_seats() if seat.is_available]
+        is_avail = available_fn or (lambda seat: seat.is_available)
+        reports = [self.evaluate(seat) for seat in self.venue.candidate_seats() if is_avail(seat)]
         # Urutkan menurun berdasarkan utilitas; seri → lebih murah dulu, lalu ID agar deterministik.
         ranked = sorted(reports, key=lambda r: (-strategy.utility(r, ctx), r.seat.price, r.seat.seat_id))
 

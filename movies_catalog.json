@@ -127,6 +127,186 @@
       "poster_file": "reference_assets/images/Poster Avengers ENDGAME.jpeg",
       "embed_id": "TcMBFSGVi1c",
       "studios": ["xxi-regular", "xxi-imax", "xxi-4dx"]
+    },
+    {
+      "id": "how-to-lose-a-guy-in-10-days",
+      "title": "How to Lose a Guy in 10 Days",
+      "tagline": "Taruhan cinta berbatas 10 hari di jantung New York.",
+      "synopsis": "Kisah reporter majalah dan eksekutif periklanan yang saling bertaruh cinta dalam batas waktu 10 hari.",
+      "rating": 6.5,
+      "duration": "116 Menit",
+      "age_rating": "13+",
+      "genres": [
+        "Romance",
+        "Comedy"
+      ],
+      "status": "now_playing",
+      "status_badge": "Sedang Tayang (Special Classic Screening)",
+      "format_labels": {
+        "xxi-regular": "Regular 2D",
+        "xxi-premiere": "The Premiere XXI"
+      },
+      "studio_prices": {
+        "xxi-regular": 50000,
+        "xxi-premiere": 100000
+      },
+      "tech_specs": {
+        "aspect_ratio": "1.85:1 (Restored 4K)",
+        "sound_mix": "Dolby Digital 5.1"
+      },
+      "poster_file": "static/images/posters/how_to_lose_a_guy_in_10_days.webp",
+      "embed_id": "hzNX_WZDNXE",
+      "studios": ["xxi-regular", "xxi-premiere"]
+    },
+    {
+      "id": "the-nun",
+      "title": "The Nun",
+      "tagline": "Berdoalah untuk pengampunan di balik dinding biara.",
+      "synopsis": "Penyelidikan rahasia kelam dan teror entitas iblis Valak di sebuah biara terpencil.",
+      "rating": 5.4,
+      "duration": "96 Menit",
+      "age_rating": "17+",
+      "genres": [
+        "Horror",
+        "Mystery"
+      ],
+      "status": "now_playing",
+      "status_badge": "Sedang Tayang (Midnight Screening)",
+      "format_labels": {
+        "xxi-regular": "Regular 2D (Dolby Atmos)"
+      },
+      "studio_prices": {
+        "xxi-regular": 45000
+      },
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (Scope)",
+        "sound_mix": "Dolby Atmos"
+      },
+      "poster_file": "static/images/posters/the_nun.webp",
+      "embed_id": "pzD9zGcUNrw",
+      "studios": ["xxi-regular"]
+    },
+    {
+      "id": "the-hunger-games",
+      "title": "The Hunger Games",
+      "tagline": "May the odds be ever in your favor.",
+      "synopsis": "Katniss Everdeen menggantikan adiknya dalam kompetisi bertahan hidup tahunan Panem yang mematikan.",
+      "rating": 7.2,
+      "duration": "142 Menit",
+      "age_rating": "13+",
+      "genres": [
+        "Sci-Fi",
+        "Action",
+        "Dystopia"
+      ],
+      "status": "now_playing",
+      "status_badge": "Sedang Tayang",
+      "format_labels": {
+        "xxi-regular": "Regular 2D",
+        "xxi-imax": "IMAX"
+      },
+      "studio_prices": {
+        "xxi-regular": 50000,
+        "xxi-imax": 75000
+      },
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (IMAX Expanded)",
+        "sound_mix": "Dolby Atmos / 12-Ch Laser Audio"
+      },
+      "poster_file": "static/images/posters/hunger_games.webp",
+      "embed_id": "mfmrPu43DF8",
+      "studios": ["xxi-regular", "xxi-imax"]
+    },
+    {
+      "id": "spiderman-no-way-home",
+      "title": "Spider-Man: No Way Home",
+      "tagline": "Multiverse terbuka, takdir sang pahlawan diuji.",
+      "synopsis": "Identitas Peter Parker terbongkar, membuka celah multiverse dan mempertemukan musuh lintas dimensi.",
+      "rating": 8.2,
+      "duration": "148 Menit",
+      "age_rating": "13+",
+      "genres": [
+        "Action",
+        "Sci-Fi",
+        "Adventure"
+      ],
+      "status": "now_playing",
+      "status_badge": "Sedang Tayang",
+      "format_labels": {
+        "xxi-imax": "IMAX with Laser",
+        "xxi-4dx": "4DX"
+      },
+      "studio_prices": {
+        "xxi-imax": 80000,
+        "xxi-4dx": 75000
+      },
+      "tech_specs": {
+        "aspect_ratio": "1.90:1 (IMAX Digital)",
+        "sound_mix": "IMAX 12-Ch / 4DX Motion"
+      },
+      "poster_file": "static/images/posters/spiderman_no_way_home.webp",
+      "embed_id": "JfVOs4VSpmA",
+      "studios": ["xxi-imax", "xxi-4dx"]
+    },
+    {
+      "id": "chiikawa-movie",
+      "title": "Chiikawa Movie",
+      "tagline": "Petualangan kecil penuh tawa bersama Chiikawa, Hachiware, dan Usagi.",
+      "synopsis": "Petualangan menggemaskan Chiikawa, Hachiware, dan Usagi menjalani ujian dan pekerjaan harian.",
+      "rating": 8.0,
+      "duration": "75 Menit",
+      "age_rating": "SU",
+      "genres": [
+        "Anime",
+        "Comedy",
+        "Slice of Life"
+      ],
+      "status": "now_playing",
+      "status_badge": "Sedang Tayang (Lagi Tayang)",
+      "format_labels": {
+        "xxi-regular": "Regular 2D"
+      },
+      "studio_prices": {
+        "xxi-regular": 45000
+      },
+      "tech_specs": {
+        "aspect_ratio": "1.85:1 (Flat Anime)",
+        "sound_mix": "Dolby Digital 5.1"
+      },
+      "poster_file": "static/images/posters/chiikawa_movie.webp",
+      "embed_id": "yUwALMbnnvs",
+      "studios": ["xxi-regular"]
+    },
+    {
+      "id": "zootopia-2",
+      "title": "Zootopia 2",
+      "tagline": "Kasus baru menanti duet polisi paling ikonik di Zootopia.",
+      "synopsis": "Duet detektif Judy Hopps dan Nick Wilde kembali mengungkap konspirasi baru di kota metropolitan Zootopia.",
+      "rating": 8.1,
+      "duration": "105 Menit",
+      "age_rating": "SU",
+      "genres": [
+        "Animation",
+        "Adventure",
+        "Comedy"
+      ],
+      "status": "coming_soon",
+      "status_badge": "Segera Tayang (Presale)",
+      "format_labels": {
+        "xxi-regular": "Regular 2D",
+        "xxi-imax": "IMAX 3D"
+      },
+      "studio_prices": {
+        "xxi-regular": 50000,
+        "xxi-imax": 75000
+      },
+      "tech_specs": {
+        "aspect_ratio": "2.39:1 (IMAX 3D)",
+        "sound_mix": "Dolby Atmos / IMAX 12-Ch"
+      },
+      "poster_file": "static/images/posters/zootopia_2.webp",
+      "embed_id": "C5s3lua1qgk",
+      "studios": ["xxi-regular", "xxi-imax"]
     }
   ]
 }

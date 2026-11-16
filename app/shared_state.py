@@ -70,6 +70,16 @@ def format_rupiah(amount: float | int | None) -> str:
     return "Rp " + f"{int(round(amount)):,}".replace(",", ".")
 
 
+def format_rupiah_short(amount: float | int | None) -> str:
+    """50000 → 'Rp 50 rb', 45000 → 'Rp 45 rb' (filter Jinja `|rupiah_short`)."""
+    if amount is None:
+        return "Rp 0"
+    rounded = int(round(amount))
+    if 1_000 <= rounded < 1_000_000 and rounded % 1_000 == 0:
+        return f"Rp {rounded // 1_000} rb"
+    return format_rupiah(rounded)
+
+
 # =========================================================================== #
 # 2. Katalog acara
 # =========================================================================== #
@@ -98,7 +108,59 @@ def _film(
     trailer: str,
     venues: tuple[str, ...] = CINEMA_STUDIOS,
 ) -> Event:
-    return Event(event_id, title, "film", meta, f"images/{poster}", f"videos/{trailer}", venues)
+    poster_path = poster if poster.startswith("images/") else f"images/{poster}"
+    trailer_path = (
+        f"videos/{trailer}" if trailer and not trailer.startswith("videos/") else trailer
+    )
+    return Event(event_id, title, "film", meta, poster_path, trailer_path, venues)
+
+
+FILM_STUDIO_PRICES: dict[str, dict[str, int]] = {
+    "how-to-lose-a-guy-in-10-days": {
+        "xxi-regular": 50_000,
+        "xxi-premiere": 100_000,
+    },
+    "the-nun": {
+        "xxi-regular": 45_000,
+    },
+    "the-hunger-games": {
+        "xxi-regular": 50_000,
+        "xxi-imax": 75_000,
+    },
+    "spiderman-no-way-home": {
+        "xxi-imax": 80_000,
+        "xxi-4dx": 75_000,
+    },
+    "chiikawa-movie": {
+        "xxi-regular": 45_000,
+    },
+    "zootopia-2": {
+        "xxi-regular": 50_000,
+        "xxi-imax": 75_000,
+    },
+}
+
+DEFAULT_VENUE_PRICES: dict[str, int] = {
+    "xxi-regular": TICKET_PRICES["regular"],
+    "xxi-premiere": TICKET_PRICES["premiere"],
+    "xxi-imax": TICKET_PRICES["imax"],
+    "xxi-4dx": TICKET_PRICES["4dx"],
+}
+
+
+def price_for_film_venue(
+    film_id: str | None,
+    venue_id: str,
+    fallback: int | None = None,
+) -> int:
+    """Harga kursi aktual untuk kombinasi film dan studio (override per film bila tersedia)."""
+    if film_id and film_id in FILM_STUDIO_PRICES:
+        override = FILM_STUDIO_PRICES[film_id].get(venue_id)
+        if override is not None:
+            return override
+    if fallback is not None:
+        return fallback
+    return DEFAULT_VENUE_PRICES.get(venue_id, TICKET_PRICES["regular"])
 
 
 EVENTS: dict[str, Event] = {
@@ -124,6 +186,30 @@ EVENTS: dict[str, Event] = {
         _film("avengers-endgame", "Avengers: Endgame", "2D / IMAX / 4DX · 3h 2m · Action / Sci-Fi · R13+",
               "poster_avengers_endgame.jpg", "trailer_cinema.mp4",
               ("xxi-regular", "xxi-imax", "xxi-4dx")),
+        _film("how-to-lose-a-guy-in-10-days", "How to Lose a Guy in 10 Days",
+              "2D / The Premiere XXI · 116 Menit · Romance, Comedy · 13+",
+              "images/posters/how_to_lose_a_guy_in_10_days.webp", "",
+              ("xxi-regular", "xxi-premiere")),
+        _film("the-nun", "The Nun",
+              "Regular 2D (Dolby Atmos) · 96 Menit · Horror, Mystery · 17+",
+              "images/posters/the_nun.webp", "",
+              ("xxi-regular",)),
+        _film("the-hunger-games", "The Hunger Games",
+              "Regular 2D / IMAX · 142 Menit · Sci-Fi, Action, Dystopia · 13+",
+              "images/posters/hunger_games.webp", "",
+              ("xxi-regular", "xxi-imax")),
+        _film("spiderman-no-way-home", "Spider-Man: No Way Home",
+              "IMAX with Laser / 4DX · 148 Menit · Action, Sci-Fi, Adventure · 13+",
+              "images/posters/spiderman_no_way_home.webp", "",
+              ("xxi-imax", "xxi-4dx")),
+        _film("chiikawa-movie", "Chiikawa Movie",
+              "Regular 2D · 75 Menit · Anime, Comedy, Slice of Life · SU",
+              "images/posters/chiikawa_movie.webp", "",
+              ("xxi-regular",)),
+        _film("zootopia-2", "Zootopia 2",
+              "Regular 2D / IMAX 3D · 105 Menit · Animation, Adventure, Comedy · SU",
+              "images/posters/zootopia_2.webp", "",
+              ("xxi-regular", "xxi-imax")),
         Event("coldplay-gbk", "Coldplay: Music of the Spheres", "concert",
               "Stadion Utama Gelora Bung Karno · Jakarta · Live Concert",
               "images/poster_coldplay_konser.jpg", "videos/coldplay_live.mp4", ("gbk-coldplay",)),

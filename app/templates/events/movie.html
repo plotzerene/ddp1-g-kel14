@@ -70,8 +70,10 @@
   <section class="movie-body" id="detail-sinopsis" aria-label="Detail Film">
     <div class="movie-poster-col">
       <div class="detail__poster-wrap movie-poster-slot">
+        {% set fallback_src = poster_fallback_url | default('/static/images/posters/poster_fallback.svg') %}
         {% if poster_url %}
-        <img class="detail__poster" src="{{ poster_url }}" alt="Poster {{ movie.title }}" width="340" height="450">
+        <img class="detail__poster" src="{{ poster_url }}" alt="Poster {{ movie.title }}" width="340" height="450"
+             onerror="this.onerror=null;this.src='{{ fallback_src }}'">
         {% else %}
         <div class="detail__poster detail__poster-empty" aria-hidden="true">{{ movie.title[:1] }}</div>
         {% endif %}
@@ -81,7 +83,7 @@
       </div>
       <div class="status-tayang-pill">
         <span class="status-tayang-pill__dot" aria-hidden="true"></span>
-        <span>Sedang Tayang di Bioskop</span>
+        <span>{{ status_badge | default('Sedang Tayang di Bioskop') }}</span>
       </div>
     </div>
 
@@ -170,7 +172,7 @@
             <span class="movie-format-row__label">Format Studio Tersedia:</span>
             <span class="movie-format-row__badge">{{ format_list | join(' • ') }}</span>
           </div>
-          <strong class="movie-price-label">Mulai dari Rp 50.000 / kursi <span class="detail__discount-tag">(Hemat 15% SSO UI)</span></strong>
+          <strong class="movie-price-label">Mulai dari {{ (min_price | default(50000)) | rupiah_short }} / kursi <span class="detail__discount-tag">(Hemat 15% SSO UI)</span></strong>
         </div>
         <div class="movie-bottom-bar__actions">
           <button type="button" class="detail__cta-secondary liquid-glass-pill" id="trailer-open">
@@ -196,7 +198,7 @@
       </div>
       <span class="status-badge-inline">
         <span class="status-tayang-pill__dot" aria-hidden="true"></span>
-        <span>Sedang Tayang &bull; {{ format_list | join(' • ') }}</span>
+        <span>{{ status_badge | default('Sedang Tayang') }} &bull; {{ format_list | join(' • ') }}</span>
       </span>
     </header>
 
@@ -257,7 +259,7 @@
           <div class="studio-row{% if st.vip %} studio-row-vip{% endif %}" data-format="{{ st.type }}">
             <div class="studio-row__info">
               <strong class="studio-row__type">{{ st.type }}{% if st.room %} &bull; {{ st.room }}{% endif %}</strong>
-              <span class="studio-row__price num">{{ st.price | rupiah }} / kursi{% if st.audio %} &bull; {{ st.audio }}{% endif %}</span>
+              <span class="studio-row__price num">{{ st.price | rupiah_short }} / kursi{% if st.audio %} &bull; {{ st.audio }}{% endif %}</span>
             </div>
             <div class="studio-times">
               {% set studio_first = outer_first and loop.first %}
@@ -269,11 +271,11 @@
                 data-venue-id="{{ st.venue_id }}"
                 data-studio-type="{{ st.type }}"
                 data-studio-room="{{ st.room | default('') }}"
-                data-price-text="{{ st.price | rupiah }}"
+                data-price-text="{{ st.price | rupiah_short }}"
                 data-cinema-name="{{ cinema.name }}"
                 data-time="{{ tm }}"
                 data-href="{{ url_for('visualizer.studio', venue_id=st.venue_id, film=movie_slug) }}"
-              >{{ tm }} &bull; {{ 'Sisa 4 Kursi' if is_limited else (st.price | rupiah) }}</button>
+              >{{ tm }} &bull; {{ 'Sisa 4 Kursi' if is_limited else (st.price | rupiah_short) }}</button>
               {% endfor %}
             </div>
           </div>
@@ -288,7 +290,7 @@
         <span class="schedule-selection-bar__eyebrow">JADWAL DIPILIH</span>
         <strong class="schedule-selection-bar__value" id="summary-value">
           <span id="summary-cinema">{{ cinema_list[0].name }}</span>
-          <span id="summary-meta">{{ date_list[0].day }}, {{ date_list[0].date }} &bull; {{ cinema_list[0].studios[0].type }}{% if cinema_list[0].studios[0].room %} ({{ cinema_list[0].studios[0].room }}){% endif %} &bull; {{ cinema_list[0].studios[0].times[0] }} WIB &bull; {{ cinema_list[0].studios[0].price | rupiah }}</span>
+          <span id="summary-meta">{{ date_list[0].day }}, {{ date_list[0].date }} &bull; {{ cinema_list[0].studios[0].type }}{% if cinema_list[0].studios[0].room %} ({{ cinema_list[0].studios[0].room }}){% endif %} &bull; {{ cinema_list[0].studios[0].times[0] }} WIB &bull; {{ cinema_list[0].studios[0].price | rupiah_short }}</span>
         </strong>
       </div>
       <a

@@ -269,7 +269,7 @@ class RouteTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def test_pages_render(self):
-        for path in ("/", "/visualizer/studio/xxi-regular", "/visualizer/studio/gbk-coldplay", "/cart"):
+        for path in ("/", "/intro", "/home", "/visualizer/studio/xxi-regular", "/visualizer/studio/gbk-coldplay", "/cart"):
             self.assertEqual(self.client.get(path).status_code, 200, path)
         empty_checkout = self.client.get("/checkout/")
         self.assertEqual(empty_checkout.status_code, 302)
@@ -278,7 +278,7 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(self.client.get("/visualizer/studio/tidak-ada").status_code, 404)
 
     def test_landing_sends_every_event_to_the_visualizer(self):
-        page = self.client.get("/").get_data(as_text=True)
+        page = self.client.get("/home").get_data(as_text=True)
         for event in EVENTS.values():
             param = "event" if event.kind == "concert" else "film"
             self.assertIn(f"{param}={event.event_id}", page)
@@ -369,7 +369,9 @@ class RouteTests(unittest.TestCase):
         self.assertIn("Kursi", seated.get_json()["message"])          # tribun duduk tetap menyebut kursi
 
     def test_landing_is_light_and_has_no_mtix(self):
-        page = self.client.get("/").get_data(as_text=True)
+        intro_page = self.client.get("/").get_data(as_text=True)
+        self.assertIn('name="theme-color" content="#08090C"', intro_page)
+        page = self.client.get("/home").get_data(as_text=True)
         self.assertIn('name="theme-color" content="#FFFFFF"', page)
         self.assertNotIn("m.tix", page.lower())
         self.assertNotIn("m-tix", page.lower())

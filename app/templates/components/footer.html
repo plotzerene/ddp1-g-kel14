@@ -46,7 +46,7 @@
         <ul>
           <li><a href="{{ url_for('landing.index') }}#lagi-tayang">Film Sedang Tayang (XXI, IMAX, CGV)</a></li>
           <li><a href="{{ url_for('landing.index') }}#coming-soon">Film Segera Tayang</a></li>
-          <li><a href="{{ url_for('events.coldplay_overview') }}">Konser Musik &amp; Festival GBK</a></li>
+          <li><a href="{{ url_for('events.concerts') }}">Konser Musik &amp; Festival</a></li>
           <li><a href="{{ url_for('visualizer.index', type='cinema') }}">{{ 'Simulasi POV 3D Spot & Area' if footer_ns.has_standing else 'Simulasi POV 3D Kursi' }}</a></li>
           <li><a href="{{ url_for('visualizer.studio', venue_id='xxi-premiere') }}">Sewa Studio &amp; Event Organizer</a></li>
         </ul>
@@ -59,7 +59,7 @@
           <li><a href="mailto:bantuan@titiket.com">Email: bantuan@titiket.com</a></li>
           <li><a href="{{ url_for('intro.index') }}">Pusat Bantuan &amp; FAQ</a></li>
           <li><a href="{{ url_for('landing.promo') }}">Promo &amp; Syarat Ketentuan</a></li>
-          <li><a href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Tiket Konser GBK</a></li>
+          <li><a href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Tiket Konser</a></li>
           <li><a href="{{ url_for('landing.promo') }}#ketentuan">Kebijakan Privasi &amp; Pengembalian Dana</a></li>
           <li><a href="{{ url_for('checkout.profile') }}">Keamanan Akun &amp; Verifikasi E-Tiket</a></li>
         </ul>

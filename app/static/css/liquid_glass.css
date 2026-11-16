@@ -208,6 +208,43 @@ html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data
   background: rgba(234, 179, 8, 0.95);
 }
 
+/* Tombol aksi utama Liquid Glass + teks kontras AAA (#0F172A) di semua state & hover */
+.liquid-glass-btn-primary,
+html .btn.liquid-glass-btn-primary,
+html[data-theme="light"] .btn.liquid-glass-btn-primary {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(202, 138, 4, 0.45);
+  background: linear-gradient(180deg, rgba(254, 240, 138, 0.96) 0%, rgba(250, 204, 21, 0.94) 100%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  color: #0F172A;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 6px 18px rgba(234, 179, 8, 0.22);
+}
+
+.liquid-glass-btn-primary:hover:not([aria-disabled="true"]),
+html .btn.liquid-glass-btn-primary:hover:not([aria-disabled="true"]),
+html[data-theme="light"] .btn.liquid-glass-btn-primary:hover:not([aria-disabled="true"]) {
+  background: linear-gradient(180deg, rgba(254, 249, 195, 0.98) 0%, rgba(250, 204, 21, 0.98) 100%);
+  border-color: rgba(202, 138, 4, 0.75);
+  color: #0F172A;
+  filter: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 24px rgba(234, 179, 8, 0.34);
+}
+
+.liquid-glass-badge {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  color: #0F172A;
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  backdrop-filter: blur(8px) saturate(140%);
+}
+
 /* 3. Tombol ganti tema
    ========================================================================== */
 .liquid-glass-switch {
@@ -284,6 +321,59 @@ html.is-theme-switching body * {
 :root .viewport .hud--hint.liquid-glass-dock {
   border-radius: 9999px;
   padding: 6px 14px;
+}
+
+/* Mode default (non-fullscreen): skala HUD ramping agar tidak menutupi layar pratinjau 3D */
+:root .viewport:not(.is-fullscreen-theater) .hud--tl.liquid-glass-dock {
+  padding: 6px 10px;
+  border-radius: 14px;
+  max-width: calc(100% - 196px);
+  gap: 2px;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .hud--tl.liquid-glass-dock .hud__title {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .hud--tl.liquid-glass-dock .hud__sub {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .score-pill.liquid-glass-dock {
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 14px;
+  gap: 1px;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .score-pill.liquid-glass-dock strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .score-pill.liquid-glass-dock span {
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .viewport__expand-btn.liquid-glass-pill {
+  min-height: 28px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  gap: 5px;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .viewport__expand-btn.liquid-glass-pill .icon {
+  width: 12px;
+  height: 12px;
+}
+
+:root .viewport:not(.is-fullscreen-theater) .hud--hint.liquid-glass-dock {
+  padding: 5px 10px;
+  font-size: 11px;
 }
 
 /* 5. Cangkang modal

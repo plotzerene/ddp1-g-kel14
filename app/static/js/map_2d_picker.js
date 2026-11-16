@@ -15,6 +15,14 @@ const HEAT_STOPS = [[239, 68, 68], [245, 158, 11], [34, 197, 94]];
 
 export const formatRupiah = (amount) => 'Rp ' + Math.round(amount).toLocaleString('id-ID');
 
+export const formatRupiahShort = (amount) => {
+  const rounded = Math.round(Number(amount) || 0);
+  if (rounded >= 1000 && rounded < 1000000 && rounded % 1000 === 0) {
+    return `Rp ${rounded / 1000} rb`;
+  }
+  return formatRupiah(rounded);
+};
+
 /** Buat elemen SVG. */
 function svg(tag, attrs = {}, parent = null) {
   const node = document.createElementNS(SVG_NS, tag);
@@ -115,6 +123,30 @@ export class Map2DPicker {
   }
 
   /* •••••••••••• Bioskop •••••••••••• */
+  _buildScreenArc(screen) {
+    if (screen.arc && screen.arc.length >= 2) {
+      const pts = screen.arc.map((p) => [p[0], p[2]]);
+      return pts[0][0] <= pts[pts.length - 1][0] ? pts : pts.slice().reverse();
+    }
+    const halfW = (screen.width || 12) / 2;
+    const sag = Math.max(0.7, Math.min(1.45, (screen.width || 12) * 0.065));
+    const steps = 20;
+    const pts = [];
+    for (let i = 0; i <= steps; i += 1) {
+      const u = -1 + (2 * i) / steps;
+      pts.push([u * halfW, sag * u * u]);
+    }
+    return pts;
+  }
+
+  _cinemaScreenLabel(layout, screen) {
+    const name = String(layout.name || '').toUpperCase();
+    if (screen.arc || name.includes('IMAX')) return 'LAYAR IMAX · CURVED';
+    if (name.includes('PREMIERE')) return 'LAYAR THE PREMIERE';
+    if (name.includes('4DX')) return 'LAYAR 4DX MOTION';
+    return 'LAYAR BIOSKOP';
+  }
+
   _renderCinema() {
     const L = this.layout;
     const { room, spec, screen } = L;
@@ -128,17 +160,26 @@ export class Map2DPicker {
 
     svg('rect', { class: 'room', x: -halfW, y: -0.5, width: room.width, height: room.depth + 0.65, rx: 0.4 }, root);
 
-    const arc = screen.arc;
-    const edges = arc
-      ? [[arc[0][0], arc[0][2]], [arc[arc.length - 1][0], arc[arc.length - 1][2]]]
-      : [[-screen.width / 2, 0], [screen.width / 2, 0]];
-    const path = arc
-      ? 'M' + arc.map((p) => `${p[0]},${p[2]}`).join(' L')
-      : `M${edges[0][0]},0 L${edges[1][0]},0`;
+    const screenPts = this._buildScreenArc(screen);
+    this.screenArcPts = screenPts;
+    const labelPts = screenPts.map(([px, pz]) => [px, pz + 0.92]);
+    const path = 'M' + screenPts.map(([px, pz]) => `${px.toFixed(3)},${pz.toFixed(3)}`).join(' L');
+    const labelPath = 'M' + labelPts.map(([px, pz]) => `${px.toFixed(3)},${pz.toFixed(3)}`).join(' L');
+    const defs = svg('defs', {}, root);
+    const uid = `screen-arc-${Math.random().toString(36).slice(2, 8)}`;
+    svg('path', { id: uid, d: labelPath, fill: 'none' }, defs);
+
     svg('path', { class: 'screen-glow', d: path }, root);
+    svg('path', { class: 'screen-housing', d: path }, root);
     svg('path', { class: 'screen-line', d: path }, root);
-    this.screenEdges = edges;
-    this.cone = svg('polygon', { class: 'sight-cone', points: '' }, root);
+    const screenText = svg('text', { class: 'screen-label', 'font-size': '0.46' }, root);
+    const textPath = svg('textPath', {
+      href: `#${uid}`,
+      startOffset: '50%',
+      'text-anchor': 'middle',
+    }, screenText);
+    textPath.textContent = this._cinemaScreenLabel(L, screen);
+    this.cone = svg('path', { class: 'sight-cone', d: '' }, root);
 
     const seatW = spec.seat_pitch * 0.84;
     const seatH = Math.min(spec.row_depth * 0.62, seatW * 1.05);
@@ -407,7 +448,7 @@ export class Map2DPicker {
     if (node.classList.contains('seat')) {
       const { seat } = this.seatNodes.get(node.dataset.id);
       title = `Baris ${seat.row} · Kursi ${seat.number}`;
-      detail = `${seat.status === 'sold' ? 'Terjual' : 'Tersedia'} · ${formatRupiah(this.layout.price)}`;
+      detail = `${seat.status === 'sold' ? 'Terisi' : 'Tersedia'} · ${formatRupiahShort(this.layout.price)}`;
       const score = this.heat && this.heat.get(seat.id);
       if (score !== undefined && score !== null) detail += ` · skor ${score}`;
     } else if (node.classList.contains('spot')) {
@@ -459,8 +500,11 @@ export class Map2DPicker {
       current.node.setAttribute('tabindex', '0');
       this.selectedSeat = pov.seat.seat_id;
       const [x, , z] = pov.seat.floor;
-      const [a, b] = this.screenEdges;
-      this.cone.setAttribute('points', `${x},${z} ${a[0]},${a[1]} ${b[0]},${b[1]}`);
+      const pts = this.screenArcPts || [];
+      if (pts.length >= 2) {
+        const arcSegs = pts.map(([ax, az]) => `L${ax.toFixed(3)},${az.toFixed(3)}`).join(' ');
+        this.cone.setAttribute('d', `M${x.toFixed(3)},${z.toFixed(3)} ${arcSegs} Z`);
+      }
       return;
     }
 
@@ -587,12 +631,12 @@ export class Map2DPicker {
         h('span', { class: `legend-swatch ${cls}` }), label);
       host.append(
         swatch('legend-swatch--avail', 'Tersedia'),
-        swatch('legend-swatch--chosen', 'Dipilih'),
+        swatch('legend-swatch--chosen', 'Terpilih'),
         swatch('legend-swatch--taken', 'Terisi'),
         swatch('legend-swatch--sweet', 'Sweet Spot'),
         swatch('legend-swatch--cart', 'Di keranjang'),
         h('span', { class: 'legend-note', text:
-          `Semua kursi ${formatRupiah(L.price)}. Baris A = paling belakang (konvensi XXI), layar di sisi atas peta.` }),
+          `Semua kursi ${formatRupiahShort(L.price)}. Baris A = paling belakang (konvensi XXI), layar di sisi atas peta.` }),
       );
       return;
     }

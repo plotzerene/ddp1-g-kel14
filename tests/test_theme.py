@@ -19,7 +19,7 @@ class ThemeToggleTests(unittest.TestCase):
 
     def test_toggle_is_on_every_main_page(self):
         venue_id = self.client.get("/visualizer/api/venues").get_json()["venues"][0]["venue_id"]
-        for path in ("/", f"/visualizer/studio/{venue_id}", "/cart"):
+        for path in ("/home", f"/visualizer/studio/{venue_id}", "/cart"):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
@@ -27,7 +27,7 @@ class ThemeToggleTests(unittest.TestCase):
                 response.close()
 
     def test_saved_theme_is_applied_before_stylesheet(self):
-        html = self.client.get("/").get_data(as_text=True)
+        html = self.client.get("/home").get_data(as_text=True)
         self.assertIn('localStorage.getItem("titiket-theme")', html)
         self.assertLess(html.index("localStorage.getItem"), html.index("tokens.css"))
 
@@ -62,7 +62,7 @@ class ThemeToggleTests(unittest.TestCase):
         self.assertNotIn("theme-toggle__sun", partial)
         self.assertIn('step === "promo"', script)
 
-        for path in ("/", "/promo", "/visualizer/studio/xxi-regular", "/cart"):
+        for path in ("/home", "/promo", "/visualizer/studio/xxi-regular", "/cart"):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
             html = response.get_data(as_text=True)

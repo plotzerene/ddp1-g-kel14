@@ -34,7 +34,7 @@
               aria-controls="viz-grid" tabindex="{{ '0' if v.venue_id == venue.venue_id else '-1' }}">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#i-film"/></svg>
         <span class="venue-tab__label">{{ v.short_label }}</span>
-        <span class="venue-tab__price num">{{ v.price_from | rupiah }}</span>
+        <span class="venue-tab__price num">{{ (venue_prices[v.venue_id] if venue_prices is defined and v.venue_id in venue_prices else v.price_from) | rupiah_short }}</span>
       </button>
       {% endfor %}
       {% else %}
@@ -79,10 +79,6 @@
         <span id="map-spotlight-anchor" hidden></span>
         <div class="map-legend" id="map-legend"></div>
 
-        <div class="cinema-screen-banner" id="cinema-screen-banner" {% if venue.kind.value != 'cinema' %}hidden{% endif %}>
-          <span>AREA LAYAR &bull; CINEMA XXI</span>
-        </div>
-
         <div class="map-wrap">
           <div class="seat-map-scroll" id="seat-map-scroll">
             <div class="seat-map-stage" id="map2d">
@@ -107,8 +103,7 @@
             <label for="range-body">Tinggi Badan Kamu</label>
             <output class="num" id="out-body" for="range-body">170 cm</output>
           </div>
-          <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170"
-                 aria-describedby="eye-note">
+          <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170">
           <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
         </div>
 
@@ -120,8 +115,6 @@
           <input class="range" type="range" id="range-front" min="145" max="195" step="1" value="170">
           <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
         </div>
-
-        <p class="eye-note" id="eye-note" aria-live="polite"></p>
       </section>
 
       <section class="panel" aria-labelledby="reco-title">
@@ -134,7 +127,6 @@
         </header>
 
         <div class="preset-list" id="preset-list" role="radiogroup" aria-label="Preferensi rekomendasi"></div>
-        <p class="panel__hint" id="preset-desc"></p>
 
         <button class="btn btn--secondary btn--block" type="button" id="btn-recommend">
           <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
@@ -150,8 +142,10 @@
 
       {# KARTU 1: INFO ACARA #}
       <section class="panel viz-event-card" aria-label="Informasi acara">
-        <img class="viz-event-card__poster" id="event-card-poster" src="{{ event_poster or '' }}"
-             alt="{{ event.title if event else venue.name }}" {% if not event_poster %}hidden{% endif %}>
+        {% set viz_fallback = poster_fallback_url | default('/static/images/posters/poster_fallback.svg') %}
+        <img class="viz-event-card__poster" id="event-card-poster" src="{{ event_poster or viz_fallback }}"
+             alt="{{ event.title if event else venue.name }}"
+             onerror="this.onerror=null;this.src='{{ viz_fallback }}'">
         <div class="viz-event-card__meta">
           <p class="viz-event-card__eyebrow" id="event-card-kind">{{ 'Sedang Tayang' if venue.kind.value == 'cinema' else 'Konser Live' }}</p>
           <h2 class="viz-event-card__title" id="event-card-title">{{ event.title if event else venue.name }}</h2>
@@ -322,9 +316,9 @@
           <button class="btn btn--outline-neutral" type="button" id="btn-clear">
             Hapus Pilihan
           </button>
-          <a class="btn btn--teal-primary" id="btn-checkout" href="{{ url_for('checkout.index') }}" aria-disabled="true">
+          <a class="btn btn--teal-primary liquid-glass-btn-primary" id="btn-checkout" href="{{ url_for('checkout.index') }}" aria-disabled="true">
             <span id="btn-checkout-label">Lanjut ke Checkout</span>
-            <span class="badge-count num" id="checkout-count" hidden>0</span>
+            <span class="badge-count num liquid-glass-badge" id="checkout-count" hidden>0</span>
             <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
           </a>
         </div>
@@ -335,7 +329,7 @@
         <h2 id="insight-title">{{ 'Seat Insight' if venue.kind.value == 'cinema' else 'Spot Insight' }}</h2>
         <div class="insight__body">
           <div class="insight__score">
-            <div class="score-ring">
+            <div class="score-ring" id="score-ring-wrap">
               <svg viewBox="0 0 116 116" aria-hidden="true">
                 <circle class="score-ring__track" cx="58" cy="58" r="50"/>
                 <circle class="score-ring__bar" id="score-ring" cx="58" cy="58" r="50"
@@ -343,7 +337,7 @@
               </svg>
               <div class="score-ring__text">
                 <strong class="num" id="score-value">–</strong>
-                <span id="score-grade"></span>
+                <span class="score-badge" id="score-grade"></span>
               </div>
             </div>
             {# Hanya konser: baterai vertikal = bagian pandangan yang bebas halangan. #}

@@ -22,7 +22,7 @@ class LiquidGlassTests(unittest.TestCase):
         return response.get_data(as_text=True)
 
     def test_stylesheet_is_linked_globally_after_page_css(self):
-        for path in ("/", "/cart", "/visualizer/studio/xxi-regular", "/movie/sore"):
+        for path in ("/", "/home", "/cart", "/visualizer/studio/xxi-regular", "/movie/sore"):
             with self.subTest(path=path):
                 html = self.get_text(path)
                 self.assertIn("css/liquid_glass.css", html)
@@ -42,22 +42,40 @@ class LiquidGlassTests(unittest.TestCase):
         self.assertIn("prefers-reduced-motion", css)
 
     def test_components_use_glass_classes(self):
-        self.assertIn("liquid-glass-switch", self.get_text("/"))
-        self.assertIn("auth-modal__panel liquid-glass-modal", self.get_text("/"))
+        self.assertIn("liquid-glass-switch", self.get_text("/home"))
+        self.assertIn("auth-modal__panel liquid-glass-modal", self.get_text("/home"))
         viz = self.get_text("/visualizer/studio/xxi-regular")
         self.assertIn("hud hud--tl liquid-glass-dock", viz)
         movie = self.get_text("/movie/sore")
         self.assertIn('detail__cta-secondary liquid-glass-pill" id="trailer-open"', movie)
 
     def test_landing_parallax_showcase_and_assets(self):
-        html = self.get_text("/")
-        self.assertIn("data-parallax-stage", html)
-        self.assertEqual(html.count("data-parallax-layer"), 3)
-        self.assertIn("js/parallax.js", html)
-        for name in ("background.svg", "frame.svg", "foreground.svg"):
-            with self.subTest(layer=name):
-                self.assertIn(f"images/parallax/{name}", html)
-                self.assertEqual(self.client.get(f"/static/images/parallax/{name}").status_code, 200)
+        intro_html = self.get_text("/")
+        self.assertIn('id="intro-stage"', intro_html)
+        self.assertIn("data-parallax-stage", intro_html)
+        self.assertEqual(intro_html.count("data-parallax-layer"), 3)
+        self.assertIn("js/parallax.js", intro_html)
+        self.assertNotIn("PARALLAX LAYERED ENTRANCE", intro_html)
+        self.assertNotIn("POV 3D ENGINE", intro_html)
+        self.assertIn("data-home-transition", intro_html)
+        self.assertIn('id="page-fade-curtain"', intro_html)
+        self.assertIn("FEEL THE MOMENTS BEYOND", intro_html)
+        self.assertIn("Mulai Eksplorasi", intro_html)
+        self.assertNotIn("images/parallax/background.svg", intro_html)
+        self.assertIn("bioskopbg.jpg", intro_html)
+        self.assertIn("person_silhouette_clean.png", intro_html)
+
+        home_html = self.get_text("/home")
+        self.assertNotIn('id="parallax-intro"', home_html)
+        self.assertNotIn("data-parallax-stage", home_html)
+        self.assertNotIn("js/parallax.js", home_html)
+        self.assertIn('id="catalog-section"', home_html)
+        self.assertEqual(self.client.get("/static/reference_assets/images/bioskopbg.jpg").status_code, 200)
+        self.assertEqual(self.client.get("/static/reference_assets/person_silhouette_clean.png").status_code, 200)
+        for icon in ("projector.svg", "music.svg", "clapperboard.svg", "food.svg", "building.svg"):
+            with self.subTest(category_svg=icon):
+                self.assertIn(f"images/icons/categories/{icon}", home_html)
+                self.assertEqual(self.client.get(f"/static/images/icons/categories/{icon}").status_code, 200)
 
     def test_parallax_uses_extracted_lerp_formula(self):
         js = (STATIC / "js/parallax.js").read_text(encoding="utf-8")

@@ -47,4 +47,60 @@
   }
 
   render();
+
+  function revealFadingPage() {
+    if (!root.classList.contains("is-page-fading-in")) return;
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      root.classList.remove("is-page-fading-in");
+    }
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(finish);
+      });
+    } else {
+      finish();
+    }
+    window.setTimeout(finish, 650);
+  }
+
+  function fadeOutAndGo(targetUrl) {
+    var dest = targetUrl || "/home";
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try {
+      sessionStorage.setItem("titiket-fade-in", "1");
+    } catch (e) {
+      // Abaikan jika sessionStorage tidak tersedia.
+    }
+    if (reduce) {
+      window.location.href = dest;
+      return;
+    }
+    var curtain = document.getElementById("page-fade-curtain");
+    if (curtain) {
+      var targetTheme = "light";
+      try {
+        if (localStorage.getItem(KEY) === "dark") targetTheme = "dark";
+      } catch (e) {}
+      curtain.setAttribute("data-target-theme", targetTheme);
+    }
+    root.classList.add("is-leaving-to-home");
+    window.setTimeout(function () {
+      window.location.href = dest;
+    }, 380);
+  }
+
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+      root.classList.remove("is-leaving-to-home", "is-page-fading-in");
+    }
+  });
+
+  window.TitiketTransition = {
+    fadeOutAndGo: fadeOutAndGo
+  };
+
+  revealFadingPage();
 })();

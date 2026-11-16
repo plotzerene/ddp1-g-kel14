@@ -18,16 +18,25 @@ from __future__ import annotations
 import math
 import secrets
 
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, session, url_for
 
-from ...assets_sync import asset_url
-from ...shared_state import MAX_CART_ITEMS, Cart, CartItem, event_for_venue, format_rupiah, get_event
+from ...assets_sync import POSTER_FALLBACK_REL, asset_url
+from ...shared_state import (
+    MAX_CART_ITEMS,
+    Cart,
+    CartItem,
+    event_for_venue,
+    format_rupiah,
+    get_event,
+    price_for_film_venue,
+)
 from .engine.geometry_3d import LENSES
 from .engine.obstruction import DEFAULT_BODY_CM, MAX_BODY_CM, MIN_BODY_CM
 from .engine.pov_engine import PovReport, engine_for
 from .engine.seat_lock import SeatLockStore
 from .engine.sightline_ai import SmartSeatRecommender
 from .models import SeatNotFoundError, Venue, get_venue, venue_registry
+from .models.base_venue import SeatStatus
 
 visualizer_bp = Blueprint("visualizer", __name__, template_folder="templates")
 
@@ -187,12 +196,40 @@ def index():
     return redirect(url_for("visualizer.studio", venue_id=venue_id, film=film))
 
 
+def _seat_status(venue: Venue, seat, film_id: str | None) -> SeatStatus:
+    if hasattr(venue, "seat_status_for"):
+        return venue.seat_status_for(seat, film_id)
+    return seat.status
+
+
+def _seat_price(venue: Venue, seat, film_id: str | None) -> int:
+    if venue.kind.value == "cinema":
+        return price_for_film_venue(film_id, venue.venue_id, seat.price)
+    return seat.price
+
+
 @visualizer_bp.get("/studio/<venue_id>")
 def studio(venue_id: str):
+    return _render_studio(venue_id)
+
+
+def studio_pov(event_id: str):
+    """Rute langsung simulator denah kursi & POV 3D untuk film/konser (/studio_pov/<event_id>)."""
+    event = get_event(event_id)
+    if event is None:
+        abort(404)
+    requested_studio = (request.args.get("studio") or "").strip()
+    venue_id = requested_studio if requested_studio in event.venues else event.venues[0]
+    return _render_studio(venue_id, forced_event=event)
+
+
+def _render_studio(venue_id: str, forced_event=None):
     venue = get_venue(venue_id)
     is_concert = venue.kind.value == "concert"
-    requested_film = None if is_concert else get_event(request.args.get("film"))
-    if requested_film is not None and requested_film.kind != "film":
+    requested_film = forced_event if forced_event is not None else (
+        None if is_concert else get_event(request.args.get("film"))
+    )
+    if requested_film is not None and requested_film.kind != "film" and forced_event is None:
         requested_film = None
 
     cinema_arg = (request.args.get("cinema") or "").strip()
@@ -210,13 +247,15 @@ def studio(venue_id: str):
             time=time_arg or None,
         ))
 
-    event = event_for_venue(venue_id, requested_film.event_id if requested_film else None)
+    event = forced_event or event_for_venue(venue_id, requested_film.event_id if requested_film else None)
     film = event if not is_concert and event is not None and event.kind == "film" else requested_film
+    film_id = film.event_id if film is not None else None
 
     if is_concert:
         venue_tabs = []
         concert_zones = _concert_zone_tabs(venue)
         boot_venues = []
+        venue_prices: dict[str, int] = {}
     else:
         registry = venue_registry()
         allowed_ids = event.venues if event is not None else tuple(registry.keys())
@@ -225,7 +264,11 @@ def studio(venue_id: str):
             if vid in registry and registry[vid].kind.value == "cinema"
         ]
         concert_zones = []
-        boot_venues = [{**v.summary(), "price_from": v.price_from} for v in venue_tabs]
+        venue_prices = {
+            v.venue_id: price_for_film_venue(film_id, v.venue_id, v.price_from)
+            for v in venue_tabs
+        }
+        boot_venues = [{**v.summary(), "price_from": venue_prices[v.venue_id]} for v in venue_tabs]
 
     schedule = {
         "cinema": cinema_arg or ("Stadion Utama GBK" if is_concert else "AGORA MALL XXI"),
@@ -235,14 +278,16 @@ def studio(venue_id: str):
         ),
     }
     event_poster = asset_url(event.poster) if event is not None and event.poster else ""
+    fallback_poster = asset_url(POSTER_FALLBACK_REL) or "/static/images/posters/poster_fallback.svg"
     placeholder = "__VENUE__"
     bootstrap = {
         "venueId": venue.venue_id,
-        # Film pilihan ikut dibawa saat berpindah studio, supaya trailernya tetap sama.
+        # Film pilihan ikut dibawa saat berpindah studio, supaya trailernya dan harganya tetap sama.
         "film": film.event_id if not is_concert and film is not None and film.kind == "film" else None,
         "schedule": schedule,
         "venues": boot_venues,
         "limits": LIMITS,
+        "posterFallbackUrl": fallback_poster,
         "api": {
             "layout": url_for("visualizer.api_layout", venue_id=placeholder),
             "heatmap": url_for("visualizer.api_heatmap", venue_id=placeholder),
@@ -259,9 +304,9 @@ def studio(venue_id: str):
         "cart": _cart_state(),
     }
     return render_template("visualizer/studio_pov.html", venue=venue, event=event,
-                           schedule=schedule, event_poster=event_poster,
-                           venues=venue_tabs, concert_zones=concert_zones,
-                           bootstrap=bootstrap)
+                           schedule=schedule, event_poster=event_poster or fallback_poster,
+                           venues=venue_tabs, venue_prices=venue_prices,
+                           concert_zones=concert_zones, bootstrap=bootstrap)
 
 
 # =========================================================================== #
@@ -276,12 +321,28 @@ def api_venues():
 def api_layout(venue_id: str):
     venue = get_venue(venue_id)
     scoring = venue.scoring_profile()
-    event = event_for_venue(venue_id, request.args.get("film"))
-    layout = venue.layout()
+    film_arg = request.args.get("film")
+    event = event_for_venue(venue_id, film_arg)
+    active_film = film_arg or (event.event_id if event is not None and event.kind == "film" else None)
+    price_override = (
+        price_for_film_venue(active_film, venue_id, venue.price_from)
+        if venue.kind.value == "cinema"
+        else None
+    )
+    layout = (
+        venue.layout_for_film(active_film, price_override=price_override)
+        if hasattr(venue, "layout_for_film")
+        else venue.layout()
+    )
     media = dict(layout["media"])
     if event is not None:       # layar 3D memutar trailer/rekaman acara yang dipilih
         media.update(video=asset_url(event.trailer) or media["video"], video_label=event.title,
                      poster=asset_url(event.poster) or media["poster"])
+    default_selector = (
+        venue.default_selector_for_film(active_film)
+        if hasattr(venue, "default_selector_for_film")
+        else venue.default_selector()
+    )
     return jsonify({
         **layout,
         "media": media,
@@ -289,16 +350,20 @@ def api_layout(venue_id: str):
         "presets": SmartSeatRecommender.presets_for(venue.kind.value),
         "lenses": [lens.to_dict() for lens in LENSES.values()],
         "limits": LIMITS,
-        "default_selector": venue.default_selector(),
+        "default_selector": default_selector,
         "scoring": {"standard_label": scoring.standard_label, "ideal_h_fov_deg": scoring.ideal_h_fov_deg},
-        "price_from": venue.price_from,
+        "price_from": price_override if price_override is not None else venue.price_from,
     })
 
 
 @visualizer_bp.post("/api/pov")
 def api_pov():
-    venue, report = _evaluate(_payload())
+    payload = _payload()
+    venue, report = _evaluate(payload)
+    film_id = payload.get("film")
     data = report.to_dict()
+    data["seat"]["status"] = _seat_status(venue, report.seat, film_id).value
+    data["seat"]["price"] = _seat_price(venue, report.seat, film_id)
     data["in_cart"] = f"{venue.venue_id}|{report.seat.seat_id}" in Cart().seat_keys()
     return jsonify(data)
 
@@ -307,11 +372,20 @@ def api_pov():
 def api_recommend():
     data = _payload()
     venue = get_venue(str(data.get("venue_id", "")))
+    film_id = data.get("film")
     body_cm = data.get("body_height_cm", DEFAULT_BODY_CM)
     front_cm = data.get("front_height_cm", DEFAULT_BODY_CM)
     engine = engine_for(venue.venue_id)
     recommender = SmartSeatRecommender(venue, lambda seat: engine.evaluate(seat, body_cm, front_cm))
-    return jsonify(recommender.recommend(str(data.get("preset", "ideal_thx"))))
+    result = recommender.recommend(
+        str(data.get("preset", "ideal_thx")),
+        available_fn=lambda seat: _seat_status(venue, seat, film_id) is SeatStatus.AVAILABLE,
+    )
+    if venue.kind.value == "cinema" and film_id:
+        adjusted_price = price_for_film_venue(film_id, venue.venue_id)
+        for rec in result.get("recommendations", []):
+            rec["price"] = adjusted_price
+    return jsonify(result)
 
 
 @visualizer_bp.get("/api/venues/<venue_id>/heatmap")
@@ -333,8 +407,9 @@ def api_cart_add():
     """Tambah kursi aktif ke keranjang. Metadata POV dihitung ulang di server, bukan dari klien."""
     data = _payload()
     venue, report = _evaluate(data)
+    film_id = data.get("film")
     is_standing = getattr(report.seat, "seat_type", "") == "festival"      # area berdiri: tidak memakai kata "kursi"
-    if not report.seat.is_available:
+    if _seat_status(venue, report.seat, film_id) is not SeatStatus.AVAILABLE:
         sold = "Tiket ini sudah habis." if is_standing else "Kursi ini sudah terjual."
         return jsonify(
             error=sold,
@@ -356,7 +431,7 @@ def api_cart_add():
             conflict_standing=is_standing,
             **_cart_state(),
         ), 409
-    event = event_for_venue(venue.venue_id, data.get("film"))
+    event = event_for_venue(venue.venue_id, film_id)
     summary = report.summary()
     raw_schedule = data.get("schedule") if isinstance(data.get("schedule"), dict) else {}
     is_concert_venue = venue.kind.value == "concert"
@@ -370,6 +445,7 @@ def api_cart_add():
     show_time = str(raw_schedule.get("time") or ("19:30 WIB" if is_concert_venue else "19:00 WIB"))[:30]
     cinema_name = str(raw_schedule.get("cinema") or ("Stadion Utama GBK" if is_concert_venue else "AGORA MALL XXI"))[:60]
     studio_label = "Pintu Timur" if is_concert_venue else studio_labels.get(venue.venue_id, venue.short_label)
+    seat_price = _seat_price(venue, report.seat, film_id)
     item = CartItem(
         event_id=event.event_id if event else "",
         venue_id=venue.venue_id,
@@ -377,7 +453,7 @@ def api_cart_add():
         seat_id=report.seat.seat_id,
         seat_label=report.seat.label,
         category=report.seat.category,
-        price=report.seat.price,
+        price=seat_price,
         pov={**{key: summary[key] for key in POV_CART_FIELDS},
              "body_height_cm": report.viewer.stature_cm, "front_height_cm": report.front.stature_cm,
              "show_date": show_date, "show_time": show_time,

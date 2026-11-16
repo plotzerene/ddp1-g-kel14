@@ -13,7 +13,7 @@ from pathlib import Path
 
 from flask import Blueprint, render_template, url_for
 
-from ...shared_state import EVENTS
+from ...shared_state import EVENTS, price_for_film_venue
 
 landing_bp = Blueprint("landing", __name__, template_folder="templates")
 CATALOG_PATH = Path(__file__).resolve().parents[3] / "movies_catalog.json"
@@ -51,16 +51,32 @@ def _card_from_event(event, catalog: dict[str, dict], *, is_extra: bool = False)
             "is_extra": is_extra,
             "badge": "LIVE",
             "badge_variant": "gold",
-            "meta_line": "GBK Stadium \u2022 Music/Concert",
+            "meta_line": "Stadion Utama GBK \u2022 Konser Musik",
             "detail_endpoint": "events.coldplay_overview",
             "detail_slug": None,
             "rating": 9.4,
+            "min_price": 800_000,
+            "status_badge": "Konser Musik",
+            "trailer_embed": "",
+            "is_coming_soon": False,
+            "formats": "concert",
+            "days": "tomorrow",
+            "is_nearby": False,
         }
     meta = catalog.get(event.event_id, {})
     raw_age = str(meta.get("age_rating", "13+"))
     badge = "SU" if raw_age == "SU" else (raw_age if raw_age.startswith("R") else f"R{raw_age}")
     genres = "/".join(meta.get("genres", [])[:2])
     duration = meta.get("duration", "1h 50m")
+    min_price = min(
+        (price_for_film_venue(event.event_id, v) for v in event.venues),
+        default=50_000,
+    )
+    embed_id = meta.get("embed_id")
+    trailer_embed = f"https://www.youtube-nocookie.com/embed/{embed_id}" if embed_id else ""
+    is_coming_soon = meta.get("status") == "coming_soon"
+    formats = " ".join(event.venues)
+    days = "tomorrow" if is_coming_soon else "today tomorrow"
     return {
         "event": event,
         "kind": "film",
@@ -72,20 +88,43 @@ def _card_from_event(event, catalog: dict[str, dict], *, is_extra: bool = False)
         "detail_endpoint": "events.movie",
         "detail_slug": event.event_id,
         "rating": meta.get("rating", 8.0),
+        "min_price": min_price,
+        "status_badge": meta.get("status_badge", "Sedang Tayang"),
+        "trailer_embed": trailer_embed,
+        "is_coming_soon": is_coming_soon,
+        "formats": formats,
+        "days": days,
+        "is_nearby": not is_coming_soon,
     }
 
 
-@landing_bp.get("/")
+QUICK_FILTER_CHIPS: tuple[tuple[str, str], ...] = (
+    ("all", "Semua"),
+    ("nearby", "Bioskop Terdekat"),
+    ("imax", "IMAX Laser"),
+    ("concert", "Konser Musik"),
+    ("today", "Hari Ini"),
+    ("tomorrow", "Besok"),
+)
+
+
+@landing_bp.get("/home")
 def index():
     catalog = _catalog_by_id()
     all_cards = {ev.event_id: _card_from_event(ev, catalog) for ev in EVENTS.values()}
 
-    # Carousel sorotan utama FigCraft 01_Home (3 kartu awal + lanjutan katalog).
+    # Carousel sorotan utama FigCraft 01_Home (rilis baru + judul unggulan).
     featured_order = [
+        ("spiderman-no-way-home", "IMAX & 4DX READY"),
+        ("how-to-lose-a-guy-in-10-days", "SPECIAL CLASSIC"),
+        ("coldplay-gbk", "KONSER MUSIK"),
+        ("the-hunger-games", "SEDANG TAYANG"),
+        ("the-nun", "MIDNIGHT SCREENING"),
+        ("chiikawa-movie", "LAGI TAYANG \u2022 ANIME"),
+        ("zootopia-2", "PRESALE \u2022 IMAX 3D"),
+        ("sore", "REKOMENDASI POV 3D"),
         ("boboiboy-the-movie", "SEDANG TAYANG"),
         ("ejen-ali-the-movie-2", "SEDANG TAYANG"),
-        ("coldplay-gbk", "KONSER STADION \u2022 GBK"),
-        ("sore", "REKOMENDASI POV 3D"),
         ("jatuh-cinta-seperti-di-film-film", "PILIHAN PENONTON"),
         ("la-la-land", "CLASSIC CINEMA"),
         ("avengers-endgame", "IMAX & 4DX READY"),
@@ -96,8 +135,13 @@ def index():
         if eid in all_cards
     ]
 
-    # Grid 5 kolom "Lagi tayang" (kartu ke-6 & 7 terbuka lewat tombol "Lihat semua").
+    # Grid 5 kolom "Lagi tayang" (2 baris utama + kartu lanjutan lewat "Lihat semua").
     now_playing_primary = (
+        "how-to-lose-a-guy-in-10-days",
+        "the-nun",
+        "the-hunger-games",
+        "spiderman-no-way-home",
+        "chiikawa-movie",
         "sore",
         "jatuh-cinta-seperti-di-film-film",
         "boboiboy-the-movie",
@@ -111,15 +155,19 @@ def index():
     ] + [
         _card_from_event(ev, catalog, is_extra=True)
         for eid, ev in EVENTS.items()
-        if eid not in now_playing_primary
-    ]
+        if eid not in now_playing_primary and eid != "zootopia-2"
+    ] + (
+        [_card_from_event(EVENTS["zootopia-2"], catalog, is_extra=True)]
+        if "zootopia-2" in EVENTS
+        else []
+    )
 
     # Grid 5 kolom "Coming Soon" + tombol "Ingatkan Saya".
     coming_soon_order = (
+        "zootopia-2",
         "la-la-land",
         "avengers-endgame",
         "sore",
-        "ejen-ali-the-movie-2",
         "coldplay-gbk",
     )
     coming_soon_cards = [
@@ -134,6 +182,7 @@ def index():
         featured_slides=featured_slides,
         now_playing_cards=now_playing_cards,
         coming_soon_cards=coming_soon_cards,
+        quick_filter_chips=QUICK_FILTER_CHIPS,
         concert_event=EVENTS.get("coldplay-gbk"),
         studios=STUDIOS,
         food_items=FOOD_HIGHLIGHTS,
@@ -215,12 +264,12 @@ PROMO_OFFERS: list[dict] = [
     {
         "id": "gbk-3d-priority",
         "category": "konser",
-        "category_label": "Konser",
+        "category_label": "Konser Musik",
         "badge": "BEBAS ADMIN VA",
         "accent": "amber",
-        "period": "Selama ketersediaan zona tiket GBK masih dibuka",
+        "period": "Selama ketersediaan zona tiket konser masih dibuka",
         "code": "Tanpa Kode • Pembayaran Virtual Account",
-        "title": "Prioritas Zona Konser GBK & Bebas Biaya Admin VA",
+        "title": "Prioritas Zona Konser & Bebas Biaya Admin VA",
         "highlight": "Nol Biaya Transfer Virtual Account BCA, Mandiri, BNI, BRI",
         "summary": (
             "Amankan kategori zona terbaik Coldplay: Music of the Spheres di Stadion Utama GBK lengkap "
@@ -232,7 +281,7 @@ PROMO_OFFERS: list[dict] = [
             "Total pembayaran tetap memperhitungkan Pajak Hiburan Daerah 15% dan Convenience Fee 5% sesuai ketentuan promotor resmi PK Entertainment.",
             "E-tiket konser diterbitkan menggunakan Barcode Code128 unik, bersifat final (tidak dapat dijadwal ulang), dan wajib disertai kartu identitas asli saat penukaran.",
         ],
-        "cta_label": "Lihat Denah & 3D GBK",
+        "cta_label": "Lihat Denah & 3D Konser",
         "cta_kind": "concert",
     },
     {

@@ -10,7 +10,7 @@
  * File ini tidak menghitung geometri: ia hanya mengirim pilihan pengguna ke
  * Python dan menampilkan angka yang dikembalikan.
  */
-import { Map2DPicker, SubPositionPicker, formatRupiah, h, icon } from './map_2d_picker.js';
+import { Map2DPicker, SubPositionPicker, formatRupiah, formatRupiahShort, h, icon } from './map_2d_picker.js';
 import { PovScene } from './pov_3d_three.js';
 
 const boot = JSON.parse(document.getElementById('viz-bootstrap').textContent);
@@ -56,7 +56,11 @@ function syncEventCard(layout) {
     badgeEl.hidden = isConcert;
   }
   if (posterEl) {
-    const posterSrc = (layout.media && layout.media.poster) || '';
+    const posterSrc = (layout.media && layout.media.poster) || boot.posterFallbackUrl || '';
+    posterEl.onerror = () => {
+      posterEl.onerror = null;
+      if (boot.posterFallbackUrl) posterEl.src = boot.posterFallbackUrl;
+    };
     if (posterSrc) {
       posterEl.src = posterSrc;
       posterEl.alt = layout.event ? layout.event.title : layout.name;
@@ -335,8 +339,6 @@ async function loadVenue(venueId, pushHistory = false) {
 
   const vizApp = $('viz-app');
   if (vizApp) vizApp.dataset.kind = layout.kind;
-  const screenBanner = $('cinema-screen-banner');
-  if (screenBanner) screenBanner.hidden = layout.kind !== 'cinema';
   const displayGroup = $('deck-display-group');
   if (displayGroup) displayGroup.hidden = layout.kind !== 'cinema';
   const compareBtn = $('btn-compare');
@@ -392,6 +394,7 @@ async function requestPov(mode = 'glide') {
       target_id: state.targetId,
       lens: state.lens,
       aspect: state.aspect,
+      film: boot.film,
     }, controller.signal);
     if (controller.signal.aborted) return;
     state.pov = pov;
@@ -415,7 +418,7 @@ function applyPov(pov, mode) {
   }
 
   const standing = isStandingPov(pov);
-  $('hud-seat').textContent = standing ? pov.seat.label : `${pov.seat.label} (Duduk Bernomor)`;
+  $('hud-seat').textContent = pov.seat.label;
   const spotSel = $('spotlight-selection');
   if (spotSel) {
     spotSel.textContent = `${pov.seat.label} · ${pov.seat.category} · ${formatRupiah(pov.seat.price)}`;
@@ -425,7 +428,6 @@ function applyPov(pov, mode) {
     : `${pov.seat.category} · ${formatRupiah(pov.seat.price)}`;
   $('hud-score-value').textContent = Math.round(pov.score.total);
   $('hud-score-grade').textContent = pov.score.grade;
-  $('eye-note').textContent = `Tinggi mata ${fixed(pov.viewer.eye_height_m, 2)} m dari lantai (${pov.viewer.posture_label}).`;
   for (const button of document.querySelectorAll('#lens-buttons [data-lens]')) {
     button.setAttribute('aria-pressed', String(button.dataset.lens === pov.camera.lens.mode));
   }
@@ -494,13 +496,46 @@ function renderLenses(layout) {
 /* •••••••••••• */
 /* Seat Insight: cincin skor, 5 bar, baterai halangan (konser), spesifikasi   */
 /* •••••••••••• */
+function getScoreTier(total) {
+  if (total >= 85) {
+    return {
+      tier: 'good',
+      accent: '#15803D',
+      border: '#22C55E',
+      glow: 'rgba(34, 197, 94, 0.15)',
+    };
+  }
+  if (total >= 65) {
+    return {
+      tier: 'mid',
+      accent: '#CA8A04',
+      border: '#EAB308',
+      glow: 'rgba(234, 179, 8, 0.15)',
+    };
+  }
+  return {
+    tier: 'low',
+    accent: '#DC2626',
+    border: '#EF4444',
+    glow: 'rgba(239, 68, 68, 0.15)',
+  };
+}
+
 function updateInsight(pov) {
   const target = pov.targets[pov.active_target];
   const sound = pov.acoustics;
   const total = pov.score.total;
+  const spec = getScoreTier(total);
   const ring = $('score-ring');
+  const ringWrap = $('score-ring-wrap') || (ring && ring.closest('.score-ring'));
+  if (ringWrap) {
+    ringWrap.dataset.scoreTier = spec.tier;
+    ringWrap.style.setProperty('--score-accent', spec.accent);
+    ringWrap.style.setProperty('--score-border', spec.border);
+    ringWrap.style.setProperty('--score-glow', spec.glow);
+  }
   ring.setAttribute('stroke-dashoffset', String(100 - total));       // pathLength lingkaran = 100
-  ring.style.stroke = total < 40 ? 'var(--color-destructive)' : total < 55 ? 'var(--color-warning)' : '';
+  ring.style.stroke = spec.accent;
   $('score-value').textContent = fixed(total, 1);
   $('score-grade').textContent = pov.score.grade;
 
@@ -571,6 +606,8 @@ function syncCart() {
   const sold = pov.seat.status === 'sold';
   const hasCart = count > 0;
 
+  const priceFormatter = (state.layout && state.layout.kind === 'cinema') ? formatRupiahShort : formatRupiah;
+
   const seatEl = $('cta-seat');
   if (hasCart) {
     if (summaryLbl) {
@@ -580,15 +617,15 @@ function syncCart() {
       const chips = (state.cart.items || []).map((item) => h('span', { class: 'seat-chip', text: item.seat_label }));
       seatEl.replaceChildren(...chips);
     }
-    $('cta-price').textContent = formatRupiah(state.cart.subtotal);
+    $('cta-price').textContent = priceFormatter(state.cart.subtotal);
   } else {
     if (summaryLbl) summaryLbl.textContent = standing ? 'Posisi Terpilih' : 'Kursi Terpilih';
     if (seatEl) {
       seatEl.textContent = standing
         ? `${pov.seat.label} (Free Standing)`
-        : `${pov.seat.label} (Duduk Bernomor)`;
+        : pov.seat.label;
     }
-    $('cta-price').textContent = formatRupiah(pov.seat.price);
+    $('cta-price').textContent = priceFormatter(pov.seat.price);
   }
 
   button.disabled = sold;
@@ -691,7 +728,8 @@ function syncPreset() {
   for (const button of $('preset-list').children) {
     button.setAttribute('aria-checked', String(button.dataset.key === state.preset.key));
   }
-  $('preset-desc').textContent = state.preset.description;
+  const presetDesc = $('preset-desc');
+  if (presetDesc) presetDesc.textContent = state.preset.description || '';
 }
 
 async function recommend() {
@@ -707,6 +745,7 @@ async function recommend() {
       preset: state.preset.key,
       body_height_cm: state.body,
       front_height_cm: state.front,
+      film: boot.film,
     });
     map.setRecommendations(data.recommendations);
     results.replaceChildren();
@@ -943,9 +982,8 @@ function bindEvents() {
   function openSpotlight() {
     if (!spotlightModal || !spotlightBody || !spotlightAnchor || spotlightOpen) return;
     const legend = $('map-legend');
-    const banner = $('cinema-screen-banner');
     const mapWrap = spotlightAnchor.parentElement.querySelector('.map-wrap');
-    spotlightBody.replaceChildren(...[legend, banner, mapWrap].filter(Boolean));
+    spotlightBody.replaceChildren(...[legend, mapWrap].filter(Boolean));
     spotlightModal.hidden = false;
     spotlightOpen = true;
     document.body.style.overflow = 'hidden';
@@ -961,7 +999,6 @@ function bindEvents() {
     if (btnSpotlight) btnSpotlight.setAttribute('aria-expanded', 'false');
     const restore = [
       spotlightBody.querySelector('#map-legend'),
-      spotlightBody.querySelector('#cinema-screen-banner'),
       spotlightBody.querySelector('.map-wrap'),
     ].filter(Boolean);
     let cursor = spotlightAnchor;

@@ -311,8 +311,16 @@ html[data-theme="light"] .screen-line {
   stroke: #C59B27;
 }
 
+html[data-theme="light"] .screen-housing {
+  stroke: rgba(197, 155, 39, 0.16);
+}
+
 html[data-theme="light"] .screen-glow {
   stroke: rgba(197, 155, 39, 0.35);
+}
+
+html[data-theme="light"] .screen-label {
+  fill: #92400E;
 }
 
 html[data-theme="light"] .sight-cone {
@@ -465,8 +473,7 @@ html[data-theme="light"] .map-tooltip {
   color: var(--color-muted-fg);
 }
 
-/* Teks aksen kuning di atas latar putih perlu versi yang lebih gelap agar terbaca. */
-html[data-theme="light"] .insight__score,
+/* Teks aksen kuning di atas latar putih pada rekomendasi; skor Seat Insight mengikuti spektrum dinamis 0-100. */
 html[data-theme="light"] .reco-card__score {
   color: #8A6A12;
 }
@@ -518,14 +525,6 @@ html[data-theme="light"] .seat-spotlight-selected {
   color: #006875;
 }
 
-html[data-theme="light"] .cinema-screen-banner {
-  background: #F1F5F9;
-  border-color: #CBD5E1;
-  border-top: 3px solid #C59B27;
-  color: #0F172A;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-}
-
 html[data-theme="light"] .pov-hud-metrics {
   background: #F8FAFC;
   border-color: #E2E8F0;
@@ -571,18 +570,11 @@ html[data-theme="light"] .mini-grid__label {
   color: #006875;
 }
 
-html[data-theme="light"] .map-wrap {
-  background: #F8FAFC;
-  border-color: #E2E8F0;
-}
-
+html[data-theme="light"] .map-wrap,
 html[data-theme="light"] .viz[data-kind="cinema"] .map-wrap {
-  background-image:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.68) 0%, rgba(15, 23, 42, 0.84) 100%),
-    url("../reference_assets/images/bioskopbg.jpg");
-  background-size: cover;
-  background-position: center;
-  border-color: #CBD5E1;
+  background: #FFFFFF;
+  background-image: none;
+  border-color: #E2E8F0;
 }
 
 html[data-theme="light"] .map-svg {

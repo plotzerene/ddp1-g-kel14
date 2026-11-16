@@ -130,6 +130,8 @@
   const nowPlayingChips = Array.from(document.querySelectorAll('[data-filter-group="now-playing"] .filter-chip'));
   const comingSoonChips = Array.from(document.querySelectorAll('[data-filter-group="coming-soon"] .filter-chip'));
   const expandBtn = document.getElementById("now-playing-expand");
+  const nowPlayingGrid = document.getElementById("now-playing-grid");
+  const comingSoonGrid = document.getElementById("coming-soon-grid");
   const nowPlayingCards = Array.from(document.querySelectorAll('.poster-card[data-grid="now-playing"]'));
   const comingSoonCards = Array.from(document.querySelectorAll('.poster-card[data-grid="coming-soon"]'));
   const emptyState = document.getElementById("catalog-empty");
@@ -148,6 +150,16 @@
     });
   }
 
+  function matchesQuickFilter(card, filterKey) {
+    if (!filterKey || filterKey === "all") return true;
+    if (filterKey === "film" || filterKey === "nearby") return card.dataset.kind === "film";
+    if (filterKey === "concert") return card.dataset.kind === "concert";
+    if (filterKey === "imax") return (card.dataset.formats || "").includes("xxi-imax");
+    if (filterKey === "today") return (card.dataset.days || "").includes("today");
+    if (filterKey === "tomorrow") return (card.dataset.days || "").includes("tomorrow");
+    return card.dataset.kind === filterKey;
+  }
+
   function applyCatalogState() {
     const query = state.searchQuery.trim().toLowerCase();
     const revealExtra = state.expandedNowPlaying || Boolean(query) || state.nowPlayingFilter !== "all";
@@ -157,21 +169,31 @@
       const isExtra = card.dataset.extra === "true";
       card.classList.toggle("is-revealed", isExtra && revealExtra);
 
-      const matchesKind = state.nowPlayingFilter === "all" || card.dataset.kind === state.nowPlayingFilter;
+      const matchesFilter = matchesQuickFilter(card, state.nowPlayingFilter);
       const haystack = (card.dataset.search || "").toLowerCase();
       const matchesSearch = !query || haystack.includes(query);
-      const visible = matchesKind && matchesSearch && (!isExtra || revealExtra);
+      const visible = matchesFilter && matchesSearch && (!isExtra || revealExtra);
 
-      card.hidden = !matchesKind || !matchesSearch;
+      card.hidden = !matchesFilter || !matchesSearch;
       if (visible) visibleNowCount += 1;
     });
 
+    let visibleSoonCount = 0;
     comingSoonCards.forEach((card) => {
-      const matchesKind = state.comingSoonFilter === "all" || card.dataset.kind === state.comingSoonFilter;
+      const matchesFilter = matchesQuickFilter(card, state.comingSoonFilter);
       const haystack = (card.dataset.search || "").toLowerCase();
       const matchesSearch = !query || haystack.includes(query);
-      card.hidden = !matchesKind || !matchesSearch;
+      const isVisible = matchesFilter && matchesSearch;
+      card.hidden = !isVisible;
+      if (isVisible) visibleSoonCount += 1;
     });
+
+    if (nowPlayingGrid) {
+      nowPlayingGrid.dataset.visibleCount = String(visibleNowCount);
+    }
+    if (comingSoonGrid) {
+      comingSoonGrid.dataset.visibleCount = String(visibleSoonCount);
+    }
 
     if (emptyState) {
       emptyState.hidden = visibleNowCount > 0;
@@ -224,6 +246,12 @@
        Label aksesibel tetap aria-label statis; placeholder hanya contoh pencarian.
        Berhenti saat kolom fokus/terisi atau tab tidak terlihat. */
     const SEARCH_HINTS = [
+      "Cari film Spider-Man: No Way Home...",
+      "Cari film The Hunger Games...",
+      "Cari film Chiikawa Movie...",
+      "Cari film Zootopia 2...",
+      "Cari film How to Lose a Guy in 10 Days...",
+      "Cari film The Nun...",
       "Cari film SORE: Istri dari Masa Depan...",
       "Cari konser Coldplay di GBK...",
       "Cari bioskop Studio IMAX...",
@@ -289,7 +317,7 @@
         return;
       }
 
-      if (cat === "konser") {
+      if (cat === "konser" || cat === "konser-musik") {
         state.nowPlayingFilter = "concert";
         syncChipGroup(nowPlayingChips, "concert");
         applyCatalogState();
@@ -359,22 +387,30 @@
     });
   });
 
-  /* 7. Modal Trailer Native */
+  /* 7. Modal Trailer Native & YouTube Resmi */
   const trailerDialog = document.getElementById("trailer-dialog");
   const trailerTitle = document.getElementById("trailer-title");
   const trailerVideo = document.getElementById("trailer-video");
+  const trailerEmbedFrame = document.getElementById("trailer-embed-frame");
   const trailerClose = document.getElementById("landing-trailer-close");
 
-  if (trailerDialog && trailerVideo) {
+  if (trailerDialog && (trailerVideo || trailerEmbedFrame)) {
     function stopLandingTrailer() {
-      trailerVideo.pause();
-      try {
-        trailerVideo.currentTime = 0;
-      } catch {
-        /* Abaikan jika metadata belum termuat */
+      if (trailerVideo) {
+        trailerVideo.pause();
+        try {
+          trailerVideo.currentTime = 0;
+        } catch {
+          /* Abaikan jika metadata belum termuat */
+        }
+        trailerVideo.removeAttribute("src");
+        trailerVideo.load();
+        trailerVideo.hidden = true;
       }
-      trailerVideo.removeAttribute("src");
-      trailerVideo.load();
+      if (trailerEmbedFrame) {
+        trailerEmbedFrame.src = "";
+        trailerEmbedFrame.hidden = true;
+      }
     }
 
     function closeLandingTrailer() {
@@ -386,19 +422,30 @@
       }
     }
 
-    document.querySelectorAll("[data-trailer]").forEach((btn) => {
+    document.querySelectorAll("[data-trailer], [data-trailer-embed]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const src = btn.dataset.trailer || "";
+        const embed = btn.dataset.trailerEmbed || "";
         const title = btn.dataset.title || "Film";
-        if (!src) return;
+        if (!src && !embed) return;
+        stopLandingTrailer();
         if (trailerTitle) trailerTitle.textContent = `Trailer: ${title}`;
-        trailerVideo.src = src;
+        if (src && trailerVideo) {
+          trailerVideo.hidden = false;
+          trailerVideo.src = src;
+        } else if (embed && trailerEmbedFrame) {
+          const sep = embed.includes("?") ? "&" : "?";
+          trailerEmbedFrame.hidden = false;
+          trailerEmbedFrame.src = `${embed}${sep}autoplay=1&rel=0`;
+        }
         if (typeof trailerDialog.showModal === "function") {
           trailerDialog.showModal();
         } else {
           trailerDialog.setAttribute("open", "open");
         }
-        trailerVideo.play().catch(() => {});
+        if (src && trailerVideo) {
+          trailerVideo.play().catch(() => {});
+        }
       });
     });
 

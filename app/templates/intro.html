@@ -1,75 +1,55 @@
 {% extends "base.html" %}
-{% set theme_color = "#02060D" %}
+{% set theme_color = "#08090C" %}
 {% block title %}Selamat datang{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block content %}
-{% set silhouette_url = asset_url("person_silhouette_clean.png") %}
+{% set silhouette_url = asset_url("person_silhouette_clean.png") or url_for('static', filename='reference_assets/person_silhouette_clean.png') %}
+{% set cinema_bg_url = asset_url("images/bioskopbg.jpg") or url_for('static', filename='reference_assets/images/bioskopbg.jpg') %}
 {% set makara_url = asset_url("makara_ui.png") %}
 <section class="intro" aria-labelledby="intro-title">
   <div class="intro__brand-bar">
-    <a href="{{ url_for('landing.index') }}" class="brand-logo" aria-label="titiket.com Beranda">
+    <a href="{{ url_for('landing.index') }}" class="brand-logo" data-home-transition aria-label="titiket.com Beranda">
       <span class="brand-logo__name">titiket</span>
       <span class="brand-logo__dot" aria-hidden="true"></span>
       <span class="brand-logo__tld">com</span>
     </a>
   </div>
 
-  <div class="intro__stage" id="intro-stage">
-    {# Lapis 4: atmosfer auditorium, sorot cahaya proyektor, dan layar melengkung perak #3081 #}
-    <div class="intro__layer" data-depth="10">
-      <div class="intro__inner intro__screen-wrap" aria-hidden="true">
-        <div class="intro__ambient-glow"></div>
-        <div class="intro__projector-spark"></div>
-        <div class="intro__projector-beam"></div>
-        <div class="intro__silver-screen">
-          <div class="intro__screen-bloom"></div>
-        </div>
-        <div class="intro__stage-rim"></div>
+  <div class="intro__stage parallax-intro" id="intro-stage" data-parallax-stage data-max-offset="36">
+    {# Lapis 1 (Belakang, depth 0.35): auditorium bioskop gelap dengan kursi merah & cahaya ambient ungu/biru #}
+    <div class="parallax-intro__layer parallax-intro__layer--back" data-parallax-layer data-depth="0.35" data-scale="1.08" aria-hidden="true">
+      <div class="intro__inner intro__layer-inner intro__screen-bg">
+        <img class="parallax-intro__bg" src="{{ cinema_bg_url }}" alt="" width="1600" height="900">
+        <div class="parallax-intro__ambient"></div>
       </div>
     </div>
 
-    {# Lapis 3: tipografi masif tanpa penghalang #3091 #}
-    <div class="intro__layer" data-depth="18">
-      <div class="intro__inner intro__title-wrap">
-        <span class="intro__kicker">TITIKET.COM &bull; CINEMA GRAND ENTRANCE</span>
-        <h1 class="intro__title" id="intro-title" aria-label="FEEL THE MOMENTS">
-          <span class="intro__title-line1" aria-hidden="true">FEEL THE</span>
-          <span class="intro__title-line2" aria-hidden="true">MOMENTS</span>
-        </h1>
-        <p class="intro__subtitle">Layar bioskop dan panggung konser di satu tempat.</p>
+    {# Lapis 2 (Tengah, depth 0.70): tipografi utama #}
+    <div class="parallax-intro__layer parallax-intro__layer--mid" data-parallax-layer data-depth="0.70" data-scale="1.0">
+      <div class="intro__inner intro__layer-inner parallax-intro__mid-inner">
+        <div class="parallax-intro__copy">
+          <h1 class="parallax-intro__title" id="intro-title">FEEL THE MOMENTS BEYOND</h1>
+          <p class="parallax-intro__subtitle">Rasakan sudut pandang kursi bioskop &amp; panggung konser secara 3D sebelum membeli tiket.</p>
+        </div>
       </div>
     </div>
 
-    {# Lapis 2: siluet penonton #3096 #}
-    <div class="intro__layer" data-depth="34">
-      <div class="intro__inner intro__audience" aria-hidden="true">
-        {% if silhouette_url %}<img src="{{ silhouette_url }}" alt="" width="617" height="485">{% endif %}
-      </div>
-    </div>
-
-    {# Lapis 1: bingkai tirai pintu luar #3103 tanpa menutupi tipografi tengah #}
-    <div class="intro__layer" data-depth="26">
-      <div class="intro__inner intro__door" aria-hidden="true">
-        <div class="intro__lintel"></div>
-        <div class="intro__curtain intro__curtain-left">
-          <span class="intro__curtain-rib"></span>
-          <span class="intro__curtain-glow"></span>
-        </div>
-        <div class="intro__curtain intro__curtain-right">
-          <span class="intro__curtain-rib"></span>
-          <span class="intro__curtain-glow"></span>
-        </div>
-        <div class="intro__sill"></div>
+    {# Lapis 3 (Depan, depth 1.25): siluet penonton di bagian bawah tengah #}
+    <div class="parallax-intro__layer parallax-intro__layer--front" data-parallax-layer data-depth="1.25" data-scale="1.04" aria-hidden="true">
+      <div class="intro__inner intro__layer-inner parallax-intro__front-inner">
+        <img class="parallax-intro__silhouette" src="{{ silhouette_url }}" alt="" width="617" height="485">
       </div>
     </div>
   </div>
 
   <div class="intro__cta" id="intro-cta">
-    <button type="button" class="intro__start" id="intro-start" aria-controls="intro-gate" aria-expanded="false">
-      Mulai Eksplorasi &darr;
+    <button type="button" class="intro__start parallax-intro__cta liquid-glass-pill liquid-glass-btn-primary"
+            id="intro-start" aria-controls="intro-gate" aria-expanded="false">
+      <span>Mulai Eksplorasi</span>
+      <span class="parallax-intro__chevron" aria-hidden="true">&#8964;</span>
     </button>
     <p class="intro__scroll-cue">Gulir atau klik untuk masuk</p>
   </div>
@@ -124,10 +104,13 @@
         <span></span><span>atau</span><span></span>
       </div>
 
-      <a class="intro__option-guest" href="{{ url_for('landing.index') }}">Lanjut Jelajah sebagai Tamu &rarr;</a>
+      <a class="intro__option-guest" href="{{ url_for('landing.index') }}" data-home-transition>Lanjut Jelajah sebagai Tamu &rarr;</a>
     </div>
   </div>
 </section>
 {% endblock %}
 
-{% block scripts %}<script src="{{ url_for('static', filename='js/intro.js') }}" defer></script>{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parallax.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/intro.js') }}" defer></script>
+{% endblock %}

@@ -254,12 +254,69 @@ html[data-theme="dark"] .checkout__section {
 .pov-meta {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
   padding: 10px 12px;
   border-radius: 10px;
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
+}
+
+/* 5 metrik POV (cart & checkout): susun 3 atas + 2 bawah (atau 5 sejajar di cart desktop lebar), bukan 4+1 */
+.pov-meta:has(> :nth-child(5):last-child) {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.pov-meta:has(> :nth-child(5):last-child) > div {
+  grid-column: span 2;
+}
+
+.pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
+  grid-column: 4 / span 2;
+}
+
+@media (min-width: 980px) {
+  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div,
+  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4),
+  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
+    grid-column: auto;
+  }
+}
+
+/* 4 blok jadwal (e-ticket & profile): 4 sejajar saat lebar, 2x2 saat diperkecil, bukan 3+1 */
+@media (min-width: 720px) {
+  .pov-meta.eticket__schedule {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .pov-meta:has(> :nth-child(5):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pov-meta:has(> :nth-child(5):last-child) > div,
+  .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4) {
+    grid-column: auto;
+  }
+
+  .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 359px) {
+  .pov-meta.eticket__schedule {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pov-meta dt {

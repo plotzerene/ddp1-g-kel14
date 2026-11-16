@@ -11,10 +11,16 @@ app/static/reference_assets/
 # Konfigurasi lokal
 .env
 instance/
-.claude/settings.local.json
+.AI Assistant/settings.local.json
 
 # Editor & OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Video & Asset Mentah Besar (>100MB)
+reference_assets/videos/
+promo_video/
+*.figcraft
+Craft Anything/

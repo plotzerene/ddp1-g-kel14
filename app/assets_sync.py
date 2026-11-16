@@ -112,13 +112,27 @@ def sync_reference_assets(source_dir: Path = SOURCE_DIR, target_dir: Path = STAT
     return report
 
 
+POSTER_FALLBACK_REL = "images/posters/poster_fallback.svg"
+
+
 def asset_exists(relative: str) -> bool:
-    return (STATIC_ASSET_DIR / relative).is_file()
+    if not relative:
+        return False
+    return (
+        (STATIC_ASSET_DIR / relative).is_file()
+        or (APP_DIR / "static" / relative).is_file()
+    )
 
 
 def asset_url(relative: str) -> str | None:
     """URL statis sebuah aset, atau None bila filenya tidak ada."""
-    return f"{ASSET_URL_PREFIX}/{relative}" if asset_exists(relative) else None
+    if not relative:
+        return None
+    if (STATIC_ASSET_DIR / relative).is_file():
+        return f"{ASSET_URL_PREFIX}/{relative}"
+    if (APP_DIR / "static" / relative).is_file():
+        return f"/static/{relative}"
+    return None
 
 
 def photo_entry(relative: str, caption: str) -> dict:

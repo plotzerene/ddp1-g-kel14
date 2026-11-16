@@ -35,12 +35,36 @@ class PagesTests(unittest.TestCase):
             response.close()
 
     def test_intro_has_three_layers_and_gate(self):
-        html = self.get_text("/intro")
-        self.assertIn("FEEL THE MOMENTS", html)
-        self.assertIn('data-depth="34"', html)
-        self.assertIn("Mulai Eksplorasi", html)
-        self.assertIn("Lanjut Jelajah sebagai Tamu", html)
-        self.assertIn('href="/"', html)
+        for intro_path in ("/", "/intro"):
+            with self.subTest(intro_path=intro_path):
+                html = self.get_text(intro_path)
+                self.assertIn("FEEL THE MOMENTS BEYOND", html)
+                self.assertNotIn("PARALLAX LAYERED ENTRANCE", html)
+                self.assertNotIn("POV 3D ENGINE", html)
+                self.assertIn("titiket-fade-in", html)
+                self.assertEqual(html.count("data-parallax-layer"), 3)
+                self.assertIn('data-depth="0.35"', html)
+                self.assertIn('data-depth="0.70"', html)
+                self.assertIn('data-depth="1.25"', html)
+                self.assertIn("Mulai Eksplorasi", html)
+                self.assertIn("Lanjut Jelajah sebagai Tamu", html)
+                self.assertIn('href="/home"', html)
+                self.assertNotIn('<header class="site-header"', html)
+                self.assertNotIn('<footer class="site-footer', html)
+
+        intro_css = self.get_text("/static/css/intro.css")
+        self.assertIn("dvh)", intro_css)
+        self.assertIn("clamp(", intro_css)
+        self.assertNotIn("parallax-intro__badge", intro_css)
+
+        tokens_css = self.get_text("/static/css/tokens.css")
+        self.assertIn(".page-fade-curtain", tokens_css)
+        self.assertIn("is-page-fading-in", tokens_css)
+
+        theme_js = self.get_text("/static/js/theme.js")
+        self.assertIn("TitiketTransition", theme_js)
+        self.assertIn("fadeOutAndGo", theme_js)
+        self.assertNotIn("-" + "-", theme_js)
 
     def test_every_catalog_film_has_a_detail_page(self):
         for movie_id in self.movie_ids:
@@ -74,14 +98,14 @@ class PagesTests(unittest.TestCase):
         self.assertIn("SSO UI", html)
 
     def test_visible_text_has_no_double_hyphen(self):
-        for path in ("/", "/intro", "/promo", "/movie/sore", "/event/coldplay/terms",
+        for path in ("/", "/intro", "/home", "/promo", "/movie/sore", "/event/coldplay/terms",
                      "/visualizer/studio/xxi-regular", "/cart"):
             with self.subTest(path=path):
                 text = visible_text(self.get_text(path))
                 self.assertNotIn(DOUBLE_HYPHEN, text)
 
     def test_unified_brand_wordmark_renders_without_raster_logo(self):
-        for path in ("/", "/intro", "/promo", "/visualizer/studio/xxi-regular", "/cart"):
+        for path in ("/", "/intro", "/home", "/promo", "/visualizer/studio/xxi-regular", "/cart"):
             with self.subTest(path=path):
                 html = self.get_text(path)
                 self.assertIn('class="brand-logo', html)
@@ -158,7 +182,6 @@ class PagesTests(unittest.TestCase):
             'id="btn-clear"',
             "Hapus Pilihan",
             "Lanjut ke Checkout",
-            "AREA LAYAR",
             'class="seat-map-scroll"',
             'id="btn-map-spotlight"',
             "Perbesar Peta Kursi",
@@ -169,6 +192,7 @@ class PagesTests(unittest.TestCase):
             "AGORA MALL XXI",
         ):
             self.assertIn(marker, html)
+        self.assertNotIn("AREA LAYAR", html)
         self.assertNotIn('id="viz-tagline"', html)
         self.assertNotIn('id="map-hint"', html)
 
@@ -202,11 +226,11 @@ class PagesTests(unittest.TestCase):
             self.assertIn(token, trailer_js)
 
         light_css = (ROOT / "app/static/css/theme-light.css").read_text(encoding="utf-8")
-        for selector in (".pov-hud-metrics", ".reco-card__score", ".map-spotlight-btn", ".seat-spotlight-dialog", ".cinema-screen-banner"):
+        for selector in (".pov-hud-metrics", ".reco-card__score", ".map-spotlight-btn", ".seat-spotlight-dialog", ".screen-label"):
             self.assertIn(selector, light_css)
 
     def test_landing_figcraft_home_reconstruction(self):
-        html = self.get_text("/")
+        html = self.get_text("/home")
         for marker in (
             "Feel the moments beyond",
             "JABODETABEK",
@@ -307,11 +331,11 @@ class PagesTests(unittest.TestCase):
         self.assertIn('id="pov-card-badge" hidden', concert_html)
         self.assertIn('id="deck-display-group" hidden', concert_html)
 
-        landing_html = self.get_text("/")
+        landing_html = self.get_text("/home")
         self.assertIn('class="poster-card__cover-link" href="/movie/sore"', landing_html)
         self.assertIn('class="poster-card__fab" href="/movie/sore"', landing_html)
 
-        for path in ("/", "/intro", "/cart"):
+        for path in ("/", "/home", "/intro", "/cart"):
             page_html = self.get_text(path)
             self.assertIn("https://sso.ui.ac.id/cas2/login?service=", page_html)
             self.assertNotIn('data-auth-view="sso"', page_html)
@@ -363,7 +387,11 @@ class PagesTests(unittest.TestCase):
             ),
             "app/static/css/detail.css": ("flex-wrap: nowrap", "90dvh", "position: sticky"),
             "app/static/css/checkout.css": ("#pay-submit-btn", "position: sticky", "90dvh"),
-            "app/static/css/auth.css": ("width: min(92vw, 540px)", "90dvh", "position: sticky"),
+            "app/static/css/auth.css": (
+                "width: min(92vw, clamp(340px, 38vw, 580px))",
+                "90dvh",
+                "position: sticky",
+            ),
         }
         for rel, tokens in checks.items():
             css = (ROOT / rel).read_text(encoding="utf-8")
@@ -371,7 +399,7 @@ class PagesTests(unittest.TestCase):
                 self.assertIn(token, css, f"Missing {token!r} in {rel}")
 
     def test_hero_cinema_interior_backdrop(self):
-        landing_html = self.get_text("/")
+        landing_html = self.get_text("/home")
         self.assertIn('class="hero-stage"', landing_html)
         self.assertIn("Feel the moments beyond", landing_html)
 
@@ -396,7 +424,7 @@ class PagesTests(unittest.TestCase):
         fresh = create_app().test_client()
 
         # Navbar cart links to /cart from both base header and landing page.
-        landing_html = fresh.get("/").get_data(as_text=True)
+        landing_html = fresh.get("/home").get_data(as_text=True)
         self.assertIn('href="/cart"', landing_html)
 
         # Empty checkout directly redirects to /cart.
@@ -426,7 +454,7 @@ class PagesTests(unittest.TestCase):
             self.assertIn("Pilih tiket dan tekan tombol Tambah ke Keranjang.", empty_card)
             self.assertIn("Pilih Tiket", empty_card)
             self.assertIn("#i-arrow-right", empty_card)
-            self.assertIn('href="/"', empty_card)
+            self.assertIn('href="/home"', empty_card)
             self.assertNotIn('class="stepper"', cart_html)
             self.assertNotIn("Langkah 3 dari 3", cart_html)
             self.assertNotIn("Checkout &amp; Pembayaran", cart_html)
@@ -565,23 +593,38 @@ class PagesTests(unittest.TestCase):
             self.assertNotIn(removed, ticket_html)
         self.assertNotIn(DOUBLE_HYPHEN, visible_text(ticket_html))
 
-        # 3. Visualizer CSS/JS fixes + Spotlight Modal + bioskopbg map backdrop.
+        # 3. Visualizer CSS/JS fixes + Spotlight Modal + clean seatmap surface + centered metrics + compact HUD.
         viz_css = (ROOT / "app/static/css/visualizer.css").read_text(encoding="utf-8")
         metric_block = viz_css.split(".pov-metric__value {", 1)[1].split("}", 1)[0]
         self.assertNotIn("text-overflow: ellipsis", metric_block)
         self.assertIn("white-space: normal", metric_block)
+        self.assertIn("text-align: center", metric_block)
+        hud_metrics_block = viz_css.split(".pov-hud-metrics {", 1)[1].split("}", 1)[0]
+        self.assertIn("align-items: center", hud_metrics_block)
+        self.assertIn("justify-items: center", hud_metrics_block)
+        self.assertIn("text-align: center", hud_metrics_block)
         self.assertIn("z-index: 9998", viz_css)
         self.assertIn("backdrop-filter: blur(8px)", viz_css)
         self.assertIn("scale(0.95)", viz_css)
         self.assertIn("0.25s ease-out", viz_css)
-        self.assertIn('url("../reference_assets/images/bioskopbg.jpg")', viz_css)
+        self.assertNotIn('url("../reference_assets/images/bioskopbg.jpg")', viz_css)
         self.assertIn("visibility: hidden", viz_css.split(".viewport__veil.is-hidden {", 1)[1].split("}", 1)[0])
+
+        light_css = (ROOT / "app/static/css/theme-light.css").read_text(encoding="utf-8")
+        self.assertNotIn('url("../reference_assets/images/bioskopbg.jpg")', light_css)
+        self.assertIn("background: #FFFFFF;\n  background-image: none;", light_css)
+
+        lg_css = (ROOT / "app/static/css/liquid_glass.css").read_text(encoding="utf-8")
+        self.assertIn(".viewport:not(.is-fullscreen-theater) .hud--tl.liquid-glass-dock", lg_css)
+        self.assertIn("padding: 6px 10px;", lg_css)
+        self.assertIn("font-size: 12px;", lg_css)
+        self.assertIn("font-size: 11px;", lg_css)
 
         map_js = (ROOT / "app/static/js/map_2d_picker.js").read_text(encoding="utf-8")
         self.assertNotIn("textContent = 'LAYAR'", map_js)
 
-        # 4. Header & Auth harmonization across Landing, Visualizer, and Cart.
-        for path in ("/", "/visualizer/studio/xxi-regular", "/cart"):
+        # 4. Header & Auth harmonization across Catalog (/home), Visualizer, and Cart.
+        for path in ("/home", "/visualizer/studio/xxi-regular", "/cart"):
             html = self.get_text(path)
             self.assertIn('data-auth-open="login"', html)
             self.assertIn('data-auth-open="register"', html)
@@ -598,6 +641,60 @@ class PagesTests(unittest.TestCase):
             self.assertGreater(google_pos, sso_pos)
             self.assertGreater(form_pos, google_pos)
 
+    def test_curved_screen_generalized_concerts_and_top_parallax(self):
+        # 1. Fullscreen Parallax Entrance sits at dedicated root '/' & catalog lives cleanly at '/home'.
+        intro_html = self.get_text("/")
+        self.assertIn('id="intro-stage"', intro_html)
+        self.assertIn("FEEL THE MOMENTS BEYOND", intro_html)
+        self.assertNotIn('<header class="site-header"', intro_html)
+        self.assertNotIn('<footer class="site-footer', intro_html)
+        self.assertIn('href="/home"', intro_html)
+
+        landing_html = self.get_text("/home")
+        self.assertNotIn('id="parallax-intro"', landing_html)
+        self.assertNotIn('id="pov-showcase"', landing_html)
+        self.assertIn('<header class="site-header">', landing_html)
+        self.assertIn('<footer class="site-footer official-footer"', landing_html)
+        cat_pos = landing_html.find('id="catalog-section"')
+        hero_pos = landing_html.find('class="hero-stage"')
+        lag_pos = landing_html.find('id="lagi-tayang"')
+        self.assertGreater(cat_pos, -1)
+        self.assertGreater(hero_pos, cat_pos)
+        self.assertGreater(lag_pos, hero_pos)
+
+        # 2. Exact 6 quick filter chips present & no "Konser GBK" in filters/header.
+        for label in ("Semua", "Bioskop Terdekat", "IMAX Laser", "Konser Musik", "Hari Ini", "Besok"):
+            self.assertIn(label, landing_html)
+        header_html = landing_html.split("<header", 1)[1].split("</header>", 1)[0]
+        self.assertIn("Konser Musik", header_html)
+        self.assertIn('href="/concerts"', header_html)
+        self.assertNotIn("Konser GBK", header_html)
+
+        # 3. /concerts & /events return HTTP 200 and use Coldplay venue strictly on Coldplay card.
+        for path in ("/concerts", "/events?type=concert"):
+            resp = self.client.get(path)
+            self.assertEqual(resp.status_code, 200)
+            body = resp.get_data(as_text=True)
+            self.assertIn("Konser Musik &amp; Festival", body)
+            self.assertIn("Stadion Utama Gelora Bung Karno, Jakarta", body)
+
+        # 4. 2D map curved screen + radial <path class="sight-cone"> & removed duplicate screen banner.
+        studio_html = self.get_text("/visualizer/studio/xxi-imax")
+        self.assertNotIn("AREA LAYAR", studio_html)
+        self.assertNotIn("cinema-screen-banner", studio_html)
+        map_js = (ROOT / "app/static/js/map_2d_picker.js").read_text(encoding="utf-8")
+        self.assertIn("this.cone = svg('path', { class: 'sight-cone'", map_js)
+        self.assertIn("_buildScreenArc", map_js)
+        self.assertIn("LAYAR IMAX", map_js)
+
+        # 5. Authentic empty hourglass symbol registered & wired in auth_modal.js without '--'.
+        icons_html = (ROOT / "app/templates/_icons.html").read_text(encoding="utf-8")
+        self.assertIn('id="i-hourglass-empty"', icons_html)
+        auth_js = (ROOT / "app/static/js/auth_modal.js").read_text(encoding="utf-8")
+        self.assertIn("#i-hourglass-empty", auth_js)
+        self.assertIn('oauthBtn.closest("#intro-gate") ? "/home" : ""', auth_js)
+        self.assertIn('window.location.href = "/home"', auth_js)
+
     def test_promo_page_and_navigation_links(self):
         promo_html = self.get_text("/promo")
         self.assertIn('data-step="promo"', promo_html)
@@ -609,18 +706,21 @@ class PagesTests(unittest.TestCase):
         self.assertIn("Diskon Sivitas Akademika Universitas Indonesia 15%", promo_html)
         self.assertIn("Cashback Instan QRIS &amp; Dompet Digital 10%", promo_html)
         self.assertIn("Hemat Studio IMAX Laser &amp; 4DX Motion", promo_html)
-        self.assertIn("Prioritas Zona Konser GBK &amp; Bebas Biaya Admin VA", promo_html)
+        self.assertIn("Prioritas Zona Konser &amp; Bebas Biaya Admin VA", promo_html)
         self.assertIn("Bundling Camilan Bioskop &amp; Stadion titiket.food", promo_html)
         self.assertIn("Syarat &amp; Ketentuan Promo", promo_html)
         self.assertIn("Ketentuan Umum Promo titiket.com", promo_html)
         self.assertNotIn(DOUBLE_HYPHEN, visible_text(promo_html))
 
-        landing_html = self.get_text("/")
-        self.assertIn('class="sso-strip__all" href="/promo"', landing_html)
-        self.assertIn('href="/promo">Promo &amp; Syarat Ketentuan</a>', landing_html)
+        landing_html = self.get_text("/home")
+        self.assertIn("Diskon Khusus Mahasiswa UI 15%", landing_html)
+        self.assertIn("Verifikasi SSO UI sekali klik saat checkout bioskop &amp; konser!", landing_html)
+        self.assertIn("liquid-glass-btn-primary", landing_html)
+        self.assertIn(">Aktifkan SSO UI<", landing_html)
+        self.assertNotIn("sso-strip__all", landing_html)
 
-        # Unified global top navbar consistency across landing, promo, cart, and movie detail.
-        for path in ("/", "/promo", "/cart", "/movie/sore", "/visualizer/studio/xxi-regular"):
+        # Unified global top navbar consistency across catalog (/home), promo, cart, movie detail, and visualizer.
+        for path in ("/home", "/promo", "/cart", "/movie/sore", "/visualizer/studio/xxi-regular"):
             with self.subTest(unified_header=path):
                 page_html = self.get_text(path)
                 header = page_html.split('<header class="site-header">', 1)[1].split("</header>", 1)[0]
@@ -722,7 +822,7 @@ class PagesTests(unittest.TestCase):
         self.assertIn("Musik:", viz_html)
 
     def test_enterprise_footer_structure_links_and_social_icons(self):
-        html = self.get_text("/")
+        html = self.get_text("/home")
         footer_match = re.search(r"<footer\b[^>]*>.*?</footer>", html, re.S)
         self.assertIsNotNone(footer_match)
         footer_html = footer_match.group(0)
@@ -733,12 +833,12 @@ class PagesTests(unittest.TestCase):
             "Gedung Fasilkom UI, Kampus UI Depok, Jawa Barat 16424.",
             "Film Sedang Tayang (XXI, IMAX, CGV)",
             "Film Segera Tayang",
-            "Konser Musik &amp; Festival GBK",
+            "Konser Musik &amp; Festival",
             "Simulasi POV 3D Kursi",
             "Sewa Studio &amp; Event Organizer",
             "+62 812-8484-5387 (24/7)",
             "bantuan@titiket.com",
-            "Syarat &amp; Ketentuan Tiket Konser GBK",
+            "Syarat &amp; Ketentuan Tiket Konser",
             "Kebijakan Privasi &amp; Pengembalian Dana",
             "Keamanan Akun &amp; Verifikasi E-Tiket",
             "Seluruh transaksi diamankan dengan enkripsi 256-bit SSL &amp; standar Bank Indonesia.",
@@ -762,6 +862,74 @@ class PagesTests(unittest.TestCase):
             with self.subTest(href=path_only):
                 with self.client.get(path_only, follow_redirects=True) as resp:
                     self.assertEqual(resp.status_code, 200, href)
+
+    def test_ui_refinements_seat_insight_spectrum_and_checkout_aaa(self):
+        movie_html = self.get_text("/movie/the-nun")
+        bottom_bar = movie_html.split('class="movie-bottom-bar__actions"', 1)[1].split("</div>", 1)[0]
+        self.assertIn("Tonton Trailer", bottom_bar)
+        self.assertIn("Pilih Jadwal &amp; Kursi", bottom_bar)
+        self.assertNotIn("Simulasi POV 3D", bottom_bar)
+
+        viz_html = self.get_text("/visualizer/studio/xxi-regular")
+        self.assertNotIn('id="eye-note"', viz_html)
+        self.assertNotIn('id="preset-desc"', viz_html)
+        self.assertIn('id="score-ring-wrap"', viz_html)
+        self.assertIn('class="score-badge"', viz_html)
+        self.assertIn('liquid-glass-btn-primary" id="btn-checkout"', viz_html)
+        self.assertIn('liquid-glass-badge" id="checkout-count"', viz_html)
+        self.assertNotIn("Skor keseluruhan tertinggi", viz_html)
+
+        viz_js = (ROOT / "app/static/js/visualizer_app.js").read_text(encoding="utf-8")
+        self.assertNotIn("(Duduk Bernomor)", viz_js)
+        self.assertNotIn("Tinggi mata ${fixed", viz_js)
+        for token in ("#15803D", "#22C55E", "rgba(34, 197, 94, 0.15)", "#CA8A04", "#EAB308",
+                      "rgba(234, 179, 8, 0.15)", "#DC2626", "#EF4444", "rgba(239, 68, 68, 0.15)"):
+            self.assertIn(token, viz_js)
+
+        lg_css = (ROOT / "app/static/css/liquid_glass.css").read_text(encoding="utf-8")
+        tokens_css = (ROOT / "app/static/css/tokens.css").read_text(encoding="utf-8")
+        light_css = (ROOT / "app/static/css/theme-light.css").read_text(encoding="utf-8")
+        self.assertIn(".liquid-glass-btn-primary", lg_css)
+        self.assertIn(".liquid-glass-badge", lg_css)
+        self.assertIn(":not(.liquid-glass-btn-primary)", tokens_css)
+        self.assertNotIn(".insight__score,", light_css)
+
+        presets = self.client.get("/visualizer/api/venues/xxi-regular/layout").get_json()["presets"]
+        for item in presets:
+            self.assertNotIn("Skor keseluruhan tertinggi", item.get("description", ""))
+
+    def test_intro_silhouette_scale_and_balanced_responsive_grids(self):
+        intro_css = (ROOT / "app/static/css/intro.css").read_text(encoding="utf-8")
+        self.assertIn("padding-bottom: 0;", intro_css)
+        self.assertIn("height: clamp(205px, min(62dvh, 108vw), 680px);", intro_css)
+        self.assertIn("bottom: clamp(46px, 14.5dvh, 175px);", intro_css)
+        self.assertIn("@media (max-height: 460px) and (orientation: landscape)", intro_css)
+
+        landing_html = self.get_text("/home")
+        self.assertIn('id="now-playing-grid"\n          data-visible-count="10"', landing_html)
+        self.assertIn('id="coming-soon-grid"\n          data-visible-count="5"', landing_html)
+
+        landing_js = (ROOT / "app/static/js/landing.js").read_text(encoding="utf-8")
+        self.assertIn("nowPlayingGrid.dataset.visibleCount", landing_js)
+        self.assertIn("comingSoonGrid.dataset.visibleCount", landing_js)
+
+        landing_css = (ROOT / "app/static/css/landing.css").read_text(encoding="utf-8")
+        self.assertIn("grid-column: 2 / span 2;", landing_css)
+        self.assertIn("grid-column: 4 / span 2;", landing_css)
+        self.assertIn('.poster-grid[data-visible-count="5"]', landing_css)
+        self.assertIn('.poster-grid[data-visible-count="4"]', landing_css)
+
+        detail_css = (ROOT / "app/static/css/detail.css").read_text(encoding="utf-8")
+        self.assertNotIn("grid-template-columns: repeat(auto-fit", detail_css)
+        self.assertIn(".detail__quick-meta:has(> :nth-child(4):last-child)", detail_css)
+
+        checkout_css = (ROOT / "app/static/css/checkout.css").read_text(encoding="utf-8")
+        self.assertNotIn("repeat(auto-fit, minmax(120px, 1fr))", checkout_css)
+        self.assertIn(".pov-meta:has(> :nth-child(5):last-child)", checkout_css)
+
+        viz_css = (ROOT / "app/static/css/visualizer.css").read_text(encoding="utf-8")
+        self.assertNotIn("repeat(auto-fill, minmax(130px, 1fr))", viz_css)
+        self.assertIn("--cat-cols: 3;", viz_css)
 
 
 if __name__ == "__main__":

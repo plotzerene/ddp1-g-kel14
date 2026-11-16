@@ -9,15 +9,16 @@
 
 {% block content %}
 {% set categories = [
-  ("bioskop", "Bioskop", "screen", "gold"),
-  ("konser", "Konser", "music", "teal"),
-  ("film", "Film", "film", "neutral"),
-  ("food", "titiket.food", "food", "neutral"),
-  ("sewa", "Sewa Tempat", "building", "neutral"),
+  ("bioskop", "Bioskop", "projector.svg", "gold"),
+  ("konser", "Konser Musik", "music.svg", "teal"),
+  ("film", "Film", "clapperboard.svg", "neutral"),
+  ("food", "titiket.food", "food.svg", "neutral"),
+  ("sewa", "Sewa Tempat", "building.svg", "neutral"),
 ] %}
 {% set makara_url = asset_url("makara_ui.png") %}
 
 <div class="landing-shell">
+  <div id="catalog-section" class="catalog-landing-anchor">
   {# 1. HERO & 5 CATEGORY CARDS + FEATURED MINI CAROUSEL #}
   <section class="hero-stage" aria-labelledby="hero-title">
     <div class="container hero-stage__inner">
@@ -27,10 +28,11 @@
       </div>
 
       <div class="quick-categories" role="group" aria-label="Kategori utama">
-        {% for key, label, icon_name, tone in categories %}
+        {% for key, label, icon_file, tone in categories %}
         <button class="quick-cat quick-cat--{{ tone }}" type="button" data-category="{{ key }}" aria-pressed="false">
-          <span class="quick-cat__icon">
-            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-{{ icon_name }}"/></svg>
+          <span class="quick-cat__icon" aria-hidden="true">
+            <img class="quick-cat__svg" src="{{ url_for('static', filename='images/icons/categories/' + icon_file) }}"
+                 alt="" width="24" height="24">
           </span>
           <span class="quick-cat__label">{{ label }}</span>
         </button>
@@ -50,9 +52,8 @@
           <li class="featured-slide">
             <a class="featured-card{% if item.is_concert %} featured-card--concert{% endif %}" href="{{ href }}">
               <div class="featured-card__thumb">
-                {% if poster %}
-                <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="96" height="136">
-                {% endif %}
+                <img src="{{ poster or poster_fallback_url }}" alt="Poster {{ ev.title }}" loading="lazy" width="96" height="144"
+                     onerror="this.onerror=null;this.src='{{ poster_fallback_url }}'">
               </div>
               <div class="featured-card__info">
                 <span class="featured-card__tag{% if item.is_concert %} featured-card__tag--gold{% endif %}">{{ item.carousel_tag }}</span>
@@ -71,61 +72,21 @@
     </div>
   </section>
 
-  {# 2. SLIM SSO UI PROMO BANNER (Target #promo-mahasiswa & Artboard 01_Home_Dark_Theme) #}
+  {# 2. SLIM SSO UI PROMO BANNER (Target #promo-mahasiswa & Artboard 01_Home_Catalog_Light) #}
   <section class="sso-strip-wrap" id="promo-mahasiswa" aria-labelledby="sso-banner-title">
     <div class="container">
       <div class="sso-strip">
         <div class="sso-strip__left">
           {% if makara_url %}
-          <img class="sso-strip__logo" src="{{ makara_url }}" alt="Makara Universitas Indonesia" width="34" height="34">
+          <img class="sso-strip__logo" src="{{ makara_url }}" alt="Makara Universitas Indonesia" width="36" height="36">
           {% endif %}
-          <div class="sso-strip__copy">
-            <h2 id="sso-banner-title">Promo Sivitas Akademika Universitas Indonesia</h2>
-            <p>Masuk via SSO UI (@ui.ac.id) untuk klaim Diskon Khusus Mahasiswa UI 15% tiket bioskop &amp; konser.</p>
-          </div>
+          <p class="sso-strip__text" id="sso-banner-title">
+            <strong>Diskon Khusus Mahasiswa UI 15% &bull; Verifikasi SSO UI sekali klik saat checkout bioskop &amp; konser!</strong>
+          </p>
         </div>
         <div class="sso-strip__right">
-          <a class="sso-strip__cta" href="{{ sso_ui_login_url }}" rel="noopener">Masuk dengan SSO UI</a>
-          <a class="sso-strip__all" href="{{ url_for('landing.promo') }}">Semua Promo &amp; S&amp;K &rsaquo;</a>
+          <a class="sso-strip__cta liquid-glass-pill liquid-glass-btn-primary" href="{{ sso_ui_login_url }}" rel="noopener">Aktifkan SSO UI</a>
         </div>
-      </div>
-    </div>
-  </section>
-
-  {# 2b. SHOWCASE POV 3D: parallax Martian 3 lapis + panel Liquid Glass (static/js/parallax.js) #}
-  <section class="pov-showcase" id="pov-showcase" aria-labelledby="pov-showcase-title">
-    <div class="container">
-      <div class="pov-showcase__stage" data-parallax-stage data-max-offset="48">
-        <div class="pov-showcase__layers" aria-hidden="true">
-          <img class="pov-showcase__layer" data-parallax-layer data-depth="0.35" data-scale="1.08"
-               src="{{ url_for('static', filename='images/parallax/background.svg') }}" alt="" width="1600" height="1000">
-          <img class="pov-showcase__layer" data-parallax-layer data-depth="0.70" data-scale="1.05"
-               src="{{ url_for('static', filename='images/parallax/frame.svg') }}" alt="" width="1600" height="1000">
-          <img class="pov-showcase__layer" data-parallax-layer data-depth="1.25" data-scale="1.12"
-               src="{{ url_for('static', filename='images/parallax/foreground.svg') }}" alt="" width="1600" height="1000">
-        </div>
-
-        <div class="pov-showcase__panel liquid-glass">
-          <span class="pov-showcase__eyebrow">Pratinjau POV 3D</span>
-          <h2 id="pov-showcase-title">Lihat pandanganmu sebelum membeli</h2>
-          <p>Gerakkan kursor untuk merasakan kedalaman. Di visualizer, setiap posisi dihitung jarak, halangan kepala, dan delay suaranya.</p>
-          <div class="pov-showcase__actions">
-            <a class="liquid-glass-pill liquid-glass-pill--accent" href="{{ url_for('visualizer.index', type='cinema') }}">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-screen"/></svg>
-              <span>Coba POV Bioskop</span>
-            </a>
-            <a class="liquid-glass-pill" href="{{ url_for('events.coldplay_overview') }}">
-              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-music"/></svg>
-              <span>Lihat Area Konser</span>
-            </a>
-          </div>
-        </div>
-
-        <dl class="pov-showcase__dock liquid-glass-dock liquid-glass--obsidian" aria-label="Contoh telemetri pandangan">
-          <div><dt>Skor sightline</dt><dd class="num">92 &middot; A</dd></div>
-          <div><dt>Jarak ke layar</dt><dd class="num">14,2 m</dd></div>
-          <div><dt>Halangan kepala</dt><dd class="num">3%</dd></div>
-        </dl>
       </div>
     </div>
   </section>
@@ -136,10 +97,10 @@
       <div class="section-bar">
         <div class="section-bar__left">
           <h2 id="now-playing-title">Lagi tayang</h2>
-          <div class="filter-tabs" role="group" aria-label="Filter Lagi tayang" data-filter-group="now-playing">
-            <button class="filter-chip liquid-glass-pill" type="button" data-filter="all" aria-pressed="true">Semua</button>
-            <button class="filter-chip liquid-glass-pill" type="button" data-filter="film" aria-pressed="false">Film Bioskop</button>
-            <button class="filter-chip liquid-glass-pill" type="button" data-filter="concert" aria-pressed="false">Konser Live</button>
+          <div class="filter-tabs" role="group" aria-label="Filter cepat hiburan" data-filter-group="now-playing">
+            {% for key, label in quick_filter_chips %}
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="{{ key }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>
+            {% endfor %}
           </div>
         </div>
         <button class="lihat-semua-btn" type="button" id="now-playing-expand" aria-expanded="false">
@@ -147,7 +108,8 @@
         </button>
       </div>
 
-      <ul class="poster-grid" id="now-playing-grid">
+      <ul class="poster-grid" id="now-playing-grid"
+          data-visible-count="{{ now_playing_cards | rejectattr('is_extra') | list | length }}">
         {% for item in now_playing_cards %}
         {% set ev = item.event %}
         {% set poster = asset_url(ev.poster) %}
@@ -159,25 +121,25 @@
         <li class="poster-card{% if item.is_concert %} poster-card--concert{% endif %}{% if item.is_extra %} is-extra-card{% endif %}"
             data-grid="now-playing"
             data-kind="{{ item.kind }}"
+            data-formats="{{ item.formats }}"
+            data-days="{{ item.days }}"
             data-extra="{{ 'true' if item.is_extra else 'false' }}"
             data-search="{{ (ev.title ~ ' ' ~ ev.meta ~ ' ' ~ item.meta_line) | lower }}">
           <div class="poster-card__media">
             <a class="poster-card__cover-link" href="{{ detail_url }}" aria-label="Detail {{ ev.title }}">
-              {% if poster %}
-              <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402">
-              {% else %}
-              <div class="poster-card__missing" role="img" aria-label="Poster belum tersedia">
-                <svg class="icon icon--lg" aria-hidden="true"><use href="#i-film"/></svg>
-              </div>
-              {% endif %}
+              <img src="{{ poster or poster_fallback_url }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402"
+                   onerror="this.onerror=null;this.src='{{ poster_fallback_url }}'">
             </a>
             <a class="poster-card__fab" href="{{ detail_url }}"
                title="Detail &amp; jadwal {{ ev.title }}" aria-label="Buka detail {{ ev.title }}">
               <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-up-right"/></svg>
             </a>
             <div class="poster-card__hover-bar">
-              {% if trailer %}
-              <button class="poster-hover-btn" type="button" data-trailer="{{ trailer }}" data-title="{{ ev.title }}">
+              {% if trailer or item.trailer_embed %}
+              <button class="poster-hover-btn" type="button"
+                      {% if trailer %}data-trailer="{{ trailer }}"{% endif %}
+                      {% if item.trailer_embed %}data-trailer-embed="{{ item.trailer_embed }}"{% endif %}
+                      data-title="{{ ev.title }}">
                 <svg class="icon icon--xs" aria-hidden="true"><use href="#i-play"/></svg>
                 <span>Lihat trailer</span>
               </button>
@@ -194,6 +156,14 @@
             <div class="poster-card__meta-row">
               <span class="age-badge age-badge--{{ item.badge_variant }}">{{ item.badge }}</span>
               <span class="poster-card__meta-text">{{ item.meta_line }}</span>
+            </div>
+            <div class="poster-card__price-row">
+              <span class="poster-card__price num">Mulai {{ item.min_price | rupiah_short }}</span>
+              {% if item.status_badge and 'Screening' in item.status_badge %}
+              <span class="poster-card__status-tag">{{ 'Midnight' if 'Midnight' in item.status_badge else 'Classic' }}</span>
+              {% elif item.is_coming_soon %}
+              <span class="poster-card__status-tag">Presale</span>
+              {% endif %}
             </div>
           </div>
         </li>
@@ -212,13 +182,14 @@
           <div class="filter-tabs" role="group" aria-label="Filter Coming Soon" data-filter-group="coming-soon">
             <button class="filter-chip liquid-glass-pill" type="button" data-filter="all" aria-pressed="true">Semua</button>
             <button class="filter-chip liquid-glass-pill" type="button" data-filter="film" aria-pressed="false">Film Bioskop</button>
-            <button class="filter-chip liquid-glass-pill" type="button" data-filter="concert" aria-pressed="false">Konser Live</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-filter="concert" aria-pressed="false">Konser Musik</button>
           </div>
         </div>
         <a class="lihat-semua-link" href="#lagi-tayang">Lihat semua &rsaquo;</a>
       </div>
 
-      <ul class="poster-grid" id="coming-soon-grid">
+      <ul class="poster-grid" id="coming-soon-grid"
+          data-visible-count="{{ coming_soon_cards | length }}">
         {% for item in coming_soon_cards %}
         {% set ev = item.event %}
         {% set poster = asset_url(ev.poster) %}
@@ -229,17 +200,37 @@
         <li class="poster-card poster-card--upcoming{% if item.is_concert %} poster-card--concert{% endif %}"
             data-grid="coming-soon"
             data-kind="{{ item.kind }}"
+            data-formats="{{ item.formats }}"
+            data-days="{{ item.days }}"
             data-search="{{ (ev.title ~ ' ' ~ ev.meta ~ ' ' ~ item.meta_line) | lower }}">
           <div class="poster-card__media">
             <a class="poster-card__cover-link" href="{{ detail_url }}" aria-label="Detail {{ ev.title }}">
-              {% if poster %}
-              <img src="{{ poster }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402">
-              {% endif %}
+              <img src="{{ poster or poster_fallback_url }}" alt="Poster {{ ev.title }}" loading="lazy" width="268" height="402"
+                   onerror="this.onerror=null;this.src='{{ poster_fallback_url }}'">
             </a>
             <a class="poster-card__fab" href="{{ detail_url }}"
                title="Detail &amp; jadwal {{ ev.title }}" aria-label="Buka detail {{ ev.title }}">
               <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-up-right"/></svg>
             </a>
+            {% set trailer = asset_url(ev.trailer) %}
+            {% if trailer or item.trailer_embed or item.is_coming_soon %}
+            <div class="poster-card__hover-bar">
+              {% if trailer or item.trailer_embed %}
+              <button class="poster-hover-btn" type="button"
+                      {% if trailer %}data-trailer="{{ trailer }}"{% endif %}
+                      {% if item.trailer_embed %}data-trailer-embed="{{ item.trailer_embed }}"{% endif %}
+                      data-title="{{ ev.title }}">
+                <svg class="icon icon--xs" aria-hidden="true"><use href="#i-play"/></svg>
+                <span>Lihat trailer</span>
+              </button>
+              {% endif %}
+              {% if item.is_coming_soon %}
+              <a class="poster-hover-btn poster-hover-btn--primary" href="{{ viz_url }}">
+                <span>Presale 3D</span>
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
           <div class="poster-card__body">
             <h3 class="poster-card__title">
@@ -248,6 +239,12 @@
             <div class="poster-card__meta-row">
               <span class="age-badge age-badge--{{ item.badge_variant }}">{{ item.badge }}</span>
               <span class="poster-card__meta-text">{{ item.meta_line }}</span>
+            </div>
+            <div class="poster-card__price-row">
+              <span class="poster-card__price num">Mulai {{ item.min_price | rupiah_short }}</span>
+              {% if item.is_coming_soon %}
+              <span class="poster-card__status-tag">Presale</span>
+              {% endif %}
             </div>
             <button type="button" class="remind-btn" data-remind-id="cs-{{ ev.event_id }}" data-remind-title="{{ ev.title }}" aria-pressed="false">
               <svg class="icon icon--sm" aria-hidden="true"><use href="#i-bell"/></svg>
@@ -259,9 +256,10 @@
       </ul>
     </div>
   </section>
+  </div>
 </div>
 
-{# Modal Trailer Native #}
+{# Modal Trailer Native & YouTube Resmi #}
 <dialog class="trailer-dialog liquid-glass-modal" id="trailer-dialog" aria-labelledby="trailer-title">
   <div class="trailer-dialog__head">
     <h2 id="trailer-title">Trailer</h2>
@@ -270,6 +268,9 @@
     </button>
   </div>
   <video id="trailer-video" controls playsinline preload="none"></video>
+  <iframe id="trailer-embed-frame" class="trailer-dialog__embed" title="Trailer Resmi"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
 </dialog>
 
 {# Modal Cepat untuk Kategori titiket.food & Sewa Tempat / Studio Bioskop #}
@@ -312,6 +313,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/parallax.js') }}" defer></script>
 <script type="module" src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}

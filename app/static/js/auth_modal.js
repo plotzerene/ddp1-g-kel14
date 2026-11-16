@@ -54,7 +54,7 @@
 
   function safeLocalPath(candidate, fallback) {
     var val = String(candidate || "").trim();
-    if (!val || val.charAt(0) !== "/" || val.indexOf("//") === 0) return fallback || "/";
+    if (!val || val.charAt(0) !== "/" || val.indexOf("//") === 0) return fallback || "/home";
     return val;
   }
 
@@ -204,7 +204,7 @@
 
     var iconWrap = document.createElement("div");
     iconWrap.className = "resv-expired-card__icon";
-    iconWrap.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12"/><path d="M6 22h12"/><path d="M8 2v4l4 5 4-5V2"/><path d="M8 22v-4l4-5 4 5v4"/></svg>';
+    iconWrap.innerHTML = '<svg class="icon" width="24" height="24" aria-hidden="true"><use href="#i-hourglass-empty"/></svg>';
 
     var heading = document.createElement("h2");
     heading.className = "resv-expired-card__title";
@@ -224,7 +224,7 @@
       if (typeof cfg.onRestart === "function") {
         cfg.onRestart();
       } else {
-        window.location.href = cfg.redirectUrl || "/";
+        window.location.href = cfg.redirectUrl || "/home";
       }
     });
 
@@ -262,6 +262,16 @@
     writePending(null);
     if (target) {
       window.location.href = safeLocalPath(target, "/checkout/");
+      return;
+    }
+    if (document.getElementById("intro-gate") || window.location.pathname === "/" || window.location.pathname === "/intro") {
+      window.setTimeout(function () {
+        if (window.TitiketTransition && typeof window.TitiketTransition.fadeOutAndGo === "function") {
+          window.TitiketTransition.fadeOutAndGo("/home");
+        } else {
+          window.location.href = "/home";
+        }
+      }, 420);
       return;
     }
     window.setTimeout(close, 500);
@@ -338,7 +348,7 @@
       var pending = readPending();
       var res = await postJson("/auth/oauth", {
         provider: provider,
-        next: (pending && pending.nextUrl) || (oauthBtn.closest("#intro-gate") ? "/" : "")
+        next: (pending && pending.nextUrl) || (oauthBtn.closest("#intro-gate") ? "/home" : "")
       });
       if (!res.ok) {
         showFeedback((res.data && res.data.error) || "Gagal masuk dengan " + provider + ".", true);
@@ -352,7 +362,13 @@
           gateFeedback.textContent = "Masuk dengan " + provider + " berhasil. Mengalihkan...";
           gateFeedback.hidden = false;
         }
-        window.setTimeout(function () { window.location.href = "/"; }, 600);
+        window.setTimeout(function () {
+          if (window.TitiketTransition && typeof window.TitiketTransition.fadeOutAndGo === "function") {
+            window.TitiketTransition.fadeOutAndGo("/home");
+          } else {
+            window.location.href = "/home";
+          }
+        }, 420);
         return;
       }
       showFeedback("Berhasil masuk dengan " + provider + ".");

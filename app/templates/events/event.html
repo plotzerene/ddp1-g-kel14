@@ -10,7 +10,7 @@
   <nav class="detail__crumb" aria-label="Breadcrumb">
     <a href="{{ url_for('landing.index') }}">Beranda</a>
     <span aria-hidden="true">/</span>
-    <a href="{{ url_for('landing.index') }}#lagi-tayang">Konser</a>
+    <a href="{{ url_for('events.concerts') }}">Konser Musik</a>
     <span aria-hidden="true">/</span>
     <span aria-current="page">{{ event.title }}</span>
   </nav>
