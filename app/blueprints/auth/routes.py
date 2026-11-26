@@ -8,7 +8,7 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, redirect, request, url_for
 
-from ...shared_state import current_user, set_current_user
+from ...shared_state import current_user, set_current_user, set_guest_checkout
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -135,9 +135,18 @@ def reset_password():
     return jsonify(ok=True, message="Kata sandi berhasil diperbarui. Silakan masuk.")
 
 
+@auth_bp.post("/guest")
+def guest_checkout():
+    set_guest_checkout(False)
+    if _wants_json():
+        return jsonify(ok=False, error="Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan pemesanan."), 403
+    return redirect(url_for("checkout.cart", auth="required", next=url_for("checkout.index")))
+
+
 @auth_bp.post("/logout")
 def logout():
     set_current_user(None)
+    set_guest_checkout(False)
     if _wants_json():
         return jsonify(ok=True, authenticated=False, user=None)
     return redirect(url_for("landing.index"))

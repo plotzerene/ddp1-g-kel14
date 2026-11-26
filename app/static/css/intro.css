@@ -201,8 +201,8 @@ html[data-theme="light"] .intro__brand-bar .brand-logo__tld {
 
 .parallax-intro__chevron {
   display: inline-block;
-  font-size: 1.05em;
-  line-height: 1;
+  width: 1.1em;
+  height: 1.1em;
 }
 
 .intro__start:disabled {

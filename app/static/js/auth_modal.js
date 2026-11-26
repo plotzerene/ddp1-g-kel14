@@ -13,19 +13,20 @@
   var views = modal ? Array.prototype.slice.call(modal.querySelectorAll("[data-auth-view]")) : [];
 
   var titles = {
-    login: "Masuk ke Akun",
-    register: "Daftar Akun Baru",
+    login: "Masuk",
+    register: "Daftar",
     forgot: "Lupa Kata Sandi",
     "forgot-sent": "Instruksi Reset Terkirim"
   };
   var eyebrows = {
-    login: "Akun Member titiket.com",
-    register: "Buat Akun Baru",
-    forgot: "Pemulihan Akun",
-    "forgot-sent": "Periksa Email Anda"
+    login: "",
+    register: "",
+    forgot: "",
+    "forgot-sent": ""
   };
   var lastFocus = null;
   var toastTimer = null;
+  var gateLocked = false;
 
   function readStorage(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
@@ -113,9 +114,10 @@
     });
   }
 
-  function open(mode, guardNotice) {
+  function open(mode, guardNotice, locked) {
     if (!modal) return;
     lastFocus = document.activeElement;
+    gateLocked = Boolean(locked);
     showFeedback("", false);
     showGuardNotice(guardNotice || "");
     syncViews(mode || "login");
@@ -125,6 +127,11 @@
 
   function close() {
     if (!modal) return;
+    if (gateLocked && !currentUserState().authenticated) {
+      window.location.replace("/cart?auth=required&next=" + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    gateLocked = false;
     modal.hidden = true;
     showFeedback("", false);
     showGuardNotice("");
@@ -182,15 +189,17 @@
   }
 
   function showExpiredReservation(opts) {
+    if (document.body.classList.contains("is-wayfinding-mode")
+      || new URLSearchParams(window.location.search).get("mode") === "wayfinding") {
+      return;
+    }
     var root = document.getElementById("reservation-expired-root");
     if (!root) return;
     var cfg = opts || {};
-    var standing = Boolean(cfg.standing);
-    var titleText = cfg.title || (standing ? "Waktu Reservasi Tiket Telah Habis" : "Waktu Reservasi Kursi Telah Habis");
-    var bodyText = cfg.message || (standing
-      ? "Tiket yang Anda pilih telah dilepas otomatis. Silakan pilih kembali kategori atau jadwal yang tersedia."
-      : "Kursi yang Anda pilih telah dilepas otomatis. Silakan pilih kembali jadwal atau kursi yang tersedia.");
-    var ctaText = cfg.cta || (standing ? "Pilih Ulang Kategori" : "Pilih Ulang Kursi");
+    var titleText = cfg.title || "Waktu Reservasi Habis";
+    var bodyText = cfg.message || "Sesi pemesananmu berakhir dan tiket dilepas. Pilih ulang untuk melanjutkan.";
+    var cancelText = cfg.cancelLabel || "Batalkan Sesi";
+    var ctaText = cfg.cta || "Pilih Ulang";
 
     root.innerHTML = "";
     var backdrop = document.createElement("div");
@@ -215,6 +224,21 @@
     desc.className = "resv-expired-card__body";
     desc.textContent = bodyText;
 
+    var actions = document.createElement("div");
+    actions.className = "resv-expired-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn resv-expired-card__cancel";
+    cancelBtn.textContent = cancelText;
+    cancelBtn.addEventListener("click", async function () {
+      root.innerHTML = "";
+      try {
+        await postJson("/checkout/cancel", { action: "cancel_order", reason: "Waktu reservasi habis" });
+      } catch (e) {}
+      window.location.href = "/";
+    });
+
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn resv-expired-card__cta";
@@ -224,14 +248,17 @@
       if (typeof cfg.onRestart === "function") {
         cfg.onRestart();
       } else {
-        window.location.href = cfg.redirectUrl || "/home";
+        window.location.href = cfg.redirectUrl || "/";
       }
     });
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(btn);
 
     card.appendChild(iconWrap);
     card.appendChild(heading);
     card.appendChild(desc);
-    card.appendChild(btn);
+    card.appendChild(actions);
     backdrop.appendChild(card);
     root.appendChild(backdrop);
     btn.focus();
@@ -288,7 +315,8 @@
     });
     open(
       opts.mode || "login",
-      opts.notice || "Masuk atau daftar akun member terlebih dahulu untuk melanjutkan ke halaman checkout."
+      opts.notice || "Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan pemesanan.",
+      Boolean(opts.locked)
     );
     return false;
   }
@@ -373,6 +401,47 @@
       }
       showFeedback("Berhasil masuk dengan " + provider + ".");
       await finalizeAuthenticated(res.data.user, "");
+      return;
+    }
+
+    var profileBtn = event.target.closest("[data-profile-toggle]");
+    var popoverMenu = document.getElementById("profile-popover-menu");
+    if (profileBtn && popoverMenu) {
+      event.preventDefault();
+      var nextOpen = popoverMenu.hidden;
+      popoverMenu.hidden = !nextOpen;
+      profileBtn.setAttribute("aria-expanded", String(nextOpen));
+      return;
+    }
+    if (popoverMenu && !popoverMenu.hidden && !event.target.closest(".auth-profile-wrap")) {
+      popoverMenu.hidden = true;
+      var trig = document.getElementById("profile-popover-trigger");
+      if (trig) trig.setAttribute("aria-expanded", "false");
+    }
+
+    var openLocBtn = event.target.closest("[data-open-location-sheet]");
+    var locModal = document.getElementById("location-sheet-modal");
+    if (openLocBtn && locModal) {
+      event.preventDefault();
+      locModal.hidden = false;
+      return;
+    }
+    if (event.target.closest("[data-location-close]") && locModal) {
+      locModal.hidden = true;
+      return;
+    }
+    var locChoiceBtn = event.target.closest("[data-location-choice]");
+    if (locChoiceBtn && locModal) {
+      Array.prototype.forEach.call(locModal.querySelectorAll("[data-location-choice]"), function (b) {
+        b.classList.toggle("is-selected", b === locChoiceBtn);
+      });
+      return;
+    }
+    if (event.target.closest("#location-confirm-btn") && locModal) {
+      var chosen = locModal.querySelector("[data-location-choice].is-selected");
+      var cityVal = chosen ? chosen.getAttribute("data-location-choice") : "JABODETABEK";
+      setCity(cityVal);
+      locModal.hidden = true;
       return;
     }
 
@@ -500,15 +569,31 @@
   });
 
   var citySelector = document.getElementById("city-selector");
-  if (citySelector) {
-    var savedCity = readStorage("titiket-city");
-    if (savedCity && Array.prototype.some.call(citySelector.options, function (opt) { return opt.value === savedCity; })) {
-      citySelector.value = savedCity;
-    }
-    citySelector.addEventListener("change", function () {
-      writeStorage("titiket-city", citySelector.value);
+  var heroCitySelector = document.getElementById("hero-city-selector");
+
+  function setCity(val) {
+    if (!val) return;
+    writeStorage("titiket-city", val);
+    [citySelector, heroCitySelector].forEach(function (sel) {
+      if (sel && Array.prototype.some.call(sel.options, function (opt) { return opt.value === val; })) {
+        sel.value = val;
+      }
     });
+    try {
+      window.dispatchEvent(new CustomEvent("titiket:citychange", { detail: { city: val } }));
+    } catch (e) {}
   }
+
+  var savedCity = readStorage("titiket-city");
+  if (savedCity) setCity(savedCity);
+
+  [citySelector, heroCitySelector].forEach(function (sel) {
+    if (sel) {
+      sel.addEventListener("change", function () {
+        setCity(sel.value);
+      });
+    }
+  });
 
   var navSearchForm = document.querySelector(".nav-search");
   if (navSearchForm && document.getElementById("now-playing-grid")) {
@@ -535,10 +620,12 @@
   syncAuthIndicators();
 
   var params = new URLSearchParams(window.location.search);
-  if (params.get("auth") === "required" && !currentUserState().authenticated) {
+  var bodyGate = document.body && document.body.dataset && document.body.dataset.authGate === "required";
+  if ((params.get("auth") === "required" || bodyGate) && !currentUserState().authenticated) {
     requireAuth({
-      nextUrl: params.get("next") || "/checkout/",
-      notice: "Masuk atau daftar akun member terlebih dahulu untuk melanjutkan ke halaman checkout."
+      nextUrl: params.get("next") || (bodyGate ? (window.location.pathname + window.location.search) : "/checkout/"),
+      notice: "Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan pemesanan.",
+      locked: bodyGate
     });
   }
 })();

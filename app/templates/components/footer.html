@@ -46,7 +46,7 @@
         <ul>
           <li><a href="{{ url_for('landing.index') }}#lagi-tayang">Film Sedang Tayang (XXI, IMAX, CGV)</a></li>
           <li><a href="{{ url_for('landing.index') }}#coming-soon">Film Segera Tayang</a></li>
-          <li><a href="{{ url_for('events.concerts') }}">Konser Musik &amp; Festival</a></li>
+          <li><a href="{{ url_for('events.coldplay_overview') }}">Konser Musik &amp; Festival GBK</a></li>
           <li><a href="{{ url_for('visualizer.index', type='cinema') }}">{{ 'Simulasi POV 3D Spot & Area' if footer_ns.has_standing else 'Simulasi POV 3D Kursi' }}</a></li>
           <li><a href="{{ url_for('visualizer.studio', venue_id='xxi-premiere') }}">Sewa Studio &amp; Event Organizer</a></li>
         </ul>
@@ -58,8 +58,7 @@
           <li><a href="https://wa.me/6281284845387" target="_blank" rel="noopener noreferrer">Layanan CS WhatsApp: +62 812-8484-5387 (24/7)</a></li>
           <li><a href="mailto:bantuan@titiket.com">Email: bantuan@titiket.com</a></li>
           <li><a href="{{ url_for('intro.index') }}">Pusat Bantuan &amp; FAQ</a></li>
-          <li><a href="{{ url_for('landing.promo') }}">Promo &amp; Syarat Ketentuan</a></li>
-          <li><a href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Tiket Konser</a></li>
+          <li><a href="{{ url_for('events.coldplay_terms') }}">Syarat &amp; Ketentuan Tiket Konser GBK</a></li>
           <li><a href="{{ url_for('landing.promo') }}#ketentuan">Kebijakan Privasi &amp; Pengembalian Dana</a></li>
           <li><a href="{{ url_for('checkout.profile') }}">Keamanan Akun &amp; Verifikasi E-Tiket</a></li>
         </ul>
@@ -70,7 +69,7 @@
         <ul class="payment-logo-grid" aria-label="Logo saluran pembayaran resmi">
           {% for code, name in pay_logos %}
           {% set logo_src = asset_url("payment_logos/" ~ code ~ ".png") %}
-          <li class="payment-logo-tile" title="{{ name }}">
+          <li class="payment-logo-tile pay-logo-chip" title="{{ name }}">
             {% if logo_src %}
             <img src="{{ logo_src }}" alt="{{ name }}" loading="lazy" width="56" height="24">
             {% else %}
@@ -87,7 +86,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p class="footer-copyright">&copy; 2026 titiket.com &middot; PT Titiket Hiburan Nusantara. Seluruh hak cipta dilindungi.</p>
+      <p class="footer-copyright">&copy; 2026 titiket.com &middot; PT Titiket Hiburan Nusantara. Hak Cipta Dilindungi.</p>
       <nav class="footer-social-links" aria-label="Media sosial resmi titiket.com">
         {% for slug, label, href in social_channels %}
         <a class="footer-social-btn" href="{{ href }}" target="_blank" rel="noopener noreferrer" aria-label="{{ label }}" title="{{ label }}">

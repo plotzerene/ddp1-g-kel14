@@ -23,6 +23,7 @@ from flask import Blueprint, abort, current_app, jsonify, redirect, render_templ
 from ...assets_sync import POSTER_FALLBACK_REL, asset_url
 from ...shared_state import (
     MAX_CART_ITEMS,
+    AddonCart,
     Cart,
     CartItem,
     event_for_venue,
@@ -30,7 +31,7 @@ from ...shared_state import (
     get_event,
     price_for_film_venue,
 )
-from .engine.geometry_3d import LENSES
+from .engine.geometry_3d import lens_set
 from .engine.obstruction import DEFAULT_BODY_CM, MAX_BODY_CM, MIN_BODY_CM
 from .engine.pov_engine import PovReport, engine_for
 from .engine.seat_lock import SeatLockStore
@@ -43,6 +44,12 @@ visualizer_bp = Blueprint("visualizer", __name__, template_folder="templates")
 POV_CART_FIELDS = ("score", "grade", "distance_m", "h_fov_deg", "neck_pitch_deg", "neck_yaw_deg",
                    "obstruction_pct", "visible_pct", "audio_delay_ms", "spl_db")
 LIMITS = {"body_min_cm": MIN_BODY_CM, "body_max_cm": MAX_BODY_CM, "body_default_cm": DEFAULT_BODY_CM}
+
+
+def _limits_for(venue: Venue) -> dict:
+    """Batas slider tinggi badan; tinggi awalnya bisa berbeda per venue (festival berdiri: 178 cm)."""
+    default = venue.DEFAULT_VIEWER_CM if venue.DEFAULT_VIEWER_CM is not None else DEFAULT_BODY_CM
+    return {**LIMITS, "body_default_cm": default}
 
 
 # =========================================================================== #
@@ -70,7 +77,7 @@ def _evaluate(data: dict) -> tuple[Venue, PovReport]:
     seat = venue.resolve_seat(selector)
     report = engine_for(venue.venue_id).evaluate(
         seat,
-        body_height_cm=data.get("body_height_cm", DEFAULT_BODY_CM),
+        body_height_cm=data.get("body_height_cm", _limits_for(venue)["body_default_cm"]),
         front_height_cm=data.get("front_height_cm", DEFAULT_BODY_CM),
         target_id=data.get("target_id"),
         lens_mode=data.get("lens"),
@@ -137,47 +144,6 @@ def handle_bad_request(error: ValueError):
 # =========================================================================== #
 # Halaman
 # =========================================================================== #
-CONCERT_ZONE_ORDER: tuple[str, ...] = (
-    "Festival",
-    "Ultimate Experience",
-    "My Universe",
-    "CAT 1",
-    "CAT 2",
-    "CAT 3",
-    "CAT 4",
-    "CAT 5",
-    "CAT 6",
-    "CAT 7",
-    "CAT 8",
-)
-
-
-def _concert_zone_tabs(venue) -> list[dict]:
-    """Bangun daftar tab zona stadion GBK terurut tanpa mencampur studio bioskop."""
-    grouped: dict[str, list[dict]] = {}
-    for block in venue.layout().get("blocks", []):
-        cat = block.get("category") or block.get("label") or ""
-        if cat:
-            grouped.setdefault(cat, []).append(block)
-
-    ordered_cats = [cat for cat in CONCERT_ZONE_ORDER if cat in grouped]
-    for cat in grouped:
-        if cat not in ordered_cats:
-            ordered_cats.append(cat)
-
-    tabs: list[dict] = []
-    for cat in ordered_cats:
-        blocks = grouped[cat]
-        tabs.append({
-            "category": cat,
-            "label": "Festival Standing" if cat == "Festival" else cat,
-            "block_id": blocks[0]["id"],
-            "block_ids": [b["id"] for b in blocks],
-            "price": blocks[0]["price"],
-        })
-    return tabs
-
-
 @visualizer_bp.get("/")
 def index():
     """Pintu masuk dari landing: terjemahkan ?type/film/event/studio menjadi halaman studio."""
@@ -253,7 +219,6 @@ def _render_studio(venue_id: str, forced_event=None):
 
     if is_concert:
         venue_tabs = []
-        concert_zones = _concert_zone_tabs(venue)
         boot_venues = []
         venue_prices: dict[str, int] = {}
     else:
@@ -263,7 +228,6 @@ def _render_studio(venue_id: str, forced_event=None):
             registry[vid] for vid in allowed_ids
             if vid in registry and registry[vid].kind.value == "cinema"
         ]
-        concert_zones = []
         venue_prices = {
             v.venue_id: price_for_film_venue(film_id, v.venue_id, v.price_from)
             for v in venue_tabs
@@ -286,7 +250,7 @@ def _render_studio(venue_id: str, forced_event=None):
         "film": film.event_id if not is_concert and film is not None and film.kind == "film" else None,
         "schedule": schedule,
         "venues": boot_venues,
-        "limits": LIMITS,
+        "limits": _limits_for(venue),
         "posterFallbackUrl": fallback_poster,
         "api": {
             "layout": url_for("visualizer.api_layout", venue_id=placeholder),
@@ -306,7 +270,9 @@ def _render_studio(venue_id: str, forced_event=None):
     return render_template("visualizer/studio_pov.html", venue=venue, event=event,
                            schedule=schedule, event_poster=event_poster or fallback_poster,
                            venues=venue_tabs, venue_prices=venue_prices,
-                           concert_zones=concert_zones, bootstrap=bootstrap)
+                           bootstrap=bootstrap,
+                           # ?mode=wayfinding: tur 3 langkah mandiri (tanpa elemen komersial), hanya untuk konser.
+                           wayfinding=is_concert and request.args.get("mode") == "wayfinding")
 
 
 # =========================================================================== #
@@ -348,8 +314,8 @@ def api_layout(venue_id: str):
         "media": media,
         "event": {"event_id": event.event_id, "title": event.title, "meta": event.meta} if event else None,
         "presets": SmartSeatRecommender.presets_for(venue.kind.value),
-        "lenses": [lens.to_dict() for lens in LENSES.values()],
-        "limits": LIMITS,
+        "lenses": [lens.to_dict() for lens in lens_set(venue.LENS_BASE_FOV_DEG).values()],
+        "limits": _limits_for(venue),
         "default_selector": default_selector,
         "scoring": {"standard_label": scoring.standard_label, "ideal_h_fov_deg": scoring.ideal_h_fov_deg},
         "price_from": price_override if price_override is not None else venue.price_from,
@@ -487,4 +453,5 @@ def api_cart_remove():
 def api_cart_clear():
     _seat_locks().release_all(_seat_owner())
     Cart().clear()
+    AddonCart().clear()
     return jsonify(status="cleared", **_cart_state())

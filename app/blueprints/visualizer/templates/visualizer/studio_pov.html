@@ -8,26 +8,45 @@
 #}
 {% extends "base.html" %}
 {% set step = "visualizer" %}
+{% set back_href = url_for('checkout.ticket') if wayfinding else (url_for('events.movie', slug=event.event_id) if (event and event.kind == 'film') else (url_for('events.coldplay_overview') if venue.kind.value == 'concert' else url_for('landing.index'))) %}
+{% set back_label = 'Kembali ke E-Tiket' if wayfinding else 'Kembali ke Detail' %}
+{% set body_class = 'is-wayfinding-mode' if wayfinding else '' %}
 {% block title %}{{ venue.name }}{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/visualizer.css') }}">
 <script type="importmap">
-  {"imports": {"three": "{{ url_for('static', filename='js/vendor/three.module.min.js') }}"}}
+  {"imports": {
+    "three": "{{ url_for('static', filename='js/vendor/three.module.min.js') }}",
+    "three/addons/": "{{ url_for('static', filename='js/vendor/three-addons/') }}"
+  }}
 </script>
 {% endblock %}
 
+{% block header_right %}
+<div class="seat-lock-pill" id="seat-lock-timer" aria-live="polite">
+  <span class="seat-lock-pill__label" id="seat-lock-label">Sisa waktu</span>
+  <strong class="seat-lock-pill__clock num" id="seat-lock-countdown">10:00</strong>
+</div>
+<div class="seat-lock-pill hdr-score" title="Skor pandangan POV" hidden>
+  <span class="seat-lock-pill__label">Skor POV</span>
+  <strong class="seat-lock-pill__clock num" id="hdr-score-value">&ndash;</strong>
+</div>
+{% endblock %}
+
 {% block content %}
+{% set cap_label = 'Cakupan Layar' if venue.kind.value == 'cinema' else 'Cakupan Panggung' %}
+{% set obs_label = 'Sudut Elevasi' if venue.kind.value == 'cinema' else 'Bebas Halangan' %}
 <div class="container viz" id="viz-app" data-kind="{{ venue.kind.value }}">
 
   <header class="viz-head">
     <div class="viz-head__text">
-      <p class="eyebrow" id="viz-eyebrow">{{ event.title if event else "Visualizer" }}</p>
+      {% if venue.kind.value == 'cinema' %}<p class="eyebrow" id="viz-eyebrow">{{ event.title if event else "Visualizer" }}</p>{% endif %}
       <h1 id="viz-title">{{ venue.name }}</h1>
     </div>
 
-    <div class="venue-tabs" data-venue-count="{{ venues|length if venue.kind.value == 'cinema' else concert_zones|length }}" role="tablist" aria-label="{{ 'Pilih studio bioskop' if venue.kind.value == 'cinema' else 'Pilih zona kategori stadion' }}">
-      {% if venue.kind.value == 'cinema' %}
+    {% if venue.kind.value == 'cinema' %}
+    <div class="venue-tabs" data-venue-count="{{ venues|length }}" role="tablist" aria-label="Pilih studio bioskop">
       {% for v in venues %}
       <button class="venue-tab format-pill" type="button" role="tab" id="tab-{{ v.venue_id }}" data-venue="{{ v.venue_id }}"
               aria-selected="{{ 'true' if v.venue_id == venue.venue_id else 'false' }}"
@@ -37,24 +56,21 @@
         <span class="venue-tab__price num">{{ (venue_prices[v.venue_id] if venue_prices is defined and v.venue_id in venue_prices else v.price_from) | rupiah_short }}</span>
       </button>
       {% endfor %}
-      {% else %}
-      {% for z in concert_zones %}
-      <button class="venue-tab" type="button" role="tab" id="tab-zone-{{ z.block_id }}"
-              data-concert-block="{{ z.block_id }}"
-              data-concert-blocks="{{ z.block_ids | join(',') }}"
-              data-concert-category="{{ z.category }}"
-              aria-selected="{{ 'true' if loop.first else 'false' }}"
-              aria-controls="viz-grid" tabindex="{{ '0' if loop.first else '-1' }}">
-        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-music"/></svg>
-        <span class="venue-tab__label">{{ z.label }}</span>
-        <span class="venue-tab__price num">{{ z.price | rupiah }}</span>
-      </button>
-      {% endfor %}
-      {% endif %}
     </div>
+    {% else %}
+    {# Peta kategori sepenuhnya dirender JS: tanpa JS pengunjung hanya melihat daftar kategori + harga ini. #}
+    <noscript>
+      <ul class="viz-noscript-cats" aria-label="Kategori tiket">
+        {% set seen = namespace(cats=[]) %}
+        {% for b in venue.layout().blocks %}{% if b.category not in seen.cats %}{% set seen.cats = seen.cats + [b.category] %}
+        <li>{{ 'Festival Standing' if b.category == 'Festival' else b.category }} <span class="num">{{ b.price | rupiah }}</span></li>
+        {% endif %}{% endfor %}
+      </ul>
+    </noscript>
+    {% endif %}
   </header>
 
-  <div class="viz-grid" id="viz-grid" role="tabpanel" aria-labelledby="tab-{{ venue.venue_id }}">
+  <div class="viz-grid" id="viz-grid"{% if venue.kind.value == 'cinema' %} role="tabpanel" aria-labelledby="tab-{{ venue.venue_id }}"{% endif %}>
 
     {# KIRI: peta 2D + pengaturan #}
     <div class="viz-left">
@@ -69,15 +85,29 @@
               <svg class="icon icon--sm" aria-hidden="true"><use href="#i-maximize"/></svg>
               <span>{{ 'Perbesar Peta Kursi' if venue.kind.value == 'cinema' else 'Perbesar Peta Area' }}</span>
             </button>
-            <button class="btn" type="button" id="btn-heatmap" aria-pressed="false">
-              <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>
-              Heatmap skor
-            </button>
           </div>
         </header>
 
+        <div class="seat-cluster-bar liquid-glass" id="seat-cluster-bar" role="region" aria-label="Pencari kursi berdampingan">
+          <div class="seat-cluster-bar__top">
+            <span class="seat-cluster-bar__label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Jumlah Kursi Berdampingan</span>
+            </span>
+            <div class="seat-cluster-bar__pills" id="cluster-size-pills" role="radiogroup" aria-label="Pilih jumlah kursi berdampingan">
+              <button type="button" class="seat-cluster-pill" data-cluster-size="1" role="radio" aria-checked="true">1 Kursi</button>
+              <button type="button" class="seat-cluster-pill" data-cluster-size="2" role="radio" aria-checked="false">2 Kursi (Pasangan)</button>
+              <button type="button" class="seat-cluster-pill" data-cluster-size="3" role="radio" aria-checked="false">3 Kursi</button>
+              <button type="button" class="seat-cluster-pill" data-cluster-size="4" role="radio" aria-checked="false">4 Kursi (Grup)</button>
+            </div>
+          </div>
+          <div class="seat-cluster-bar__result" id="cluster-status" aria-live="polite" hidden>
+            <span class="seat-cluster-bar__summary num" id="cluster-status-text"></span>
+            <button type="button" class="btn btn--teal-primary liquid-glass-pill seat-cluster-bar__add" id="btn-cluster-cart">Tambah Semua ke Keranjang</button>
+          </div>
+        </div>
+
         <span id="map-spotlight-anchor" hidden></span>
-        <div class="map-legend" id="map-legend"></div>
 
         <div class="map-wrap">
           <div class="seat-map-scroll" id="seat-map-scroll">
@@ -85,56 +115,17 @@
               <div class="map-skeleton" aria-hidden="true"></div>
             </div>
           </div>
+          <button type="button" class="map-zoom-reset liquid-glass-pill" id="btn-map-zoom-reset" hidden aria-label="Kembalikan skala penuh denah studio">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/></svg>
+            <span>Lihat Seluruh Studio</span>
+          </button>
         </div>
+        <div class="map-legend" id="map-legend"></div>
       </section>
 
-      <section class="panel picker" id="picker" aria-labelledby="picker-title" hidden></section>
+      <section class="panel picker picker--sheet liquid-glass-modal" id="picker" aria-labelledby="picker-title" hidden></section>
 
-      <section class="panel" aria-labelledby="body-title">
-        <header class="panel__head">
-          <div>
-            <h2 id="body-title">Tinggi badan</h2>
-          </div>
-          <svg class="icon icon--lg panel__icon" aria-hidden="true"><use href="#i-ruler"/></svg>
-        </header>
 
-        <div class="slider-field">
-          <div class="slider-field__top">
-            <label for="range-body">Tinggi Badan Kamu</label>
-            <output class="num" id="out-body" for="range-body">170 cm</output>
-          </div>
-          <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170">
-          <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
-        </div>
-
-        <div class="slider-field">
-          <div class="slider-field__top">
-            <label for="range-front">Tinggi Penonton di Depan</label>
-            <output class="num" id="out-front" for="range-front">170 cm</output>
-          </div>
-          <input class="range" type="range" id="range-front" min="145" max="195" step="1" value="170">
-          <div class="slider-field__scale num" aria-hidden="true"><span>145</span><span>170</span><span>195</span></div>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="reco-title">
-        <header class="panel__head">
-          <div>
-            <h2 id="reco-title">{{ 'Rekomendasi Kursi Otomatis' if venue.kind.value == 'cinema' else 'Rekomendasi Posisi Otomatis' }}</h2>
-            <p class="panel__hint" id="reco-hint">Pilih preferensi posisi.</p>
-          </div>
-          <svg class="icon icon--lg panel__icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
-        </header>
-
-        <div class="preset-list" id="preset-list" role="radiogroup" aria-label="Preferensi rekomendasi"></div>
-
-        <button class="btn btn--secondary btn--block" type="button" id="btn-recommend">
-          <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>
-          <span>{{ 'Cari 3 kursi terbaik' if venue.kind.value == 'cinema' else 'Cari 3 posisi terbaik' }}</span>
-        </button>
-
-        <div class="reco-results" id="reco-results" aria-live="polite"></div>
-      </section>
     </div>
 
     {# KANAN: Sidebar 3 Kartu FigCraft (Info Acara, Simulasi 3D POV, Ringkasan & Aksi) + Insight #}
@@ -161,8 +152,13 @@
             <svg class="icon icon--sm viz-pov-card__icon" aria-hidden="true"><use href="#i-eye"/></svg>
             <span>Simulasi Pandangan 3D</span>
           </div>
-          <span class="chip chip--info num" id="pov-card-badge" {% if venue.kind.value != 'cinema' %}hidden{% endif %}>{{ venue.short_label }}</span>
+          <span class="chip chip--info num" id="pov-card-badge" hidden>{{ venue.short_label }}</span>
         </header>
+        <div class="friend-reco-chip liquid-glass-pill" id="friend-reco-chip" role="status" aria-live="polite" hidden>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <span class="friend-reco-chip__title">Rekomendasi Terdekat dari Teman Anda</span>
+          <span class="friend-reco-chip__meta num" id="friend-reco-meta"></span>
+        </div>
 
         <div class="viewport" id="viewport" aria-label="Pandangan 3D dari posisi terpilih">
           <div class="viewport__stage" id="viewport-stage" data-compare="off">
@@ -188,50 +184,72 @@
                 </button>
               </div>
 
+              <div class="viewport-media-bar" role="group" aria-label="Kontrol video">
+                <button class="viewport-media-bar__btn" type="button" id="btn-play" aria-label="Putar video">
+                  <svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>
+                </button>
+                <button class="viewport-media-bar__btn" type="button" id="btn-mute" aria-label="Nyalakan suara" aria-pressed="false">
+                  <svg class="icon" aria-hidden="true"><use href="#i-mute"/></svg>
+                </button>
+                <label class="visually-hidden" for="range-volume">Volume</label>
+                <input class="range range--volume" type="range" id="range-volume" min="0" max="100" value="70">
+                <button class="viewport-media-bar__btn" type="button" id="btn-maximize-video" aria-label="Maximize layar penuh" onclick="document.getElementById('btn-fullscreen').click()">
+                  <svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg>
+                </button>
+              </div>
+
               <div class="fullscreen-hud" id="fullscreen-hud" hidden>
                 <div class="fullscreen-hud__top fullscreen-hud-top">
+                  <div class="theater-chips">
+                    <span class="theater-chip" id="theater-chip-seat">&hellip;</span>
+                    <span class="theater-chip" id="theater-chip-mode">{{ venue.short_label if venue.kind.value == 'cinema' else 'Duduk' }}</span>
+                    <span class="theater-chip">{{ schedule.cinema if venue.kind.value == 'cinema' else 'SUGBK' }}</span>
+                  </div>
                   <div class="fullscreen-hud__tip">
                     <svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg>
                     <span class="fs-tip-full">Seret untuk melihat 360°</span>
                     <span class="fs-tip-short">Seret 360°</span>
                   </div>
+                  {% if venue.kind.value != 'cinema' %}
+                  <div class="theater-height-slot" id="theater-height-slot">
+<div class="height-pill" role="group" aria-label="Tinggi badan simulasi">
+          <button class="height-pill__main" type="button" id="height-pill-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="height-pill-pop">
+                        <span class="height-pill__label-full">Tinggi: <strong class="num" id="out-body">170 cm</strong></span>
+            <span class="height-pill__label-compact"><span id="height-pill-posture">Duduk</span> &middot; <span class="num" id="out-body-compact">170 cm</span></span>
+            <span class="height-pill__caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="height-pill__pop liquid-glass-modal" id="height-pill-pop" hidden>
+            <div class="height-pill__presets" role="group" aria-label="Pilih tinggi badan">
+              {% for cm in (155, 160, 165, 170, 175, 180, 185) %}
+              <button type="button" class="height-pill__preset" data-height-preset="{{ cm }}">{{ cm }} cm</button>
+              {% endfor %}
+            </div>
+            <div class="height-pill__fine">
+              <label for="range-body">Tinggi badan kamu</label>
+              <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170" aria-label="Tinggi Badan Kamu">
+            </div>
+            <div class="height-pill__front">
+              <label for="range-front">Tinggi penonton di depan <output class="num" id="out-front" for="range-front">170 cm</output></label>
+              <input class="range" type="range" id="range-front" min="145" max="195" step="1" value="170">
+            </div>
+          </div>
+        </div>
+                  </div>
+                  {% endif %}
+                  <div class="theater-controls" id="theater-controls-slot"></div>
                   <button class="btn fullscreen-hud__exit" type="button" id="btn-exit-fullscreen" aria-label="{{ 'Kembali ke Peta Kursi' if venue.kind.value == 'cinema' else 'Kembali ke Peta Area' }}">
                     <svg class="icon icon--sm" aria-hidden="true"><use href="#i-minimize"/></svg>
                     <span id="fs-exit-label" class="fs-exit-full">{{ 'Kembali ke Peta Kursi' if venue.kind.value == 'cinema' else 'Kembali ke Peta Area' }} (Esc)</span>
                     <span class="fs-exit-short">Keluar</span>
                   </button>
+                  {% if wayfinding %}
+                  {# Mode wayfinding: header situs tersembunyi saat layar penuh, jadi jalan kembali ke e-tiket ada di sini. #}
+                  <a class="wayfinding-back liquid-glass-pill" id="wf-back" href="{{ back_href }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    <span>Kembali ke E-Tiket</span>
+                  </a>
+                  {% endif %}
                 </div>
-              </div>
-
-              <p class="hud hud--hint liquid-glass-dock" id="hud-hint">
-                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg>
-                <span>Seret untuk melihat sekeliling</span>
-              </p>
-
-              <div class="viewport__veil" id="veil" role="status">
-                <span class="spinner" aria-hidden="true"></span>
-                <span id="veil-text">Memuat venue…</span>
-              </div>
-            </div>
-
-            <figure class="compare" id="compare" hidden>
-              <img id="compare-img" alt="" decoding="async">
-              <div class="compare__missing" id="compare-missing" hidden>
-                <svg class="icon icon--lg" aria-hidden="true"><use href="#i-image"/></svg>
-                <p id="compare-missing-text"></p>
-              </div>
-              <figcaption class="compare__bar">
-                <button class="btn btn--icon btn--ghost" type="button" id="compare-prev" aria-label="Foto sebelumnya">
-                  <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
-                </button>
-                <span id="compare-caption"></span>
-                <button class="btn btn--icon btn--ghost" type="button" id="compare-next" aria-label="Foto berikutnya">
-                  <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-                </button>
-              </figcaption>
-            </figure>
-          </div>
-        </div>
 
         <div class="pov-hud-metrics" id="pov-hud-metrics" aria-label="Ringkasan metrik pandangan">
           <div class="pov-metric">
@@ -248,72 +266,201 @@
           </div>
         </div>
 
-        <div class="deck" role="toolbar" aria-label="Kontrol pandangan dan media">
-          <div class="deck__group">
-            <span class="eyebrow">Lensa</span>
-            <div class="segmented" id="lens-buttons" role="group" aria-label="Lensa kamera"></div>
-          </div>
-
-          <div class="deck__group">
-            <span class="eyebrow">Video &amp; suara</span>
-            <div class="deck__row">
-              <button class="btn btn--icon" type="button" id="btn-play" aria-label="Putar video">
-                <svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>
-              </button>
-              <button class="btn btn--icon" type="button" id="btn-mute" aria-label="Nyalakan suara" aria-pressed="false">
-                <svg class="icon" aria-hidden="true"><use href="#i-mute"/></svg>
-              </button>
-              <label class="visually-hidden" for="range-volume">Volume</label>
-              <input class="range range--volume" type="range" id="range-volume" min="0" max="100" value="70">
+                {# Frame 07A/B: dock Liquid Glass 520x64, Seat Insight HUD, mini-map dan CTA bar #}
+                {% set unit = 'Kursi' if venue.kind.value == 'cinema' else 'Blok' %}
+                <div class="theater-dock{% if venue.kind.value != 'cinema' %} theater-dock--stadium{% endif %}" id="theater-dock" role="group" aria-label="Kontrol posisi">
+                  <button class="theater-dock__nav" type="button" id="btn-seat-prev" aria-label="{{ unit }} sebelumnya">&#9664; {{ unit }}</button>
+                  <div class="theater-dock__slot" id="theater-dock-slot">
+                    {% if venue.kind.value == 'cinema' %}
+<div class="height-pill" role="group" aria-label="Tinggi badan simulasi">
+          <button class="height-pill__main" type="button" id="height-pill-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="height-pill-pop">
+                        <span class="height-pill__label-full">Tinggi: <strong class="num" id="out-body">170 cm</strong></span>
+            <span class="height-pill__label-compact"><span id="height-pill-posture">Duduk</span> &middot; <span class="num" id="out-body-compact">170 cm</span></span>
+            <span class="height-pill__caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="height-pill__pop liquid-glass-modal" id="height-pill-pop" hidden>
+            <div class="height-pill__presets" role="group" aria-label="Pilih tinggi badan">
+              {% for cm in (155, 160, 165, 170, 175, 180, 185) %}
+              <button type="button" class="height-pill__preset" data-height-preset="{{ cm }}">{{ cm }} cm</button>
+              {% endfor %}
+            </div>
+            <div class="height-pill__fine">
+              <label for="range-body">Tinggi badan kamu</label>
+              <input class="range" type="range" id="range-body" min="145" max="195" step="1" value="170" aria-label="Tinggi Badan Kamu">
+            </div>
+            <div class="height-pill__front">
+              <label for="range-front">Tinggi penonton di depan <output class="num" id="out-front" for="range-front">170 cm</output></label>
+              <input class="range" type="range" id="range-front" min="145" max="195" step="1" value="170">
             </div>
           </div>
+        </div>
+                    {% else %}
+                    <div class="posture-toggle" id="posture-toggle" role="group" aria-label="Mode sudut pandang">
+                      <button type="button" data-posture="seated" aria-pressed="true">Duduk &middot; <span id="posture-tier">Lower Tier</span></button>
+                      <button type="button" data-posture="standing" aria-pressed="false">Berdiri</button>
+                    </div>
+                    {% endif %}
+                  </div>
+                  <button class="theater-dock__nav" type="button" id="btn-seat-next" aria-label="{{ unit }} berikutnya">{{ unit }} &#9654;</button>
+                </div>
 
-          <div class="deck__group deck__group--end" id="deck-display-group" {% if venue.kind.value != 'cinema' %}hidden{% endif %}>
-            <span class="eyebrow">Tampilan</span>
-            <div class="deck__row">
-              <button class="btn" type="button" id="btn-compare" aria-pressed="false" {% if venue.kind.value != 'cinema' %}hidden{% endif %}>
-                <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>
-                Bandingkan dengan Foto Asli
-              </button>
-              <div class="segmented" id="compare-mode" role="group" aria-label="Mode pembanding foto" hidden>
-                <button class="segmented__btn" type="button" data-mode="pip" aria-pressed="true">Sisipan</button>
-                <button class="segmented__btn" type="button" data-mode="split" aria-pressed="false">Berdampingan</button>
+                <details class="spec theater-spec">
+                  <summary>Lihat Spesifikasi Teknis</summary>
+                  <dl class="num" id="spec-list"></dl>
+                </details>
+
+                <div class="theater-insight" id="theater-insight" aria-label="{{ 'Seat Insight' if venue.kind.value == 'cinema' else 'Spot Insight' }}">
+                  <p class="theater-insight__title">{{ 'SEAT INSIGHT' if venue.kind.value == 'cinema' else 'SPOT INSIGHT' }}</p>
+                  <div class="theater-insight__gauge">
+                    <svg viewBox="0 0 116 116" aria-hidden="true">
+                      <circle class="theater-insight__track" cx="58" cy="58" r="50" pathLength="100"/>
+                      <circle class="theater-insight__bar" id="ti-ring" cx="58" cy="58" r="50" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" transform="rotate(-90 58 58)"/>
+                    </svg>
+                    <strong class="num" id="ti-score">&ndash;</strong>
+                  </div>
+                  <span class="theater-insight__grade" id="ti-grade">skor</span>
+                  <ul class="theater-insight__metrics">
+                    {% for key, label in [("screen", 'Cakupan Layar' if venue.kind.value == 'cinema' else 'Cakupan Panggung'), ("neck", "Kenyamanan Leher"), ("off_axis", "Posisi Tengah"), ("obstruction", obs_label)] %}
+                    <li id="ti-m-{{ key }}">
+                      <span class="ti-metric__row"><span>{{ label }}</span><strong class="num ti-metric__val">&ndash;</strong></span>
+                      <span class="ti-metric__track"><span class="ti-metric__fill"></span></span>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+
+                <div class="theater-minimap" id="theater-minimap" data-kind="{{ venue.kind.value }}" aria-label="Mini-map posisimu">
+                  <svg id="tm-svg" viewBox="0 0 172 134" role="img" aria-label="Posisi {{ 'kursi' if venue.kind.value == 'cinema' else 'tribun' }} di venue"></svg>
+                </div>
+
+                <div class="spatial-route-hud liquid-glass-dock" id="spatial-route-hud" hidden aria-live="polite">
+                  <div class="spatial-route-hud__steps" aria-hidden="true">
+                    <span class="spatial-step-dot" data-spatial-step="0">1</span>
+                    <span class="spatial-step-line"></span>
+                    <span class="spatial-step-dot" data-spatial-step="1">2</span>
+                    <span class="spatial-step-line"></span>
+                    <span class="spatial-step-dot" data-spatial-step="2">3</span>
+                  </div>
+                  <div class="spatial-route-hud__copy">
+                    <span class="spatial-route-hud__eyebrow">RUTE SPASIAL 3D GBK</span>
+                    <strong class="spatial-route-hud__title" id="spatial-route-title">Titik 1/3 · Plaza Luar SUGBK</strong>
+                  </div>
+                  <div class="spatial-route-hud__actions">
+                    <button type="button" class="spatial-route-hud__btn" id="btn-spatial-replay">Putar Ulang</button>
+                    <button type="button" class="spatial-route-hud__btn spatial-route-hud__btn--primary" id="btn-spatial-skip">Lewati</button>
+                  </div>
+                </div>
+
+                {% if wayfinding %}
+                {# Dock Liquid Glass tur 3 langkah (?mode=wayfinding) — Rail Navigation terpadu. #}
+                <div class="wayfinding-dock liquid-glass-dock" id="wayfinding-dock" role="group" aria-label="Navigasi rute spasial 3D">
+                  <div class="wayfinding-dock__header">
+                    <p class="wayfinding-dock__label wayfinding-title" id="wayfinding-label" aria-live="polite">Memuat rute 3D menuju kursi Anda…</p>
+                    <p class="wayfinding-desc" id="wayfinding-desc">Menyiapkan panduan rel menuju gerbang dan sektor kursi.</p>
+                  </div>
+                  <div class="wayfinding-dock__controls">
+                    <button type="button" class="wayfinding-dock__btn wf-arrow-btn wf-arrow-btn--double" id="wf-auto-prev" aria-label="Pos sebelumnya (lompat otomatis)" title="Pos Sebelumnya" disabled>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
+                    </button>
+                    <button type="button" class="wayfinding-dock__btn wf-arrow-btn" id="wf-step-prev" aria-label="Langkah mundur perlahan (tahan)" title="Mundur Perlahan (Tahan)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <span class="wayfinding-dots" aria-hidden="true"><i class="wayfinding-dot is-active"></i><i class="wayfinding-dot"></i><i class="wayfinding-dot"></i><i class="wayfinding-dot"></i><i class="wayfinding-dot"></i></span>
+                    <button type="button" class="wayfinding-dock__btn wf-arrow-btn" id="wf-step-next" aria-label="Langkah maju perlahan (tahan)" title="Maju Perlahan (Tahan)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <button type="button" class="wayfinding-dock__btn wf-arrow-btn wf-arrow-btn--double" id="wf-auto-next" aria-label="Pos berikutnya (lompat otomatis)" title="Pos Berikutnya">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+                    </button>
+                    <a class="wayfinding-dock__btn wayfinding-btn-finish" id="wf-finish" href="{{ url_for('checkout.ticket') }}" hidden>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                      <span>Selesai</span>
+                    </a>
+                  </div>
+                </div>
+
+                {# 2D Interactive Spatial Minimap HUD (?mode=wayfinding) #}
+                <div id="minimapContainer" class="minimap-glass-card" aria-label="Mini Map GBK 2D" hidden>
+                  <div class="minimap-header">
+                    <span class="minimap-label">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9 16.2 7.8"/></svg>
+                      <span>Mini Map</span>
+                    </span>
+                  </div>
+                  <canvas id="spatialMinimap" width="180" height="180"></canvas>
+                  <div class="minimap-footer">
+                    <span id="minimapGateTag">GATE 6</span>
+                    <span id="minimapSectorTag">SEKTOR 16</span>
+                  </div>
+                </div>
+                {% endif %}
+
+                <div class="theater-cta" id="theater-cta">
+                  <div class="theater-cta__info">
+                    <strong id="tc-title">&hellip;</strong>
+                    <span id="tc-sub" class="num"></span>
+                  </div>
+                  <div class="theater-cta__actions">
+                    <button class="theater-cta__btn theater-cta__btn--glass" type="button" id="tc-back">{{ 'Kembali ke Peta' if venue.kind.value == 'cinema' else 'Kembali ke Peta Area' }} (Esc)</button>
+                    <button class="theater-cta__btn theater-cta__btn--primary" type="button" id="tc-cart" disabled>Tambah ke Keranjang</button>
+                  </div>
+                </div>
               </div>
-              <button class="btn" type="button" id="btn-4dx" aria-pressed="false" hidden>
-                <svg class="icon" aria-hidden="true"><use href="#i-wind"/></svg>
-                Simulasi Efek 4DX
-              </button>
+
+              <p class="hud hud--hint liquid-glass-dock" id="hud-hint">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-eye"/></svg>
+                <span>Seret untuk melihat sekeliling</span>
+              </p>
+
+              <div class="viewport__veil" id="veil" role="status">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="veil-text">Memuat venue…</span>
+              </div>
             </div>
+
           </div>
+        </div>
+
+        <div class="concert-timelapse-bar liquid-glass" id="concert-timelapse-bar" role="group" aria-label="Timelapse Suasana Konser GBK"{% if venue.kind.value == 'cinema' %} hidden{% endif %}>
+          <div class="concert-timelapse__head">
+            <span class="concert-timelapse__label">Timelapse Suasana Konser</span>
+            <span class="concert-timelapse__weather" id="timelapse-weather-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              <span id="timelapse-weather-text">Malam Cerah</span>
+            </span>
+          </div>
+          <div class="concert-timelapse__pills">
+            <button type="button" class="concert-timelapse__btn" data-concert-phase="open_gate" aria-pressed="false">15:30 Open Gate</button>
+            <button type="button" class="concert-timelapse__btn" data-concert-phase="golden_hour" aria-pressed="false">17:45 Golden Hour</button>
+            <button type="button" class="concert-timelapse__btn" data-concert-phase="transition_rain" aria-pressed="false">19:00 Transition Rain</button>
+            <button type="button" class="concert-timelapse__btn" data-concert-phase="peak_show" aria-pressed="true">20:00 Showtime</button>
+          </div>
+        </div>
+
+        <div class="deck__group" id="deck-display-group" {% if venue.kind.value != 'cinema' %}hidden{% endif %}>
+          <button class="btn btn--glass-secondary viz-4dx-toggle" type="button" id="btn-4dx" aria-pressed="false" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-wind"/></svg>
+            Simulasi Efek 4DX
+          </button>
         </div>
       </section>
 
       {# KARTU 3: RINGKASAN & AKSI #}
-      <div class="panel cta-bar" id="cta-bar">
+      <div class="panel cta-bar cta-bar--glass liquid-glass" id="cta-bar">
         <div class="cta-summary">
-          <div class="cta-summary__row summary-seats-row">
-            <span class="cta-summary__label" id="cta-summary-label">{{ 'Kursi Terpilih' if venue.kind.value == 'cinema' else 'Posisi Terpilih' }}</span>
-            <div class="summary-seats-list cta-bar__seat num" id="cta-seat">Belum ada posisi dipilih</div>
-          </div>
           <div class="cta-summary__row">
             <span class="cta-summary__label">Total Harga Tiket</span>
             <strong class="cta-bar__price num" id="cta-price">Rp 0</strong>
           </div>
         </div>
 
-        <div class="cta-lock-row">
-          <div class="seat-lock-pill" id="seat-lock-timer" aria-live="polite">
-            <span class="seat-lock-pill__label" id="seat-lock-label">{{ 'Batas waktu kunci kursi' if venue.kind.value == 'cinema' else 'Batas waktu pilihan' }}</span>
-            <strong class="seat-lock-pill__clock num" id="seat-lock-countdown">10:00</strong>
-          </div>
-          <button class="btn btn--sm" type="button" id="btn-cart" disabled>
+        {# Aksi: utilitas kecil (tambah/hapus pilihan), lalu Lanjut ke Checkout dan Lihat POV 3D selebar panel. #}
+        <div class="cta-bar__actions">
+          <button class="btn btn--glass-secondary cta-bar__util" type="button" id="btn-cart" disabled>
             <svg class="icon icon--sm" aria-hidden="true"><use href="#i-cart"/></svg>
             <span id="btn-cart-label">{{ 'Tambah ke Keranjang' if venue.kind.value == 'cinema' else 'Simpan Pilihan' }}</span>
           </button>
-        </div>
-
-        <div class="cta-bar__actions">
-          <button class="btn btn--outline-neutral" type="button" id="btn-clear">
+          <button class="btn btn--outline-neutral cta-bar__util" type="button" id="btn-clear">
             Hapus Pilihan
           </button>
           <a class="btn btn--teal-primary liquid-glass-btn-primary" id="btn-checkout" href="{{ url_for('checkout.index') }}" aria-disabled="true">
@@ -328,29 +475,22 @@
       <section class="panel insight" aria-labelledby="insight-title">
         <h2 id="insight-title">{{ 'Seat Insight' if venue.kind.value == 'cinema' else 'Spot Insight' }}</h2>
         <div class="insight__body">
-          <div class="insight__score">
-            <div class="score-ring" id="score-ring-wrap">
-              <svg viewBox="0 0 116 116" aria-hidden="true">
-                <circle class="score-ring__track" cx="58" cy="58" r="50"/>
-                <circle class="score-ring__bar" id="score-ring" cx="58" cy="58" r="50"
-                        pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
-              </svg>
-              <div class="score-ring__text">
-                <strong class="num" id="score-value">–</strong>
-                <span class="score-badge" id="score-grade"></span>
-              </div>
-            </div>
-            {# Hanya konser: baterai vertikal = bagian pandangan yang bebas halangan. #}
-            <div class="battery" id="battery" role="img" hidden>
-              <span class="battery__cell"><span class="battery__fill" id="battery-fill"></span></span>
-              <span class="battery__label" id="battery-label"></span>
+          <div class="score-ring" id="score-ring-wrap">
+            <svg viewBox="0 0 116 116" aria-hidden="true">
+              <circle class="score-ring__track" cx="58" cy="58" r="50"/>
+              <circle class="score-ring__bar" id="score-ring" cx="58" cy="58" r="50"
+                      pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+            </svg>
+            <div class="score-ring__text">
+              <strong class="num" id="score-value">&ndash;</strong>
+              <span class="score-badge" id="score-grade">&ndash;</span>
             </div>
           </div>
           <ul class="bars" id="bars">
-            {% for key, label in [("screen", "Cakupan Layar"), ("neck", "Kenyamanan Leher"),
-                                  ("off_axis", "Posisi Persis di Tengah"), ("obstruction", "Bebas Halangan"),
+            {% for key, label in [("screen", cap_label), ("neck", "Kenyamanan Leher"),
+                                  ("off_axis", "Posisi Tengah"), ("obstruction", obs_label),
                                   ("acoustic", "Musik:")] %}
-            <li data-key="{{ key }}">
+            <li data-key="{{ key }}"{% if key == 'acoustic' %} hidden{% endif %}>
               <span>{{ label }}</span>
               <span class="bars__track"><span class="bars__fill"></span></span>
               <span class="bars__num num">–</span>
@@ -358,13 +498,43 @@
             {% endfor %}
           </ul>
         </div>
-        <details class="spec">
-          <summary>Lihat Spesifikasi Teknis</summary>
-          <dl class="num" id="spec-list"></dl>
-        </details>
+        <div class="roof-telemetry" id="roof-protection-row" hidden>
+          <div class="roof-telemetry__head">
+            <span class="roof-telemetry__label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 19a5 5 0 0 1-10 0"/><path d="M4.2 10.2a8 8 0 0 1 15.6 0Z"/><path d="M12 10v9"/></svg>
+              <span>Perlindungan Atap</span>
+            </span>
+            <strong class="roof-telemetry__badge" id="roof-protection-badge">&ndash;</strong>
+          </div>
+          <p class="roof-telemetry__note" id="roof-protection-note"></p>
+        </div>
+        <div class="cta-summary__row summary-seats-row" id="selected-seat-card">
+          <div class="summary-seats-head selected-seat-header">
+            <span class="cta-summary__label" id="cta-summary-label">{{ 'Kursi Terpilih' if venue.kind.value == 'cinema' else 'Posisi Terpilih' }}</span>
+            <button type="button" class="btn--share-pos" id="btn-share-seat" aria-label="Bagikan tautan pratinjau posisi">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>Bagikan Pratinjau</span>
+            </button>
+          </div>
+          <div class="summary-seats-list selected-seat-tags cta-bar__seat num" id="cta-seat">Belum ada posisi dipilih</div>
+        </div>
       </section>
     </div>
   </div>
+
+  {# Bar rekomendasi selebar halaman (Liquid Glass): kriteria di kiri, hasil + aksi di kanan. Pil diisi JS dari layout.presets. #}
+  <section class="reco-bar liquid-glass" id="reco-bar" aria-label="{{ 'Rekomendasi kursi' if venue.kind.value == 'cinema' else 'Rekomendasi posisi' }}">
+    <div class="reco-bar__presets" id="preset-list" role="radiogroup" aria-label="Kriteria rekomendasi"></div>
+    <div class="reco-bar__result" aria-live="polite">
+      <div class="reco-bar__info">
+        <strong class="reco-bar__seat" id="reco-seat">Menghitung rekomendasi&hellip;</strong>
+        <span class="reco-bar__score num" id="reco-score"></span>
+      </div>
+      <button class="btn btn--teal-primary liquid-glass-btn-primary reco-bar__cta" type="button" id="reco-select" disabled>
+        Pilih Kursi Ini
+      </button>
+    </div>
+  </section>
 </div>
 
 <div class="seat-spotlight-backdrop" id="seat-spotlight-modal" hidden>
@@ -384,11 +554,53 @@
   </section>
 </div>
 
+<div class="ai-widget tikbuddy-root" id="tikbuddy-root">
+  <section class="ai-panel liquid-glass" id="tikbuddy-drawer" role="dialog" aria-label="TikBuddy" hidden>
+    <header class="ai-panel__head">
+      <span class="ai-avatar" aria-hidden="true">
+        <img class="ai-avatar__logo" src="{{ url_for('static', filename='images/gemini-logo.png') }}" alt="" width="22" height="22">
+      </span>
+      <div class="ai-panel__title">
+        <strong>TikBuddy</strong>
+        <span class="ai-status"><i aria-hidden="true"></i>Online · Virtual Assistant</span>
+      </div>
+      <button type="button" class="ai-iconbtn" id="tikbuddy-close" aria-label="Tutup asisten">&#10005;</button>
+    </header>
+    <div class="ai-chips" id="tikbuddy-pills" role="group" aria-label="Rekomendasi cepat">
+      <button type="button" class="ai-chip" data-tikbuddy-prompt="Paling Nyaman di Leher">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7l-8 5-8-5"/><path d="M4 7v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"/></svg>
+        <span>Paling Nyaman di Leher</span>
+      </button>
+      <button type="button" class="ai-chip" data-tikbuddy-prompt="View Tengah GBK">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>View Tengah GBK</span>
+      </button>
+      <button type="button" class="ai-chip" data-tikbuddy-prompt="Suara Paling Jernih">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <span>Suara Paling Jernih</span>
+      </button>
+    </div>
+    <div class="ai-body" id="tikbuddy-messages" role="log" aria-live="polite">
+      <div class="ai-msg ai-msg--bot">Halo! Mau cari kursi dengan kriteria seperti apa?</div>
+    </div>
+    <form class="ai-input" id="tikbuddy-form" autocomplete="off">
+      <label class="visually-hidden" for="tikbuddy-input">Kriteria posisi</label>
+      <input id="tikbuddy-input" type="text" placeholder="Tanya TikBuddy tentang posisi atau kursi..." autocomplete="off">
+      <button type="submit" class="ai-send" aria-label="Cari posisi"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    </form>
+  </section>
+  <button type="button" class="ai-fab" id="tikbuddy-fab" aria-label="Tanya TikBuddy" title="Tanya TikBuddy" aria-expanded="false" aria-controls="tikbuddy-drawer">
+    <img class="ai-fab__logo" src="{{ url_for('static', filename='images/gemini-logo.png') }}" alt="Tanya TikBuddy" width="28" height="28">
+  </button>
+</div>
+
 <div class="map-tooltip glass glass--3" id="map-tooltip" role="tooltip" hidden></div>
 <script type="application/json" id="viz-bootstrap">{{ bootstrap | tojson }}</script>
 {% endblock %}
 
 {% block footer %}{% endblock %}
+
+{% block assistant %}{% endblock %}
 
 {% block scripts %}
 <script type="module" src="{{ url_for('static', filename='js/visualizer_app.js') }}"></script>

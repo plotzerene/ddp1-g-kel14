@@ -18,6 +18,6 @@
     <path d="M-40 24 L-12 -4 L12 18 L28 4 L44 24 Z" fill="rgba(45,212,191,0.35)" stroke="none"/>
   </g>
   <rect x="110" y="340" width="180" height="4" rx="2" fill="url(#accent)"/>
-  <text x="200" y="378" text-anchor="middle" fill="#F8FAFC" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="22" font-weight="700">Poster Segera Hadir</text>
-  <text x="200" y="408" text-anchor="middle" fill="#CBD5E1" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14">titiket.com Cinema &amp; 3D POV</text>
+  <text x="200" y="378" text-anchor="middle" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif" font-size="22" font-weight="700">Poster Segera Hadir</text>
+  <text x="200" y="408" text-anchor="middle" fill="#CBD5E1" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif" font-size="14">titiket.com Cinema &amp; 3D POV</text>
 </svg>

@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 {% set step = "checkout" %}
 {% set theme_color = "#FFFFFF" %}
+{% set back_href = (url_for('events.coldplay_overview') if items[0].venue_id.startswith('gbk') else url_for('events.movie', slug=items[0].event_id)) if (items and items[0].event_id) else url_for('landing.index') %}
 {% block title %}Checkout &amp; Pembayaran{% endblock %}
+
+{% block header_right %}
+{% if checkout_mode != 'merch' and items %}
+<div class="seat-lock-pill" id="seat-hold-pill" aria-live="polite">
+  <span class="seat-lock-pill__label">Sisa waktu</span>
+  <strong class="seat-lock-pill__clock num" id="seat-hold-countdown">{{ '%02d:%02d' | format(lock_remaining_seconds // 60, lock_remaining_seconds % 60) }}</strong>
+</div>
+{% endif %}
+<div class="pay-timer-pill" id="pay-timer-pill" hidden role="timer" aria-live="off">
+  <svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>
+  <span>Batas Waktu Bayar</span>
+  <strong class="num" id="payment-countdown">15:00</strong>
+</div>
+{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
@@ -18,7 +33,93 @@
   {% endif %}
 {% endfor %}
 {% set is_standing_only = ns.standing_only %}
+{% set seat_count = (items | length) if (checkout_mode != 'merch' and items) else 1 %}
+{% set attendee_vals = values.attendees | default([]) %}
+{% set ns_same = namespace(same=true) %}
+{% for a in attendee_vals[1:] %}
+  {% if a.name and a.name != attendee_vals[0].name %}{% set ns_same.same = false %}{% endif %}
+{% endfor %}
 
+{% set addon_qty_map = {} %}
+{% set addon_note_map = {} %}
+{% for a in selected_addons | default([]) %}
+  {% set _ = addon_qty_map.update({a.item_id: a.qty}) %}
+  {% set _ = addon_note_map.update({a.item_id: a.note}) %}
+{% endfor %}
+
+{% macro addon_tile(addon) %}
+{% set kind = 'merch' if 'merch' in addon.category_label | lower else ('drink' if 'minum' in addon.category_label | lower else 'food') %}
+            <span class="addon-card__tile addon-card__tile--{{ kind }}" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="#FFFFFF">
+                {% if kind == 'food' %}<path d="M6 9h12l-1.4 11H7.4L6 9zM7 7a2.5 2.5 0 0 1 4-1.7A2.5 2.5 0 0 1 16 6.2 2.5 2.5 0 0 1 17 9H7V7z"/>
+                {% elif kind == 'drink' %}<path d="M9 2h6v2h1v3H8V4h1V2zm-1 6h8l-1 13H9L8 8z"/>
+                {% else %}<path d="M8.5 3 3 6l2 4 2-1v11h10V9l2 1 2-4-5.5-3a3.5 3.5 0 0 1-7 0z"/>{% endif %}
+              </svg>
+            </span>
+{% endmacro %}
+{% macro addon_note_area(addon, q, note) %}
+            <div class="addon-note-area" data-addon-note-area="{{ addon.item_id }}" {% if q == 0 %}hidden{% endif %}>
+              <div class="addon-note-display" data-addon-note-display="{{ addon.item_id }}" {% if not note %}hidden{% endif %}>
+                <span class="addon-note-quote">&#8627; Catatan: &ldquo;<span data-addon-note-text="{{ addon.item_id }}">{{ note }}</span>&rdquo;</span>
+                <button type="button" class="addon-note-trigger" data-addon-edit-note="{{ addon.item_id }}">Ubah</button>
+              </div>
+              <button type="button" class="addon-note-trigger" data-addon-open-note="{{ addon.item_id }}" {% if note %}hidden{% endif %}>
+                + Tambah Catatan (opsional)
+              </button>
+              <div class="addon-inline-editor" data-addon-editor="{{ addon.item_id }}" hidden>
+                <input type="text" class="input addon-inline-input" data-addon-input="{{ addon.item_id }}" value="{{ note }}" placeholder="{{ addon.placeholder }}" maxlength="120" aria-label="Catatan untuk {{ addon.name }}">
+                <div class="addon-inline-actions">
+                  <button type="button" class="btn btn--primary btn--sm" data-addon-save-note="{{ addon.item_id }}">Simpan</button>
+                  <button type="button" class="btn btn--ghost btn--sm" data-addon-cancel-note="{{ addon.item_id }}">Batal</button>
+                </div>
+              </div>
+            </div>
+{% endmacro %}
+{# Data Penonton per Kursi (Frame 13A/B): kolom utama; input terhubung ke #pay-form via atribut form. #}
+{% macro attendee_section(seat_count, attendee_vals, same_all, values, errors, items, checkout_mode, is_standing_only) %}
+      <section class="checkout__section attendee-card" id="attendee-section" aria-labelledby="attendee-title">
+        <div class="checkout__section-head">
+          <h2 id="attendee-title">{% if checkout_mode == 'merch' %}Data Pemesan{% elif is_standing_only %}Data Penonton per Tiket{% else %}Data Penonton per Kursi{% endif %}</h2>
+        </div>
+
+        {% for n in range(1, seat_count + 1) %}
+        {% set row = attendee_vals[n - 1] if attendee_vals | length >= n else {} %}
+        <fieldset class="attendee" data-attendee="{{ n }}">
+          <legend class="attendee__tag chip chip--info">{% if checkout_mode == 'merch' %}Pemesan{% else %}Penonton {{ n }}{% endif %}{% if items and items[n - 1] is defined and checkout_mode != 'merch' %} &middot; {{ items[n - 1].seat_label }}{% endif %}</legend>
+          <div class="attendee__grid">
+            <div class="field">
+              <label class="field__label" for="{{ 'name' if n == 1 else 'attendee-name-' ~ n }}">Nama Lengkap <span aria-hidden="true">*</span></label>
+              <input class="input" id="{{ 'name' if n == 1 else 'attendee-name-' ~ n }}" name="{{ 'name' if n == 1 else 'attendee_name_' ~ n }}" form="pay-form" type="text" autocomplete="{{ 'name' if n == 1 else 'off' }}" placeholder="Nama sesuai KTP" maxlength="80" required
+                     value="{{ (values.name if n == 1 else row.name) | default('') }}" data-attendee-field="name"
+                     {% if n == 1 and errors.name %}aria-invalid="true" aria-describedby="name-error" autofocus{% endif %}>
+              {% if n == 1 %}<p class="field__error" id="name-error" {% if not errors.name %}hidden{% endif %}>{{ errors.name | default('') }}</p>
+              {% else %}<p class="field__error" {% if not errors['attendee_' ~ n] %}hidden{% endif %}>{{ errors['attendee_' ~ n] | default('') }}</p>{% endif %}
+            </div>
+            <div class="field">
+              <label class="field__label" for="attendee-nik-{{ n }}">NIK / Paspor</label>
+              <input class="input" id="attendee-nik-{{ n }}" name="attendee_nik_{{ n }}" form="pay-form" type="text" inputmode="numeric" autocomplete="off" placeholder="16 digit NIK atau nomor paspor" maxlength="24"
+                     value="{{ row.nik | default('') }}" data-attendee-field="nik">
+            </div>
+            <div class="field attendee__email">
+              <label class="field__label" for="{{ 'email' if n == 1 else 'attendee-email-' ~ n }}">Email{% if n == 1 %} untuk e-ticket <span aria-hidden="true">*</span>{% endif %}</label>
+              <input class="input" id="{{ 'email' if n == 1 else 'attendee-email-' ~ n }}" name="{{ 'email' if n == 1 else 'attendee_email_' ~ n }}" form="pay-form" type="email" autocomplete="{{ 'email' if n == 1 else 'off' }}" placeholder="nama@email.com" maxlength="120" {% if n == 1 %}required{% endif %}
+                     value="{{ (values.email if n == 1 else row.email) | default('') }}" data-attendee-field="email"
+                     {% if n == 1 and errors.email %}aria-invalid="true" aria-describedby="email-error"{% if not errors.name %} autofocus{% endif %}{% endif %}>
+              {% if n == 1 %}<p class="field__error" id="email-error" {% if not errors.email %}hidden{% endif %}>{{ errors.email | default('') }}</p>{% endif %}
+            </div>
+          </div>
+        </fieldset>
+        {% endfor %}
+
+        {% if seat_count > 1 %}
+        <label class="ios-switch" for="attendee-same-toggle">
+          <span class="ios-switch__text">Samakan data penonton berikutnya</span>
+          <input type="checkbox" role="switch" id="attendee-same-toggle" class="ios-switch__input" {% if same_all %}checked{% endif %}>
+          <span class="ios-switch__track" aria-hidden="true"></span>
+        </label>
+        {% endif %}
+      </section>
+{% endmacro %}
 <div class="container checkout">
   <header class="checkout__head">
     <div class="checkout__head-row">
@@ -26,29 +127,26 @@
         <p class="eyebrow">Langkah 3 dari 3</p>
         <h1>Checkout &amp; Pembayaran</h1>
       </div>
-      {% if items %}
-      <div class="pay-timer-pill" id="pay-timer-pill" hidden aria-live="polite">
-        <svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>
-        <span>Batas Waktu Bayar</span>
-        <strong class="num" id="payment-countdown">15:00</strong>
-      </div>
+      {% if checkout_mode == 'merch' %}
+      <span class="fulfillment-pill fulfillment-pill--delivery">Pengiriman Reguler ke Rumah (Estimasi 2-3 hari)</span>
+      {% elif is_concert_checkout %}
+      <span class="fulfillment-pill fulfillment-pill--venue"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg> Tukar Wristband di Venue (Plaza Barat/Tenggara)</span>
+      {% else %}
+      <span class="fulfillment-pill fulfillment-pill--venue"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg> E-Tiket Langsung Scan di Studio</span>
       {% endif %}
     </div>
   </header>
 
-  {% if not items %}
-  <section class="empty-state cart-empty-card" aria-labelledby="empty-title">
-    <span class="cart-empty-card__icon" aria-hidden="true">
-      <svg class="icon icon--lg" aria-hidden="true"><use href="#i-cart"/></svg>
-    </span>
-    <h2 id="empty-title">Keranjangmu masih kosong</h2>
-    <p>Pilih tiket dan tekan tombol Tambah ke Keranjang.</p>
-    <a class="btn btn--primary cart-empty-card__cta" href="{{ url_for('landing.index') }}">
-      <span>Pilih Tiket</span>
-      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-    </a>
+  {% if is_preview_empty %}
+  <section class="checkout-preview-banner" role="status">
+    <div>
+      <strong>Belum ada tiket dipilih di sesi ini</strong>
+      <p>Kamu dapat menjelajahi katalog untuk memilih tiket, atau mencoba fitur Add-on dengan catatan pesanan dan pilihan pembayaran di bawah.</p>
+    </div>
+    <a class="btn btn--primary btn--sm" href="{{ url_for('landing.index') }}">Pilih Tiket</a>
   </section>
-  {% else %}
+  {% endif %}
+
   <div class="checkout__grid">
     <div class="checkout__main-col">
       <section class="pay-error-banner" id="payment-error-banner" role="alert" hidden>
@@ -66,6 +164,56 @@
         <a class="btn btn--secondary btn--sm" href="{{ stepper_viz_href }}">Pilih Ulang</a>
       </section>
 
+      {% if checkout_mode == 'merch' %}
+      {# Mode Pengiriman Fisik Merchandise #}
+      <section class="checkout__section" aria-labelledby="merch-items-title">
+        <div class="checkout__section-head">
+          <h2 id="merch-items-title">Merchandise Pengiriman Fisik <span class="num">({{ merch_items | length }})</span></h2>
+          <span class="fulfillment-pill fulfillment-pill--delivery">Dikirim ke Rumah</span>
+        </div>
+        <ul class="ticket-list">
+          {% for m in merch_items %}
+          <li class="ticket-row glass">
+            <div class="ticket-row__main">
+              <span class="chip chip--info">{{ m.category }}</span>
+              <h3>{{ m.name }}</h3>
+              <p class="ticket-row__venue">Jumlah: {{ m.qty }} &middot; Kurir Reguler</p>
+            </div>
+            <div class="ticket-row__side">
+              <strong class="num">{{ m.line_total | rupiah }}</strong>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="shipping-address-box">
+          <span class="eyebrow">DIKIRIM KE</span>
+          <strong>{{ active_address.label }}</strong>
+          <p>{{ active_address.recipient }} ({{ active_address.phone }}) &middot; {{ active_address.street }}, {{ active_address.city }}</p>
+        </div>
+      </section>
+      {{ attendee_section(seat_count, attendee_vals, ns_same.same, values, errors, items, checkout_mode, is_standing_only) }}
+      {% else %}
+      {# Mode Tiket + Add-on On-site #}
+      {% if items %}
+      {# Pesanan Kamu (Frame 13A/B): thumbnail 100px, judul, venue, ringkasan kursi, chip POV, Pilih Ulang #}
+      {% set first = items[0] %}
+      {% set first_parts = first.venue_name.split(' \u00b7 ') %}
+      <section class="checkout__section order-summary-card" aria-labelledby="order-summary-title">
+        <div class="order-summary-card__thumb checkout-hero__poster">
+          <img src="{{ hero_poster_url }}" alt="{{ first_parts[0] }}"
+               onerror="this.onerror=null;this.src='{{ poster_fallback_url }}'">
+        </div>
+        <div class="order-summary-card__info">
+          <h2 id="order-summary-title">{{ first_parts[0] }}</h2>
+          <p class="order-summary-card__venue">{% if first_parts | length > 1 %}{{ first_parts[1] }}{% endif %}{% if first.pov.show_date %} &middot; {{ first.pov.show_date }}{% endif %}{% if first.pov.show_time %} &middot; {{ first.pov.show_time }}{% endif %}</p>
+          <p class="order-summary-card__seats">
+            <strong>{{ items | length }} &times; {{ first.category }} &middot; {{ items | map(attribute='seat_label') | join(', ') }}</strong>
+            {% if first.pov.score %}<span class="order-summary-card__pov num">POV {{ first.pov.score | round | int }}</span>{% endif %}
+          </p>
+        </div>
+        <a class="order-summary-card__change" href="{{ stepper_viz_href }}">Pilih Ulang</a>
+      </section>
+
       <section class="checkout__section" aria-labelledby="tickets-title">
         <div class="checkout__section-head">
           <h2 id="tickets-title">Tiket pilihanmu <span class="num">({{ items | length }})</span></h2>
@@ -81,18 +229,14 @@
           {% for item in items %}
           <li class="ticket-row glass">
             <div class="ticket-row__main">
-              <span class="chip chip--info">{{ item.category }}</span>
-              <h3>{{ item.seat_label }}</h3>
-              <p class="ticket-row__venue">{{ item.venue_name }}</p>
+              <div class="ticket-row__chips">
+                <span class="chip chip--info">{{ item.category }}</span>
+                <span class="fulfillment-pill fulfillment-pill--venue">{{ 'Tukar Wristband di Venue (Plaza Barat/Tenggara)' if (is_concert_checkout or item.venue_id.startswith('gbk')) else 'E-Tiket Langsung Scan di Studio' }}</span>
+              </div>
+              {% set parts = item.venue_name.split(' · ') %}
+              <h3>{{ parts[0] }}</h3>
+              <p class="ticket-row__venue">{% if parts | length > 1 %}{{ parts[1] }} &middot; {% endif %}{{ item.seat_label }}{% if item.pov.score %} <span class="chip chip--info num">POV {{ item.pov.score | round | int }} &middot; {{ item.pov.grade }}</span>{% endif %}</p>
             </div>
-
-            <dl class="pov-meta" aria-label="Data POV dari visualizer">
-              <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} · {{ item.pov.grade }}</dd></div>
-              <div><dt>Jarak ke layar/panggung</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
-              <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
-              <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
-              <div><dt>Tinggi badan simulasi</dt><dd class="num">{{ item.pov.body_height_cm | round | int }} cm</dd></div>
-            </dl>
 
             <div class="ticket-row__side">
               <strong class="num">{{ item.price | rupiah }}</strong>
@@ -107,11 +251,76 @@
           {% endfor %}
         </ul>
 
-        <div class="checkout__ticket-footer">
-          <a class="btn btn--ghost" href="{{ url_for('visualizer.index') }}">
-            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-            Tambah tiket lain
-          </a>
+      </section>
+      {% endif %}
+
+      {{ attendee_section(seat_count, attendee_vals, ns_same.same, values, errors, items, checkout_mode, is_standing_only) }}
+
+      {# Section Add-on F&B & Merch Venue + Catatan Pesanan Inline #}
+      <section class="checkout__section addon-section" id="checkout-addons" aria-labelledby="addons-title">
+        <div class="checkout__section-head">
+          <div>
+            <h2 id="addons-title">Add-on</h2>
+            <p class="addon-section__sub">
+              {% if is_concert_checkout %}
+              Makanan, minuman &amp; merchandise resmi berstatus <strong>Ambil di Booth Merchandise Resmi GBK</strong> (mengikuti timer sesi).
+              {% else %}
+              Makanan, minuman &amp; perlengkapan bioskop berstatus <strong>Ambil di Konter F&amp;B XXI</strong> (mengikuti timer sesi).
+              {% endif %}
+            </p>
+          </div>
+          <button type="button" class="btn liquid-glass-pill--secondary" id="open-addon-catalog-btn">
+            Lihat Semua Menu &amp; Merchandise &#8599;
+          </button>
+        </div>
+
+        <div class="addon-quick-grid" id="addon-quick-grid">
+          {% for addon in addon_catalog[:3] %}
+          {% set q = addon_qty_map.get(addon.item_id, 0) %}
+          {% set note = addon_note_map.get(addon.item_id, '') %}
+          <article class="addon-card" data-addon-card="{{ addon.item_id }}" data-addon-price="{{ addon.price }}" data-addon-placeholder="{{ addon.placeholder }}" data-addon-name="{{ addon.name }}">
+            {{ addon_tile(addon) }}
+            <div class="addon-card__head">
+              <div>
+                <span class="addon-card__cat">{{ addon.category_label }} &middot; {{ 'Ambil di Booth Merchandise Resmi GBK' if ('merch' in addon.category_label | lower or is_concert_checkout) else 'Ambil di Konter F&B XXI' }}</span>
+                <h3 class="addon-card__title">{{ addon.name }}</h3>
+                <strong class="addon-card__price num">{{ addon.price | rupiah }}</strong>
+              </div>
+              <div class="addon-stepper">
+                <button type="button" class="addon-qty-btn" data-addon-delta="-1" data-addon-id="{{ addon.item_id }}" aria-label="Kurangi {{ addon.name }}">&minus;</button>
+                <span class="addon-qty-val num" data-addon-qty="{{ addon.item_id }}">{{ q }}</span>
+                <button type="button" class="addon-qty-btn addon-qty-btn--plus" data-addon-delta="1" data-addon-id="{{ addon.item_id }}" aria-label="Tambah {{ addon.name }}">+</button>
+              </div>
+            </div>
+
+            {{ addon_note_area(addon, q, note) }}
+          </article>
+          {% endfor %}
+        </div>
+
+        <div class="addon-order-summary" id="addon-order-summary" {% if not selected_addons %}hidden{% endif %}>
+          <div class="addon-order-summary__head">
+            <h3>Add-on dalam Pesanan</h3>
+            <span class="chip chip--info num" id="addon-summary-count">{{ selected_addons | sum(attribute='qty') }} item</span>
+          </div>
+          <ul class="addon-summary-list" id="selected-addons-list">
+            {% for a in selected_addons %}
+            <li class="addon-summary-item" data-summary-addon="{{ a.item_id }}">
+              <div class="addon-summary-item__main">
+                <strong>{{ a.name }}</strong>
+                <span class="addon-summary-item__meta num">&times;{{ a.qty }} &middot; {{ a.line_total | rupiah }} &middot; {{ a.fulfillment }}</span>
+                {% if a.note %}
+                <div class="addon-summary-item__note">
+                  <span>&#8627; Catatan: &ldquo;{{ a.note }}&rdquo;</span>
+                  <button type="button" class="addon-note-trigger" data-addon-edit-note="{{ a.item_id }}">Ubah</button>
+                </div>
+                {% else %}
+                <button type="button" class="addon-note-trigger" data-addon-open-note="{{ a.item_id }}">+ Tambah Catatan (opsional)</button>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
         </div>
       </section>
 
@@ -135,11 +344,15 @@
           Verifikasi SSO UI
         </a>
       </section>
+      {% endif %}
 
+      {# Panel Instruksi Pembayaran Aktif (STRICT: selalu hidden sampai Bayar Sekarang diklik) #}
       <section class="checkout__section payment-inst" id="payment-instruction-panel" hidden aria-labelledby="inst-channel-name">
         <div class="payment-inst__head">
           <div class="payment-inst__brand">
-            <img id="inst-channel-logo" src="" alt="" hidden width="64" height="28">
+            <span class="pay-logo-chip" id="inst-logo-wrap" hidden>
+              <img id="inst-channel-logo" src="" alt="" width="64" height="28">
+            </span>
             <div>
               <span class="payment-inst__kind" id="inst-kind-badge">Kanal Resmi</span>
               <h2 class="payment-inst__title" id="inst-channel-name">Virtual Account</h2>
@@ -151,7 +364,7 @@
           </div>
         </div>
 
-        <div class="payment-inst__code-box" id="inst-code-box">
+        <div class="payment-inst__code-box" id="inst-code-box" hidden>
           <span class="payment-inst__label">Nomor Virtual Account / Kode Pembayaran</span>
           <div class="payment-inst__code-row">
             <strong class="payment-inst__code num" id="inst-code-value">88010 0812 9940 112</strong>
@@ -164,7 +377,7 @@
         </div>
 
         <div class="payment-inst__qris-box" id="inst-qris-box" hidden>
-          <div class="qris-preview" aria-label="Pratinjau QRIS titiket.com">
+          <div class="qris-preview" aria-label="QR Code Pembayaran QRIS">
             <svg viewBox="0 0 21 21" width="128" height="128" role="img" aria-label="QR Code Pembayaran QRIS" shape-rendering="crispEdges">
               <rect width="21" height="21" fill="#FFFFFF"/>
               <path fill="#0F172A" d="M1 1h7v7H1zm1 1v5h5V2zm1 1h3v3H3zm10-2h7v7h-7zm1 1v5h5V2zm1 1h3v3h-3zM1 13h7v7H1zm1 1v5h5v-5zm1 1h3v3H3zm6-13h2v2H9zm0 4h1v2H9zm2 0h1v4h-1zm-2 4h3v2H9zm0 3h2v2H9zm3 0h2v1h-2zm2-4h2v2h-2zm2 0h2v1h-2zm2 1h2v2h-2zm-5 3h3v2h-3zm4 0h3v1h-3zm0 2h2v3h-2zm-4 1h3v2h-3zm-2 2h2v2h-2zm5 1h3v2h-3z"/>
@@ -176,6 +389,12 @@
           </div>
         </div>
 
+        <div class="payment-inst__ewallet-box" id="inst-ewallet-box" hidden>
+          <a class="btn btn--primary" id="inst-deeplink-btn" href="#pembayaran-ewallet" target="_blank" rel="noopener">
+            Buka Aplikasi E-Wallet &#8599;
+          </a>
+        </div>
+
         <p class="payment-inst__guide" id="inst-guide-text">
           Selesaikan pembayaran sebelum batas waktu berakhir.
         </p>
@@ -183,9 +402,10 @@
     </div>
 
     <aside class="summary glass checkout__section" aria-labelledby="summary-title">
-      <h2 id="summary-title">Detail Pemesan &amp; Pembayaran</h2>
+      <h2 id="summary-title">Ringkasan Transaksi</h2>
 
-      <form class="buyer-form" method="post" action="{{ url_for('checkout.pay') }}" novalidate>
+      <form class="buyer-form" id="pay-form" method="post" action="{{ url_for('checkout.pay') }}" novalidate>
+        <input type="hidden" name="mode" value="{{ checkout_mode }}">
         <p class="form-alert" id="checkout-form-alert" role="alert" {% if not errors %}hidden{% endif %}>
           <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
           <span id="checkout-form-alert-text">
@@ -193,109 +413,215 @@
           </span>
         </p>
 
-        <div class="field">
-          <label class="field__label" for="name">Nama pemesan <span aria-hidden="true">*</span></label>
-          <input class="input" id="name" name="name" type="text" autocomplete="name" required
-                 value="{{ values.name | default('') }}"
-                 {% if errors.name %}aria-invalid="true" aria-describedby="name-error" autofocus{% endif %}>
-          <p class="field__error" id="name-error" {% if not errors.name %}hidden{% endif %}>{{ errors.name | default('') }}</p>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="email">Email untuk e-ticket <span aria-hidden="true">*</span></label>
-          <input class="input" id="email" name="email" type="email" autocomplete="email" placeholder="nama@email.com" required
-                 value="{{ values.email | default('') }}"
-                 {% if errors.email %}aria-invalid="true" aria-describedby="email-error"{% if not errors.name %} autofocus{% endif %}{% endif %}>
-          <p class="field__error" id="email-error" {% if not errors.email %}hidden{% endif %}>{{ errors.email | default('') }}</p>
-        </div>
-
-        <fieldset class="field method-field">
-          <legend class="field__label">Pilih Kanal Pembayaran <span aria-hidden="true">*</span></legend>
-          {% if groups %}
-            <div class="pay-groups">
-              {% for grp in groups %}
-              <div class="pay-group">
-                <span class="pay-group__title">{{ grp.title }}</span>
-                <div class="pay-channel-grid">
-                  {% for ch in grp.channels %}
-                  <label class="pay-channel">
-                    <input
-                      type="radio"
-                      name="method"
-                      value="{{ ch.key }}"
-                      data-kind="{{ ch.kind }}"
-                      data-label="{{ ch.label }}"
-                      data-code="{{ ch.code }}"
-                      data-logo="{{ url_for('static', filename='reference_assets/payment_logos/' + ch.logo) }}"
-                      required
-                      {% if values.method == ch.key %}checked{% endif %}
-                    >
-                    <span class="pay-channel__face">
-                      <img
-                        src="{{ url_for('static', filename='reference_assets/payment_logos/' + ch.logo) }}"
-                        alt="{{ ch.label }}"
-                        loading="lazy"
-                      >
-                      <small>{{ ch.label }}</small>
-                    </span>
-                  </label>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="method-grid">
-              {% for key, label in methods.items() %}
-              <label class="method">
-                <input type="radio" name="method" value="{{ key }}" required {% if values.method == key %}checked{% endif %}>
-                <span>
-                  <svg class="icon" aria-hidden="true"><use href="#i-card"/></svg>
-                  {{ label }}
-                </span>
-              </label>
-              {% endfor %}
-            </div>
-          {% endif %}
-          <p class="field__error" id="method-error" role="alert" {% if not errors.method %}hidden{% endif %}>{{ errors.method | default('') }}</p>
-        </fieldset>
-
         <div class="summary-breakdown" aria-label="Rincian biaya pembayaran">
           <h3 class="summary-breakdown__title">Rincian Harga</h3>
           <dl class="totals">
-            <div class="summary-row"><dt class="fee-label">Subtotal tiket</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
-            {% if totals.tax %}<div class="summary-row"><dt class="fee-label">Pajak konser 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
-            {% if totals.convenience %}<div class="summary-row"><dt class="fee-label">Convenience fee 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
+            {% if checkout_mode == 'merch' %}
+            <div class="summary-row"><dt class="fee-label">Subtotal merchandise</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
+            <div class="summary-row"><dt class="fee-label">Ongkos kirim kurir reguler</dt><dd class="num">{{ totals.shipping_fee | rupiah }}</dd></div>
+            {% else %}
+            <div class="summary-row"><dt class="fee-label">Subtotal tiket</dt><dd class="num" id="summary-ticket-subtotal">{{ totals.subtotal | rupiah }}</dd></div>
+            {% if totals.tax %}<div class="summary-row"><dt class="fee-label">Pajak hiburan 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
+            {% if totals.convenience %}<div class="summary-row"><dt class="fee-label">Biaya layanan 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
             {% if totals.admin %}<div class="summary-row"><dt class="fee-label">Biaya admin bioskop</dt><dd class="num">{{ totals.admin | rupiah }}</dd></div>{% endif %}
+            <div class="summary-row" id="summary-addon-row" {% if not totals.addon_subtotal %}hidden{% endif %}>
+              <dt class="fee-label">Add-on ({{ 'Booth Merchandise GBK' if is_concert_checkout else 'Konter F&B XXI' }})</dt>
+              <dd class="num" id="summary-addon-amount">{{ totals.addon_subtotal | rupiah }}</dd>
+            </div>
             <div id="sso-discount-row" class="summary-row totals__discount" hidden>
               <dt class="fee-label">Diskon Mahasiswa UI (15%)</dt>
               <dd class="num" id="sso-discount-amount">- Rp 0</dd>
             </div>
+            {% endif %}
             <div class="summary-row totals__grand">
-              <dt>Total</dt>
+              <dt>Total Tagihan</dt>
               <dd
                 class="num"
                 id="checkout-grand-total"
                 data-subtotal="{{ totals.subtotal }}"
                 data-total="{{ totals.total }}"
+                data-addon-total="{{ totals.addon_subtotal | default(0) }}"
                 data-sso-rate="{{ discount_rate }}"
               >{{ totals.total | rupiah }}</dd>
             </div>
           </dl>
         </div>
 
-        <button class="btn btn--primary btn--block" type="submit" id="pay-submit-btn">
-          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
-          <span id="pay-submit-label">{% if pending_order %}Saya sudah bayar, terbitkan e-tiket{% else %}Bayar <span id="pay-btn-amount">{{ totals.total | rupiah }}</span>{% endif %}</span>
+      {# Metode pembayaran: panel kanan (di dalam #pay-form), tepat di atas tombol Bayar Sekarang. #}
+      <section class="pay-methods-card pay-methods-card--aside" aria-label="Metode Pembayaran">
+              {# STRICT 4-OPTION PAYMENT SELECTOR (NO QR/DEEP-LINK PREMATUR) #}
+              <fieldset class="field method-field" id="payment-method-accordion">
+                <legend class="checkout__legend">Metode Pembayaran</legend>
+                <div class="pay-accordion">
+                  {# 1. QRIS Instan #}
+                  <div class="pay-tile is-open" data-pay-group="qris">
+                    <label class="pay-tile__head">
+                      <input type="radio" form="pay-form" name="method" value="qris" data-kind="qris" data-label="QRIS Instan" data-code="ID1020304050607" data-logo="{{ url_for('static', filename='reference_assets/payment_logos/qris.png') }}" {% if values.method == 'qris' or not values.method %}checked{% endif %} required>
+                      <span class="pay-tile__title">
+                        <strong>QRIS Instan</strong>
+                      </span>
+                      <span class="pay-logo-chip">
+                        <img src="{{ url_for('static', filename='reference_assets/payment_logos/qris.png') }}" alt="QRIS" width="44" height="18">
+                      </span>
+                    </label>
+                  </div>
+
+                  {# 2. E-Wallet #}
+                  <div class="pay-tile{% if values.method in ('gopay', 'ovo', 'dana', 'shopeepay') %} is-open{% endif %}" data-pay-group="ewallet">
+                    <button type="button" class="pay-tile__toggle" data-pay-accordion="ewallet" aria-expanded="{{ 'true' if values.method in ('gopay', 'ovo', 'dana', 'shopeepay') else 'false' }}">
+                      <span class="pay-tile__radio-dot" aria-hidden="true"></span>
+                      <span class="pay-tile__title">
+                        <strong>E-Wallet</strong>
+                      </span>
+                      <span class="pay-tile__chips">
+                        {% for logo, label in [('gopay', 'GoPay'), ('ovo', 'OVO'), ('dana', 'DANA'), ('shopeepay', 'ShopeePay')] %}
+                        <span class="pay-logo-chip"><img src="{{ url_for('static', filename='reference_assets/payment_logos/' ~ logo ~ '.png') }}" alt="{{ label }}"></span>
+                        {% endfor %}
+                      </span>
+                    </button>
+                    <div class="pay-tile__body" {% if values.method not in ('gopay', 'ovo', 'dana', 'shopeepay') %}hidden{% endif %}>
+                      <div class="pay-channel-grid">
+                        {% for key, label, logo, code, link in [
+                          ('gopay', 'GoPay', 'gopay.png', '0812 9940 1120', 'gojek://gopay/merchanttransfer?ref=titiket'),
+                          ('ovo', 'OVO', 'ovo.png', '0812 9940 1120', 'ovo://payment/titiket'),
+                          ('dana', 'DANA', 'dana.png', '0812 9940 1120', 'dana://qr/titiket'),
+                          ('shopeepay', 'ShopeePay', 'shopeepay.png', '89308 1299 40112', 'shopeeid://pay?merchant=titiket'),
+                        ] %}
+                        <label class="pay-channel">
+                          <input type="radio" form="pay-form" name="method" value="{{ key }}" data-kind="ewallet" data-label="{{ label }}" data-code="{{ code }}" data-deeplink="{{ link }}" data-logo="{{ url_for('static', filename='reference_assets/payment_logos/' + logo) }}" {% if values.method == key %}checked{% endif %}>
+                          <span class="pay-channel__face">
+                            <span class="pay-logo-chip"><img src="{{ url_for('static', filename='reference_assets/payment_logos/' + logo) }}" alt="{{ label }}" loading="lazy"></span>
+                            <small>{{ label }}</small>
+                          </span>
+                        </label>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+
+                  {# 3. Virtual Account Bank #}
+                  <div class="pay-tile{% if values.method in ('bca', 'mandiri', 'bni', 'bri') %} is-open{% endif %}" data-pay-group="va">
+                    <button type="button" class="pay-tile__toggle" data-pay-accordion="va" aria-expanded="{{ 'true' if values.method in ('bca', 'mandiri', 'bni', 'bri') else 'false' }}">
+                      <span class="pay-tile__radio-dot" aria-hidden="true"></span>
+                      <span class="pay-tile__title">
+                        <strong>Virtual Account</strong>
+                      </span>
+                      <span class="pay-tile__chips">
+                        {% for logo, label in [('bca', 'BCA'), ('mandiri', 'Mandiri'), ('bni', 'BNI'), ('bri', 'BRI')] %}
+                        <span class="pay-logo-chip"><img src="{{ url_for('static', filename='reference_assets/payment_logos/' ~ logo ~ '.png') }}" alt="{{ label }}"></span>
+                        {% endfor %}
+                      </span>
+                    </button>
+                    <div class="pay-tile__body" {% if values.method not in ('bca', 'mandiri', 'bni', 'bri') %}hidden{% endif %}>
+                      <div class="pay-channel-grid">
+                        {% for key, label, logo, code in [
+                          ('bca', 'BCA VA', 'bca.png', '88010 0812 9940 112'),
+                          ('mandiri', 'Mandiri VA', 'mandiri.png', '89022 0812 9940 112'),
+                          ('bni', 'BNI VA', 'bni.png', '88100 0812 9940 112'),
+                          ('bri', 'BRI VA', 'bri.png', '88811 0812 9940 112'),
+                        ] %}
+                        <label class="pay-channel">
+                          <input type="radio" form="pay-form" name="method" value="{{ key }}" data-kind="va" data-label="{{ label }}" data-code="{{ code }}" data-logo="{{ url_for('static', filename='reference_assets/payment_logos/' + logo) }}" {% if values.method == key %}checked{% endif %}>
+                          <span class="pay-channel__face">
+                            <span class="pay-logo-chip"><img src="{{ url_for('static', filename='reference_assets/payment_logos/' + logo) }}" alt="{{ label }}" loading="lazy"></span>
+                            <small>{{ label }}</small>
+                          </span>
+                        </label>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+
+                  {# 4. Kartu Kredit / Debit #}
+                  <div class="pay-tile{% if values.method == 'card' %} is-open{% endif %}" data-pay-group="card">
+                    <label class="pay-tile__head">
+                      <input type="radio" form="pay-form" name="method" value="card" data-kind="card" data-label="Kartu Kredit / Debit" data-code="4111 •••• •••• 1111" {% if values.method == 'card' %}checked{% endif %}>
+                      <span class="pay-tile__title">
+                        <strong>Kartu Kredit / Debit</strong>
+                      </span>
+                      <span class="pay-tile__chips">
+                        <span class="pay-logo-chip"><img src="{{ url_for('static', filename='images/payments/visa.svg') }}" alt="Visa"></span>
+                        <span class="pay-logo-chip"><img src="{{ url_for('static', filename='images/payments/mastercard.svg') }}" alt="Mastercard"></span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <p class="field__error" id="method-error" role="alert" {% if not errors.method %}hidden{% endif %}>{{ errors.method | default('') }}</p>
+              </fieldset>
+      </section>
+
+        <button class="btn btn--primary btn--block liquid-glass-btn-primary pay-submit" type="submit" id="pay-submit-btn">
+          <span class="pay-submit__spinner" aria-hidden="true"></span>
+          <span id="pay-submit-label">{% if pending_order %}Saya sudah bayar, terbitkan e-tiket{% else %}Bayar Sekarang <span id="pay-btn-amount">{{ totals.total | rupiah }}</span>{% endif %}</span>
         </button>
 
+        {% if not is_preview_empty %}
         <button class="btn btn--ghost btn--block cancel-tx-trigger" type="button" id="cancel-tx-btn">
           Batalkan Transaksi
         </button>
+        {% endif %}
       </form>
     </aside>
   </div>
-  {% endif %}
+</div>
+
+{# Apple Sheet Modal: Full Catalog Add-on F&B & Merch (Frame 12A/B) #}
+<div class="auth-modal" id="addon-catalog-modal" hidden>
+  <div class="auth-modal__scrim" data-addon-modal-close></div>
+  <div class="auth-modal__panel liquid-glass-modal addon-catalog-sheet" role="dialog" aria-modal="true" aria-labelledby="addon-sheet-title">
+    <div class="auth-modal__head auth-modal__head--sheet">
+      <div class="auth-modal__title-wrap">
+        <h2 id="addon-sheet-title">Add-on</h2>
+      </div>
+      <button type="button" class="auth-modal__close auth-modal__close--circle" data-addon-modal-close aria-label="Tutup katalog add-on">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </div>
+
+    <div class="addon-catalog-sheet__body">
+      <div class="addon-sheet-search">
+        <input type="search" id="addon-catalog-search" class="input" placeholder="Cari menu makanan, minuman, merch...">
+        <div class="filter-tabs" role="group" aria-label="Kategori add-on">
+          <button type="button" class="filter-chip liquid-glass-pill" data-addon-cat-filter="all" aria-pressed="true">Semua</button>
+          <button type="button" class="filter-chip liquid-glass-pill" data-addon-cat-filter="fnb" aria-pressed="false">Makanan</button>
+          <button type="button" class="filter-chip liquid-glass-pill" data-addon-cat-filter="minuman" aria-pressed="false">Minuman</button>
+          <button type="button" class="filter-chip liquid-glass-pill" data-addon-cat-filter="merch" aria-pressed="false">Merchandise Resmi</button>
+        </div>
+      </div>
+
+      <div class="addon-sheet-list" id="addon-sheet-list">
+        {% for addon in addon_catalog %}
+        {% set q = addon_qty_map.get(addon.item_id, 0) %}
+        {% set note = addon_note_map.get(addon.item_id, '') %}
+        <article class="addon-card" data-addon-modal-item="{{ addon.item_id }}" data-addon-cat="{{ addon.category }}" data-addon-search="{{ (addon.name ~ ' ' ~ addon.category_label) | lower }}">
+          {{ addon_tile(addon) }}
+          <div class="addon-card__head">
+            <div>
+              <span class="addon-card__cat">{{ addon.category_label }} &middot; {{ addon.fulfillment }}</span>
+              <h3 class="addon-card__title">{{ addon.name }}</h3>
+              <p class="addon-card__desc">{{ addon.desc }}</p>
+              <strong class="addon-card__price num">{{ addon.price | rupiah }}</strong>
+            </div>
+            <div class="addon-stepper">
+              <button type="button" class="addon-qty-btn" data-addon-delta="-1" data-addon-id="{{ addon.item_id }}" aria-label="Kurangi {{ addon.name }}">&minus;</button>
+              <span class="addon-qty-val num" data-addon-qty="{{ addon.item_id }}">{{ q }}</span>
+              <button type="button" class="addon-qty-btn addon-qty-btn--plus" data-addon-delta="1" data-addon-id="{{ addon.item_id }}" aria-label="Tambah {{ addon.name }}">+</button>
+            </div>
+          </div>
+          {{ addon_note_area(addon, q, note) }}
+        </article>
+        {% endfor %}
+      </div>
+
+      <div class="addon-sheet-footer">
+        <div>
+          <strong class="num" id="addon-sheet-total-items">{{ selected_addons | sum(attribute='qty') }} item</strong>
+          <span class="num" id="addon-sheet-total-price">{{ addon_subtotal | rupiah }}</span>
+        </div>
+        <button type="button" class="btn btn--primary" data-addon-modal-close>Tambahkan ke Pesanan</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <dialog class="cancel-dialog liquid-glass-modal" id="cancel-tx-dialog" aria-labelledby="cancel-tx-title">
@@ -314,8 +640,8 @@
       <button type="button" class="btn cancel-reason-btn" data-cancel-action="change_method" data-cancel-reason="Ingin ganti metode pembayaran">
         <span>Ingin ganti metode pembayaran</span>
       </button>
-      <button type="button" class="btn cancel-reason-btn" data-cancel-action="change_seat" data-cancel-reason="{{ 'Ingin ubah kategori / area berdiri' if is_standing_only else 'Ingin ubah kursi / area' }}">
-        <span>{{ 'Ingin ubah kategori / area berdiri' if is_standing_only else 'Ingin ubah kursi / area' }}</span>
+      <button type="button" class="btn cancel-reason-btn" data-cancel-action="change_seat" data-cancel-reason="{{ 'Ingin ubah kategori / area berdiri' if is_standing_only else 'Ingin ubah posisi / area' }}">
+        <span>{{ 'Ingin ubah kategori / area berdiri' if is_standing_only else 'Ingin ubah posisi / area' }}</span>
       </button>
       <button type="button" class="btn cancel-reason-btn cancel-reason-btn--danger" data-cancel-action="cancel_order" data-cancel-reason="Batal beli / Kembali ke Beranda">
         <span>Batal beli / Kembali ke Beranda</span>
@@ -326,5 +652,5 @@
     </div>
   </div>
 </dialog>
-<script id="checkout-bootstrap" type="application/json">{{ {"pending_order": pending_order, "lock_remaining_seconds": lock_remaining_seconds, "stepper_viz_href": stepper_viz_href, "is_standing_only": is_standing_only} | tojson }}</script>
+<script id="checkout-bootstrap" type="application/json">{{ {"pending_order": pending_order, "lock_remaining_seconds": lock_remaining_seconds, "stepper_viz_href": stepper_viz_href, "is_standing_only": is_standing_only, "checkout_mode": checkout_mode, "is_preview_empty": is_preview_empty} | tojson }}</script>
 {% endblock %}

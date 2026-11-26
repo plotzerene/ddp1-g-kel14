@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% set step = "detail" %}
+{% set stepper_active = "landing" %}
+{% set theme_color = "#FFFFFF" %}
 {% block title %}{{ movie.title }}{% endblock %}
 
 {% block head_extra %}
@@ -7,40 +10,6 @@
 <script src="{{ url_for('static', filename='js/movie_schedule.js') }}" defer></script>
 {% endblock %}
 
-{% block sub_header %}
-<div class="stepper-bar">
-  <div class="container stepper-bar__inner">
-    <nav aria-label="Langkah pemesanan">
-      <ol class="stepper detail-stepper">
-        <li class="stepper__item is-done">
-          <a class="stepper__link" href="{{ url_for('landing.index') }}">
-            <span class="stepper__dot num" aria-hidden="true">&#10003;</span>
-            <span>1. Pilih Acara</span>
-          </a>
-        </li>
-        <li class="stepper__item" aria-current="step">
-          <span class="stepper__link">
-            <span class="stepper__dot num">2</span>
-            <span>Detail Acara</span>
-          </span>
-        </li>
-        <li class="stepper__item">
-          <a class="stepper__link" href="{{ buy_url }}">
-            <span class="stepper__dot num">3</span>
-            <span>Jadwal &amp; Kursi</span>
-          </a>
-        </li>
-        <li class="stepper__item">
-          <a class="stepper__link" href="{{ url_for('checkout.index') }}">
-            <span class="stepper__dot num">4</span>
-            <span>Pembayaran</span>
-          </a>
-        </li>
-      </ol>
-    </nav>
-  </div>
-</div>
-{% endblock %}
 
 {% block content %}
 {% set prod = production | default({}) %}
@@ -78,7 +47,7 @@
         <div class="detail__poster detail__poster-empty" aria-hidden="true">{{ movie.title[:1] }}</div>
         {% endif %}
         {% if movie.age_rating %}
-        <span class="detail__age-badge">{{ movie.age_rating }}</span>
+        <span class="detail__age-badge">{{ movie.age_rating if movie.age_rating == 'SU' or movie.age_rating.startswith('R') else 'R' ~ movie.age_rating }}</span>
         {% endif %}
       </div>
       <div class="status-tayang-pill">
@@ -168,10 +137,6 @@
       {# Bottom CTA Bar (FigCraft 02A #694) #}
       <div class="movie-bottom-bar">
         <div class="movie-price-summary">
-          <div class="movie-format-row">
-            <span class="movie-format-row__label">Format Studio Tersedia:</span>
-            <span class="movie-format-row__badge">{{ format_list | join(' • ') }}</span>
-          </div>
           <strong class="movie-price-label">Mulai dari {{ (min_price | default(50000)) | rupiah_short }} / kursi <span class="detail__discount-tag">(Hemat 15% SSO UI)</span></strong>
         </div>
         <div class="movie-bottom-bar__actions">

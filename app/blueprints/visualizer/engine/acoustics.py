@@ -155,12 +155,18 @@ class AcousticProfile:
     lip_sync: str
     loudness_note: str
     stereo_skew_ms: float = 0.0      # selisih waktu tiba antar speaker utama (0 = seimbang)
+    nearest_source: str = ""         # speaker terdekat (utama atau menara delay)
+    nearest_distance_m: float = 0.0
+    nearest_delay_ms: float = 0.0    # min(d1, d2) / c, ditampilkan sebagai "Delay Suara"
 
     def to_dict(self) -> dict:
         return {
             "distance_m": round(self.distance_m, 1),
             "delay_ms": round(self.delay_ms, 1),
             "stereo_skew_ms": round(self.stereo_skew_ms, 1),
+            "nearest_source": self.nearest_source,
+            "nearest_distance_m": round(self.nearest_distance_m, 1),
+            "nearest_delay_ms": round(self.nearest_delay_ms, 1),
             "speed_of_sound_ms": round(self.speed_of_sound_ms, 1),
             "spl_db": round(self.spl_db, 1),
             "attenuation_db": round(self.attenuation_db, 1),
@@ -243,10 +249,13 @@ class AcousticSimulator:
         dominant_index = max(range(len(levels)), key=levels.__getitem__)
         dominant, dominant_distance = self.sources[dominant_index], distances[dominant_index]
 
-        # Waktu tiba ditentukan muka gelombang sumber utama (menara delay di-align ke sana).
+        # Waktu tiba muka gelombang PA utama (menara delay di-time-align ke sana): dasar skor sinkronisasi.
         main_pairs = [(d, s) for d, s in zip(distances, self.sources) if s.is_main] or list(zip(distances, self.sources))
         main_distance, main_source = min(main_pairs, key=lambda pair: pair[0])
         delay_ms = main_distance / self.speed * 1000.0
+        # Delay Suara yang ditampilkan: speaker TERDEKAT (utama d1 atau menara delay d2), t = min(d1, d2) / c.
+        nearest_distance = min(distances)
+        nearest = self.sources[distances.index(nearest_distance)]
         farthest_main = max(pair[0] for pair in main_pairs)
         stereo_skew_ms = (farthest_main - main_distance) / self.speed * 1000.0
 
@@ -284,4 +293,7 @@ class AcousticSimulator:
             lip_sync=self._lip_sync_label(delay_ms),
             loudness_note=self._loudness_note(spl),
             stereo_skew_ms=stereo_skew_ms,
+            nearest_source=nearest.label,
+            nearest_distance_m=nearest_distance,
+            nearest_delay_ms=nearest_distance / self.speed * 1000.0,
         )

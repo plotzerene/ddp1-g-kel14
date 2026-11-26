@@ -11,9 +11,9 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from flask import Blueprint, render_template, url_for
+from flask import Blueprint, jsonify, render_template, request, url_for
 
-from ...shared_state import EVENTS, price_for_film_venue
+from ...shared_state import EVENTS, OFFICIAL_MERCH_CATALOG, Cart, MerchCart, price_for_film_venue
 
 landing_bp = Blueprint("landing", __name__, template_folder="templates")
 CATALOG_PATH = Path(__file__).resolve().parents[3] / "movies_catalog.json"
@@ -108,26 +108,23 @@ QUICK_FILTER_CHIPS: tuple[tuple[str, str], ...] = (
 )
 
 
+@landing_bp.get("/")
 @landing_bp.get("/home")
 def index():
     catalog = _catalog_by_id()
     all_cards = {ev.event_id: _card_from_event(ev, catalog) for ev in EVENTS.values()}
 
-    # Carousel sorotan utama FigCraft 01_Home (rilis baru + judul unggulan).
+    # Carousel promo 9 slide (3 kartu unggulan awal: Coldplay, The Hunger Games, Midnight Screening The Nun).
     featured_order = [
-        ("spiderman-no-way-home", "IMAX & 4DX READY"),
-        ("how-to-lose-a-guy-in-10-days", "SPECIAL CLASSIC"),
         ("coldplay-gbk", "KONSER MUSIK"),
         ("the-hunger-games", "SEDANG TAYANG"),
         ("the-nun", "MIDNIGHT SCREENING"),
+        ("sore", "SPECIAL CLASSIC SCREENING"),
+        ("spiderman-no-way-home", "IMAX & 4DX READY"),
+        ("how-to-lose-a-guy-in-10-days", "SPECIAL CLASSIC"),
         ("chiikawa-movie", "LAGI TAYANG \u2022 ANIME"),
         ("zootopia-2", "PRESALE \u2022 IMAX 3D"),
-        ("sore", "REKOMENDASI POV 3D"),
-        ("boboiboy-the-movie", "SEDANG TAYANG"),
-        ("ejen-ali-the-movie-2", "SEDANG TAYANG"),
         ("jatuh-cinta-seperti-di-film-film", "PILIHAN PENONTON"),
-        ("la-la-land", "CLASSIC CINEMA"),
-        ("avengers-endgame", "IMAX & 4DX READY"),
     ]
     featured_slides = [
         {**all_cards[eid], "carousel_tag": tag}
@@ -186,7 +183,53 @@ def index():
         concert_event=EVENTS.get("coldplay-gbk"),
         studios=STUDIOS,
         food_items=FOOD_HIGHLIGHTS,
+        merch_catalog=OFFICIAL_MERCH_CATALOG,
     )
+
+
+@landing_bp.post("/api/merch-cart/add")
+def api_merch_add():
+    data = request.get_json(silent=True) or dict(request.form)
+    item_id = str(data.get("item_id", "")).strip()
+    delta = int(data.get("delta", 1) or 1)
+    merch = MerchCart()
+    if not merch.add(item_id, delta):
+        return jsonify(ok=False, error="Produk merchandise tidak ditemukan."), 404
+    return jsonify(
+        ok=True,
+        merch_count=merch.count,
+        cart_count=Cart().count + merch.count,
+        items=merch.items(),
+        subtotal=merch.subtotal,
+        shipping_fee=merch.shipping_fee,
+        total=merch.subtotal + merch.shipping_fee,
+    )
+
+
+@landing_bp.post("/api/merch-cart/update")
+def api_merch_update():
+    data = request.get_json(silent=True) or dict(request.form)
+    item_id = str(data.get("item_id", "")).strip()
+    qty = int(data.get("qty", 0) or 0)
+    merch = MerchCart()
+    if not merch.set_qty(item_id, qty):
+        return jsonify(ok=False, error="Produk merchandise tidak ditemukan."), 404
+    return jsonify(
+        ok=True,
+        merch_count=merch.count,
+        cart_count=Cart().count + merch.count,
+        items=merch.items(),
+        subtotal=merch.subtotal,
+        shipping_fee=merch.shipping_fee,
+        total=merch.subtotal + merch.shipping_fee,
+    )
+
+
+@landing_bp.post("/api/merch-cart/clear")
+def api_merch_clear():
+    merch = MerchCart()
+    merch.clear()
+    return jsonify(ok=True, merch_count=0, cart_count=Cart().count)
 
 
 PROMO_OFFERS: list[dict] = [

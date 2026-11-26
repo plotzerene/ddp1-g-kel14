@@ -413,6 +413,7 @@ html[data-theme="light"] .tower {
 .seat-lock-pill {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   gap: 8px;
   padding: 7px 12px;
   border-radius: 999px;
@@ -431,13 +432,32 @@ html[data-theme="light"] .tower {
   font-variant-numeric: tabular-nums;
 }
 
-.seat-lock-pill.is-urgent {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.45);
+/* 2 menit terakhir: kaca netral Apple Liquid Glass, teks oranye semantik, pulse lembut (bukan kotak merah/oranye). */
+.seat-lock-pill.is-urgent,
+.site-header--focus .seat-lock-pill.is-urgent {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 0 rgba(255, 159, 10, 0);
+  animation: seatLockPillPulse 1.6s var(--ease-spring) infinite;
 }
 
+.seat-lock-pill.is-urgent .seat-lock-pill__label,
 .seat-lock-pill.is-urgent .seat-lock-pill__clock {
-  color: #F59E0B;
+  color: #FF9F0A;
+}
+
+@keyframes seatLockPillPulse {
+  0%, 100% { box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 0 rgba(255, 159, 10, 0); }
+  50% { box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 6px rgba(255, 159, 10, 0.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-lock-pill.is-urgent,
+  .site-header--focus .seat-lock-pill.is-urgent {
+    animation: none;
+  }
 }
 
 .seat-lock-pill.is-expired {
@@ -452,6 +472,18 @@ html[data-theme="light"] .tower {
 html[data-theme="light"] .seat-lock-pill {
   background: #F0FDFA;
   border-color: #99F6E4;
+}
+
+html[data-theme="light"] .seat-lock-pill.is-urgent,
+html[data-theme="light"] .site-header--focus .seat-lock-pill.is-urgent {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] .seat-lock-pill.is-urgent .seat-lock-pill__label,
+html[data-theme="light"] .seat-lock-pill.is-urgent .seat-lock-pill__clock {
+  color: #C93400;
 }
 
 html[data-theme="light"] .seat-lock-pill__label {
@@ -493,7 +525,7 @@ html[data-theme="light"] .battery__label {
 }
 
 html[data-theme="light"] .battery.is-partial .battery__label {
-  color: #B45309;
+  color: #B85C00;
 }
 
 html[data-theme="light"] .picker__group > .eyebrow {
@@ -554,9 +586,9 @@ html[data-theme="light"] #btn-cart {
 
 html[data-theme="light"] .chip--accent,
 html:not([data-theme="dark"]) body[data-step="landing"] .chip--accent {
-  background: #FEF3C7;
-  border-color: #F59E0B;
-  color: #8A6A12;
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.34);
+  color: #006875;
 }
 
 html[data-theme="light"] .chip--info {
@@ -581,10 +613,6 @@ html[data-theme="light"] .map-svg {
   background: transparent;
 }
 
-html[data-theme="light"] .eticket__terms {
-  color: #64748B;
-}
-
 /* Kontras teks ringkasan pembayaran dan e-tiket pada mode terang */
 html[data-theme="light"] .summary-row label,
 html[data-theme="light"] .fee-label,
@@ -594,9 +622,7 @@ html[data-theme="light"] .ticket-row__venue,
 html[data-theme="light"] .eticket__venue,
 html[data-theme="light"] .payment-inst__label,
 html[data-theme="light"] .payment-inst__guide,
-html[data-theme="light"] .payment-inst__qris-meta,
-html[data-theme="light"] .pay-group__title,
-html[data-theme="light"] .field__hint {
+html[data-theme="light"] .payment-inst__qris-meta {
   color: #334155 !important;
   font-weight: 500;
 }
@@ -606,8 +632,7 @@ html[data-theme="light"] .totals dd,
 html[data-theme="light"] .totals__grand dt,
 html[data-theme="light"] .totals__grand dd,
 html[data-theme="light"] .pov-meta dd,
-html[data-theme="light"] .ticket-row__side strong,
-html[data-theme="light"] .eticket__price {
+html[data-theme="light"] .ticket-row__side strong {
   color: #0F172A !important;
   font-weight: 600;
 }
@@ -627,8 +652,8 @@ html[data-theme="light"] .btn--danger {
 html[data-theme="light"] .sso-promo-banner,
 html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner,
 html[data-theme="light"] .sso-promo-card {
-  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%) !important;
-  border-color: #F59E0B !important;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(13, 148, 136, 0.05) 100%) !important;
+  border-color: rgba(13, 148, 136, 0.34) !important;
 }
 
 html[data-theme="light"] .sso-promo-card.is-verified {
@@ -644,7 +669,7 @@ html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner p,
 html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-banner .chip,
 html[data-theme="light"] .sso-promo-card__title,
 html[data-theme="light"] .sso-promo-card__status {
-  color: #78350F !important;
+  color: #004E58 !important;
 }
 
 html[data-theme="light"] .sso-promo-card.is-verified .sso-promo-card__title,
@@ -655,13 +680,18 @@ html[data-theme="light"] .sso-promo-card.is-verified .sso-promo-card__status {
 html[data-theme="light"] .sso-promo-cta,
 html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-cta,
 html[data-theme="light"] #sso-verify-trigger {
-  background: #D97706 !important;
-  border-color: #B45309 !important;
+  background: linear-gradient(180deg, #14919B 0%, #006875 100%) !important;
+  border-color: rgba(255, 255, 255, 0.38) !important;
+  border-radius: 9999px;
   color: #FFFFFF !important;
 }
 
 html[data-theme="light"] .sso-promo-cta:hover,
 html:not([data-theme="dark"]) body[data-step="landing"] .sso-promo-cta:hover,
 html[data-theme="light"] #sso-verify-trigger:hover {
-  background: #B45309 !important;
+  background: linear-gradient(180deg, #0891B2 0%, #006875 100%) !important;
+}
+
+.seat-lock-pill[hidden] {
+  display: none;
 }

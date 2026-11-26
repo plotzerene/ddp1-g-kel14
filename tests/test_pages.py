@@ -35,7 +35,7 @@ class PagesTests(unittest.TestCase):
             response.close()
 
     def test_intro_has_three_layers_and_gate(self):
-        for intro_path in ("/", "/intro"):
+        for intro_path in ("/intro",):  # V2: "/" kini beranda katalog, pembuka sinematik ada di /intro
             with self.subTest(intro_path=intro_path):
                 html = self.get_text(intro_path)
                 self.assertIn("FEEL THE MOMENTS BEYOND", html)
@@ -72,8 +72,9 @@ class PagesTests(unittest.TestCase):
                 html = self.get_text(f"/movie/{movie_id}")
                 self.assertIn("Pilih Jadwal &amp; Kursi", html)
                 self.assertIn('id="trailer-open"', html)
-                self.assertIn("Detail Acara", html)
-                self.assertIn(f"/visualizer/?film={movie_id}", html)
+                self.assertIn("Sinopsis Film", html)
+                self.assertIn("Detail Produksi", html)
+                self.assertIn(f"film={movie_id}", html)
 
     def test_unknown_movie_is_not_found(self):
         response = self.client.get("/movie/tidak-ada")
@@ -82,12 +83,15 @@ class PagesTests(unittest.TestCase):
 
     def test_coldplay_tabs_and_buy_link(self):
         overview = self.get_text("/event/coldplay/overview")
-        tickets = self.get_text("/event/coldplay/tickets")
+        tickets = self.client.get("/event/coldplay/tickets")
+        self.assertEqual(tickets.status_code, 302)  # V2: tab Tiket digabung ke ringkasan
+        self.assertTrue(tickets.headers["Location"].endswith("/event/coldplay/overview#harga-tiket"))
+        tickets.close()
         terms = self.get_text("/event/coldplay/terms")
         self.assertIn('href="/visualizer/studio/gbk-coldplay"', overview)
-        self.assertIn("Kategori Tiket", tickets)
+        self.assertIn('id="harga-tiket"', overview)
         self.assertIn("Syarat dan Ketentuan", terms)
-        for html in (overview, tickets, terms):
+        for html in (overview, terms):
             self.assertIn('aria-label="Menu konser"', html)
 
     def test_auth_placeholders_are_in_base_header(self):
@@ -126,8 +130,8 @@ class PagesTests(unittest.TestCase):
         )
         self.assertIn(add_cinema.status_code, (200, 201))
         guest_checkout = cinema_client.get("/checkout/")
-        self.assertEqual(guest_checkout.status_code, 302)
-        self.assertIn("auth=required", guest_checkout.headers["Location"])
+        self.assertEqual(guest_checkout.status_code, 200)  # V2: gerbang login berupa sheet modal, bukan redirect
+        self.assertIn('id="auth-modal"', guest_checkout.get_data(as_text=True))
 
         self._login(cinema_client, "bioskop@example.com")
         checkout_html = cinema_client.get("/checkout/").get_data(as_text=True)
@@ -232,25 +236,22 @@ class PagesTests(unittest.TestCase):
     def test_landing_figcraft_home_reconstruction(self):
         html = self.get_text("/home")
         for marker in (
-            "Feel the moments beyond",
+            "Lihat panggung dan layarnya dulu",
             "JABODETABEK",
             "Cari film, bioskop, atau konser...",
             'id="theme-toggle"',
             'href="/cart"',
             "Promo",
             'data-auth-open="login"',
-            'data-category="bioskop"',
-            'data-category="konser"',
-            'data-category="film"',
-            'data-category="food"',
-            'data-category="sewa"',
+            'id="hero-cobe-globe"',
+            'data-globe-pin="jakarta"',
             'class="featured-carousel"',
             'id="promo-mahasiswa"',
             "Lagi tayang",
             "Coming Soon",
             "Ingatkan Saya",
             'id="now-playing-expand"',
-            'id="quick-info-modal"',
+            'id="official-merch"',
             "Perusahaan &amp; Legalitas",
             "Jelajahi Hiburan",
             "Pusat Bantuan &amp; Layanan CS",
@@ -381,7 +382,7 @@ class PagesTests(unittest.TestCase):
                 "min-width: 480px;",
             ),
             "app/static/css/landing.css": (
-                "clamp(1.75rem, 4vw + 0.5rem, 3rem)",
+                "clamp(2rem, 3.6vw, 3.1rem)",
                 "clamp(0.875rem, 1.5vw + 0.25rem, 1.125rem)",
                 "90dvh",
             ),
@@ -401,7 +402,7 @@ class PagesTests(unittest.TestCase):
     def test_hero_cinema_interior_backdrop(self):
         landing_html = self.get_text("/home")
         self.assertIn('class="hero-stage"', landing_html)
-        self.assertIn("Feel the moments beyond", landing_html)
+        self.assertIn("Lihat panggung dan layarnya dulu", landing_html)
 
         landing_css = (ROOT / "app/static/css/landing.css").read_text(encoding="utf-8")
         for token in (
@@ -428,10 +429,11 @@ class PagesTests(unittest.TestCase):
         self.assertIn('href="/cart"', landing_html)
 
         # Empty checkout directly redirects to /cart.
+        # V2: checkout kosong menampilkan pratinjau (bukan redirect ke /cart).
         for path in ("/checkout", "/checkout/"):
-            redir = fresh.get(path)
-            self.assertEqual(redir.status_code, 302)
-            self.assertTrue(redir.headers["Location"].endswith("/cart"))
+            preview = fresh.get(path)
+            self.assertEqual(preview.status_code, 200)
+            self.assertIn("checkout-preview-banner", preview.get_data(as_text=True))
 
         # Empty /cart shows Keranjang Belanja + unified top navbar without stepper or Langkah 3 dari 3.
         for cart_path in ("/cart", "/cart/"):
@@ -451,7 +453,7 @@ class PagesTests(unittest.TestCase):
             self.assertNotIn("Lagi Tayang", cart_header)
             empty_card = cart_html.split('class="empty-state cart-empty-card"', 1)[1].split("</section>", 1)[0]
             self.assertIn("Keranjangmu masih kosong", empty_card)
-            self.assertIn("Pilih tiket dan tekan tombol Tambah ke Keranjang.", empty_card)
+            self.assertIn("Pilih tiket atau merchandise resmi untuk memulai pemesanan.", empty_card)
             self.assertIn("Pilih Tiket", empty_card)
             self.assertIn("#i-arrow-right", empty_card)
             self.assertIn('href="/home"', empty_card)
@@ -471,14 +473,14 @@ class PagesTests(unittest.TestCase):
         self.assertIn(add_resp.status_code, (200, 201))
 
         cart_filled = fresh.get("/cart").get_data(as_text=True)
-        self.assertIn("Ringkasan Keranjang", cart_filled)
-        self.assertIn("Lanjut ke Pembayaran", cart_filled)
+        self.assertIn("Ringkasan Tiket Venue", cart_filled)
+        self.assertIn("Lanjut Pembayaran Tiket", cart_filled)
         self.assertIn('href="/checkout/"', cart_filled)
         self.assertNotIn('class="stepper"', cart_filled)
 
         guest_checkout_resp = fresh.get("/checkout/")
-        self.assertEqual(guest_checkout_resp.status_code, 302)
-        self.assertIn("/cart?auth=required", guest_checkout_resp.headers["Location"])
+        self.assertEqual(guest_checkout_resp.status_code, 200)  # V2: gerbang login lewat sheet modal, bukan redirect
+        self.assertIn('id="auth-modal"', guest_checkout_resp.get_data(as_text=True))
 
         self._login(fresh, "dualroute@example.com")
         checkout_resp = fresh.get("/checkout/")
@@ -538,7 +540,7 @@ class PagesTests(unittest.TestCase):
 
         movie_html = self.get_text("/movie/sore")
         self.assertIn("Did You Know? (Trivia Film)", movie_html)
-        self.assertIn("Cerita Films", movie_html)
+        self.assertIn("Visinema Pictures", movie_html)
 
         auth_js = (ROOT / "app/static/js/auth_modal.js").read_text(encoding="utf-8")
         self.assertNotIn("AuthEngine", auth_js)
@@ -578,14 +580,15 @@ class PagesTests(unittest.TestCase):
         self.assertEqual(paid.status_code, 302)
         ticket_html = c.get("/checkout/ticket").get_data(as_text=True)
         for token in (
-            "Tanggal Tayang",
-            "Waktu",
-            "Studio &amp; Bioskop",
-            "Kode Booking",
+            "TANGGAL",
+            "WAKTU",
+            "NOMOR TIKET",
+            "PEMEGANG",
+            "Kode pesanan",
             "Sabtu, 14 Nov 2026",
             "19:00 WIB",
             "AGORA MALL XXI • Studio 1",
-            "Syarat &amp; Ketentuan Penukaran:",
+            "Panduan Rute ke Venue",
             "SORE: Istri dari Masa Depan",
         ):
             self.assertIn(token, ticket_html)
@@ -634,7 +637,7 @@ class PagesTests(unittest.TestCase):
             self.assertNotIn('class="account-pill"', html)
 
             reg_view = html.split('data-auth-view="register"', 1)[1].split('data-auth-view="forgot"', 1)[0]
-            sso_pos = reg_view.find("Daftar / Aktivasi Mahasiswa via SSO UI")
+            sso_pos = reg_view.find("Daftar dengan SSO UI")
             google_pos = reg_view.find("Daftar Cepat dengan Google")
             form_pos = reg_view.find('name="full_name"')
             self.assertGreater(sso_pos, -1)
@@ -643,7 +646,7 @@ class PagesTests(unittest.TestCase):
 
     def test_curved_screen_generalized_concerts_and_top_parallax(self):
         # 1. Fullscreen Parallax Entrance sits at dedicated root '/' & catalog lives cleanly at '/home'.
-        intro_html = self.get_text("/")
+        intro_html = self.get_text("/intro")
         self.assertIn('id="intro-stage"', intro_html)
         self.assertIn("FEEL THE MOMENTS BEYOND", intro_html)
         self.assertNotIn('<header class="site-header"', intro_html)
@@ -666,8 +669,6 @@ class PagesTests(unittest.TestCase):
         for label in ("Semua", "Bioskop Terdekat", "IMAX Laser", "Konser Musik", "Hari Ini", "Besok"):
             self.assertIn(label, landing_html)
         header_html = landing_html.split("<header", 1)[1].split("</header>", 1)[0]
-        self.assertIn("Konser Musik", header_html)
-        self.assertIn('href="/concerts"', header_html)
         self.assertNotIn("Konser GBK", header_html)
 
         # 3. /concerts & /events return HTTP 200 and use Coldplay venue strictly on Coldplay card.
@@ -685,7 +686,7 @@ class PagesTests(unittest.TestCase):
         map_js = (ROOT / "app/static/js/map_2d_picker.js").read_text(encoding="utf-8")
         self.assertIn("this.cone = svg('path', { class: 'sight-cone'", map_js)
         self.assertIn("_buildScreenArc", map_js)
-        self.assertIn("LAYAR IMAX", map_js)
+        self.assertIn("LAYAR BIOSKOP · IMAX", map_js)
 
         # 5. Authentic empty hourglass symbol registered & wired in auth_modal.js without '--'.
         icons_html = (ROOT / "app/templates/_icons.html").read_text(encoding="utf-8")
@@ -723,6 +724,12 @@ class PagesTests(unittest.TestCase):
         for path in ("/home", "/promo", "/cart", "/movie/sore", "/visualizer/studio/xxi-regular"):
             with self.subTest(unified_header=path):
                 page_html = self.get_text(path)
+                if path.startswith("/visualizer/"):
+                    # V2: alur pemesanan memakai header fokus (kembali + stepper + profil + tema).
+                    focus_header = page_html.split('<header class="site-header site-header--focus">', 1)[1].split("</header>", 1)[0]
+                    for token in ("focus-back", "focus-stepper", 'id="theme-toggle"', "focus-user-pill"):
+                        self.assertIn(token, focus_header)
+                    continue
                 header = page_html.split('<header class="site-header">', 1)[1].split("</header>", 1)[0]
                 for token in ('class="brand-logo"', 'id="city-selector"', 'id="catalog-search"',
                               "Cari film, bioskop, atau konser...", 'id="theme-toggle"',
@@ -747,9 +754,9 @@ class PagesTests(unittest.TestCase):
         # 1. Guest blocked from checkout GET, pending POST, and pay POST.
         self.assertEqual(guest.post("/visualizer/api/cart", json={"venue_id": "xxi-regular", "seat_id": seat_one}).status_code, 201)
         guest_get = guest.get("/checkout/")
-        self.assertEqual(guest_get.status_code, 302)
-        self.assertIn("auth=required", guest_get.headers["Location"])
-        self.assertEqual(guest.post("/checkout/pending", json={"name": "Guest", "email": "g@example.com", "method": "bca"}).status_code, 401)
+        self.assertEqual(guest_get.status_code, 200)  # V2: tamu melihat halaman; gerbang login lewat sheet modal
+        self.assertIn('id="auth-modal"', guest_get.get_data(as_text=True))
+        self.assertEqual(guest.post("/checkout/pending", json={"method": "bca"}).status_code, 401)  # tanpa identitas pemesan
         self.assertEqual(guest.post("/checkout/pay", json={"name": "Guest", "email": "g@example.com", "method": "bca"}).status_code, 401)
 
         # 2. Collision response returns Modal B metadata to second session.
@@ -925,7 +932,7 @@ class PagesTests(unittest.TestCase):
 
         checkout_css = (ROOT / "app/static/css/checkout.css").read_text(encoding="utf-8")
         self.assertNotIn("repeat(auto-fit, minmax(120px, 1fr))", checkout_css)
-        self.assertIn(".pov-meta:has(> :nth-child(5):last-child)", checkout_css)
+        self.assertNotIn(".pov-meta:has(> :nth-child(5):last-child)", checkout_css)  # telemetri 5-metrik dihapus (Frame 13A/B)
 
         viz_css = (ROOT / "app/static/css/visualizer.css").read_text(encoding="utf-8")
         self.assertNotIn("repeat(auto-fill, minmax(130px, 1fr))", viz_css)

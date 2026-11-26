@@ -1,3 +1,7 @@
 # Satu-satunya dependensi pihak ketiga. Perhitungan 3D/akustik memakai modul
 # standar Python (math, dataclasses, abc, enum), jadi NumPy tidak diperlukan.
 Flask>=3.0,<4
+
+# Dependensi opsional-tapi-dipakai: membaca .env (GEMINI_API_KEY)
+python-dotenv>=1.0
+certifi

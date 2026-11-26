@@ -1,0 +1,148 @@
+{
+  "version": "gbk_solid_v1",
+  "center": [0.0, 0.0],
+  "rxRef": 117.5,
+  "rzRef": 159.2,
+  "pitch": {
+    "rx": 55.22,
+    "rz": 79.24,
+    "y": 0.19
+  },
+  "track": {
+    "rxIn": 55.22,
+    "rzIn": 79.24,
+    "rxOut": 77.02,
+    "rzOut": 103.42,
+    "y": 0.22
+  },
+  "tier1": {
+    "rx0": 79.35,
+    "rz0": 107.0,
+    "baseY": 4.60,
+    "treadX": 0.90,
+    "treadZ": 1.24,
+    "riser": 0.50,
+    "rows": 22,
+    "parapetRx": 77.15,
+    "parapetRz": 103.80,
+    "parapetHeight": 1.05,
+    "vomOpenRows": 6,
+    "aisleWidth": 2.2,
+    "vomWidth": 2.4,
+    "vomLatOffset": -2.8
+  },
+  "tier2": {
+    "rx0": 97.0,
+    "rz0": 131.4,
+    "baseY": 26.80,
+    "treadX": 0.88,
+    "treadZ": 1.19,
+    "riser": 0.50,
+    "rows": 13,
+    "parapetRx": 94.8,
+    "parapetRz": 128.5,
+    "parapetHeight": 1.05,
+    "vomOpenRows": 5,
+    "aisleWidth": 2.2,
+    "vomWidth": 2.4,
+    "vomLatOffset": -2.8
+  },
+  "concourseL1": {
+    "rxIn": 99.15,
+    "rzIn": 134.28,
+    "rxOut": 115.5,
+    "rzOut": 156.5,
+    "walkRx": 107.5,
+    "walkRz": 145.6,
+    "floorY": 0.42,
+    "slabThickness": 0.42,
+    "ceilY": 5.40,
+    "ceilThickness": 0.45
+  },
+  "concourseL2": {
+    "rxIn": 108.44,
+    "rzIn": 146.87,
+    "rxOut": 116.5,
+    "rzOut": 157.8,
+    "walkRx": 113.0,
+    "walkRz": 153.1,
+    "floorY": 24.40,
+    "slabThickness": 0.50,
+    "ceilY": 29.40,
+    "ceilThickness": 0.45
+  },
+  "facade": {
+    "rx": 116.8,
+    "rz": 158.2,
+    "pillarCount": 72,
+    "pillarTopY": 36.2,
+    "ringBeamYs": [5.4, 14.5, 24.4, 35.2]
+  },
+  "roof": {
+    "sIn": 0.56,
+    "sOut": 1.04,
+    "folds": 72,
+    "zInnerVal": 37.8,
+    "zInnerCrest": 40.4,
+    "zOuterVal": 38.8,
+    "zOuterCrest": 42.0,
+    "trussDepth": 2.0
+  },
+  "pitchTunnel": {
+    "bearingDeg": 180.0,
+    "halfWidth": 3.2,
+    "yStartBlender": -136.0,
+    "yEndBlender": -104.2,
+    "floorY": 0.42,
+    "ceilY": 4.05
+  },
+  "aisleAnglesDeg": [
+    0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
+    180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345
+  ],
+  "validVomitoryAnglesDeg": [
+    0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165,
+    195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345
+  ],
+  "vomitoryPortals": [
+    { "sector": 24, "bearingDeg": 0,   "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 1,  "bearingDeg": 15,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 2,  "bearingDeg": 30,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 3,  "bearingDeg": 45,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 4,  "bearingDeg": 60,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 5,  "bearingDeg": 75,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 6,  "bearingDeg": 90,  "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 7,  "bearingDeg": 105, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 8,  "bearingDeg": 120, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 9,  "bearingDeg": 135, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 10, "bearingDeg": 150, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 11, "bearingDeg": 165, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 13, "bearingDeg": 195, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 14, "bearingDeg": 210, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 15, "bearingDeg": 225, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 16, "bearingDeg": 240, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 17, "bearingDeg": 255, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 18, "bearingDeg": 270, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 19, "bearingDeg": 285, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 20, "bearingDeg": 300, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 21, "bearingDeg": 315, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 22, "bearingDeg": 330, "tier1MouthY": 4.60, "tier2MouthY": 26.80 },
+    { "sector": 23, "bearingDeg": 345, "tier1MouthY": 4.60, "tier2MouthY": 26.80 }
+  ],
+  "plazaAnchors": {
+    "utara":   { "gate": "Gate 4",     "plaza": "Plaza Utara",    "gateAngleDeg": 0.0,   "bearingDeg": 0.0,   "portalHalfWidth": 5.2, "aOuter": 90.8 },
+    "timur":   { "gate": "Gate 5",     "plaza": "Plaza Timur",    "gateAngleDeg": 90.0,  "bearingDeg": 90.0,  "portalHalfWidth": 5.2, "aOuter": 67.0 },
+    "selatan": { "gate": "Gate 6",     "plaza": "Plaza Tenggara", "gateAngleDeg": 140.0, "bearingDeg": 140.0, "portalHalfWidth": 5.2, "aOuter": 77.5 },
+    "barat":   { "gate": "Gate 1 & 2", "plaza": "Plaza Barat",    "gateAngleDeg": 270.0, "bearingDeg": 270.0, "portalHalfWidth": 5.2, "aOuter": 67.0 }
+  },
+  "spiralRamps": [
+    { "index": 1, "rAngDeg": 22.5,  "bearingDeg": 67.5,  "cx": 118.26,  "cyBlender": 65.06,   "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 2, "rAngDeg": 67.5,  "bearingDeg": 22.5,  "cx": 48.98,   "cyBlender": 157.06,  "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 3, "rAngDeg": 112.5, "bearingDeg": 337.5, "cx": -48.98,  "cyBlender": 157.06,  "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 4, "rAngDeg": 157.5, "bearingDeg": 292.5, "cx": -118.26, "cyBlender": 65.06,   "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 5, "rAngDeg": 202.5, "bearingDeg": 247.5, "cx": -118.26, "cyBlender": -65.06,  "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 6, "rAngDeg": 247.5, "bearingDeg": 202.5, "cx": -48.98,  "cyBlender": -157.06, "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 7, "rAngDeg": 292.5, "bearingDeg": 157.5, "cx": 48.98,   "cyBlender": -157.06, "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 },
+    { "index": 8, "rAngDeg": 337.5, "bearingDeg": 112.5, "cx": 118.26,  "cyBlender": -65.06,  "rIn": 2.6, "rOut": 7.4, "turns": 3.5, "z0": 0.42, "z1": 24.40, "bridgeHalfWidth": 3.3 }
+  ]
+}

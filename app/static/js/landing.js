@@ -232,12 +232,28 @@
   }
 
   if (searchInput) {
-    const onSearch = () => {
-      state.searchQuery = searchInput.value || "";
+    const heroQuickSearch = document.getElementById("hero-quick-search");
+    const heroQuickForm = document.getElementById("hero-quick-search-form");
+    const onSearch = (sourceEl) => {
+      const val = (sourceEl ? sourceEl.value : searchInput.value) || "";
+      state.searchQuery = val;
+      if (sourceEl !== searchInput) searchInput.value = val;
+      if (heroQuickSearch && sourceEl !== heroQuickSearch) heroQuickSearch.value = val;
       applyCatalogState();
     };
-    searchInput.addEventListener("input", onSearch);
-    searchInput.addEventListener("search", onSearch);
+    searchInput.addEventListener("input", () => onSearch(searchInput));
+    searchInput.addEventListener("search", () => onSearch(searchInput));
+    if (heroQuickSearch) {
+      heroQuickSearch.addEventListener("input", () => onSearch(heroQuickSearch));
+      heroQuickSearch.addEventListener("search", () => onSearch(heroQuickSearch));
+    }
+    if (heroQuickForm) {
+      heroQuickForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const catalogSec = document.getElementById("lagi-tayang");
+        if (catalogSec) catalogSec.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
     if (state.searchQuery.trim()) {
       applyCatalogState();
     }
@@ -474,6 +490,44 @@
       }
     });
   }
+
+  /* 8. Official Merchandise Filter & Home-Delivery Cart */
+  const merchFilters = Array.from(document.querySelectorAll("[data-merch-filter]"));
+  const merchCards = Array.from(document.querySelectorAll(".merch-card[data-merch-category]"));
+  merchFilters.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const target = chip.dataset.merchFilter || "all";
+      merchFilters.forEach((btn) => btn.setAttribute("aria-pressed", String(btn === chip)));
+      merchCards.forEach((card) => {
+        card.hidden = target !== "all" && card.dataset.merchCategory !== target;
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-merch-add]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const itemId = btn.dataset.merchAdd;
+      const itemName = btn.dataset.merchName || "Merchandise";
+      if (!itemId) return;
+      try {
+        const res = await fetch("/api/merch-cart/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ item_id: itemId, delta: 1 }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.querySelectorAll("[data-cart-count]").forEach((badge) => {
+            badge.textContent = String(data.cart_count);
+            badge.hidden = !data.cart_count;
+          });
+          showToast(`${itemName} ditambahkan ke keranjang pengiriman rumah.`);
+        }
+      } catch {
+        showToast("Gagal menambahkan merchandise ke keranjang.");
+      }
+    });
+  });
 
   applyCatalogState();
 })();

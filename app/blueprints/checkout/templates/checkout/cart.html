@@ -13,95 +13,209 @@
     <h1>Keranjang Belanja</h1>
   </header>
 
-  {% if not items %}
+  {% if not items and not merch_items %}
   <section class="empty-state cart-empty-card" aria-labelledby="empty-title">
     <span class="cart-empty-card__icon" aria-hidden="true">
       <svg class="icon icon--lg" aria-hidden="true"><use href="#i-cart"/></svg>
     </span>
     <h2 id="empty-title">Keranjangmu masih kosong</h2>
-    <p>Pilih tiket dan tekan tombol Tambah ke Keranjang.</p>
+    <p>Pilih tiket atau merchandise resmi untuk memulai pemesanan.</p>
     <a class="btn btn--primary cart-empty-card__cta" href="{{ url_for('landing.index') }}">
       <span>Pilih Tiket</span>
       <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
     </a>
   </section>
   {% else %}
-  <div class="checkout__grid">
-    <div class="checkout__main-col">
-      <section class="checkout__section" aria-labelledby="cart-tickets-title">
-        <div class="checkout__section-head">
-          <h2 id="cart-tickets-title">Tiket pilihanmu <span class="num">({{ items | length }})</span></h2>
-          <form method="post" action="{{ url_for('checkout.clear') }}">
-            <button class="btn btn--ghost" type="submit">
-              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
-              Kosongkan
-            </button>
-          </form>
-        </div>
-
-        <ul class="ticket-list">
-          {% for item in items %}
-          <li class="ticket-row glass">
-            <div class="ticket-row__main">
-              <span class="chip chip--info">{{ item.category }}</span>
-              <h3>{{ item.seat_label }}</h3>
-              <p class="ticket-row__venue">{{ item.venue_name }}</p>
+  <div class="cart-fulfillment-stack">
+    {% if items %}
+    {# SECTION 1: RESERVASI TIKET & ADD-ON (Ambil di Venue, terikat Timer 10:00) #}
+    <div class="checkout__grid">
+      <div class="checkout__main-col">
+        <section class="checkout__section" aria-labelledby="cart-tickets-title">
+          <div class="checkout__section-head">
+            <div>
+              <span class="eyebrow">RESERVASI TIKET</span>
+              <h2 id="cart-tickets-title">Tiket pilihanmu <span class="num">({{ items | length }})</span></h2>
             </div>
-
-            <dl class="pov-meta" aria-label="Data POV dari visualizer">
-              <div><dt>Skor sightline</dt><dd class="num">{{ item.pov.score }} &middot; {{ item.pov.grade }}</dd></div>
-              <div><dt>Jarak ke layar/panggung</dt><dd class="num">{{ item.pov.distance_m }} m</dd></div>
-              <div><dt>Halangan kepala</dt><dd class="num">{{ item.pov.obstruction_pct }}%</dd></div>
-              <div><dt>Delay suara</dt><dd class="num">{{ item.pov.audio_delay_ms }} ms</dd></div>
-              <div><dt>Tinggi badan simulasi</dt><dd class="num">{{ item.pov.body_height_cm | round | int }} cm</dd></div>
-            </dl>
-
-            <div class="ticket-row__side">
-              <strong class="num">{{ item.price | rupiah }}</strong>
-              <form method="post" action="{{ url_for('checkout.remove', index=loop.index0) }}">
-                <input type="hidden" name="next" value="cart">
-                <button class="btn btn--danger" type="submit" aria-label="Hapus {{ item.seat_label }}">
+            <div class="cart-head-meta">
+              <span class="seat-lock-pill num">{{ '%02d:%02d' | format(lock_remaining_seconds // 60, lock_remaining_seconds % 60) }}</span>
+              <form method="post" action="{{ url_for('checkout.clear') }}">
+                <button class="btn btn--ghost" type="submit">
                   <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
-                  Hapus
+                  Kosongkan
                 </button>
               </form>
             </div>
-          </li>
-          {% endfor %}
-        </ul>
-
-        <div class="checkout__ticket-footer">
-          <a class="btn btn--ghost" href="{{ url_for('landing.index') }}">
-            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-            Pilih tiket lain
-          </a>
-        </div>
-      </section>
-    </div>
-
-    <aside class="summary glass checkout__section" aria-labelledby="cart-summary-title">
-      <h2 id="cart-summary-title">Ringkasan Keranjang</h2>
-
-      <div class="summary-breakdown" aria-label="Rincian biaya tiket">
-        <h3 class="summary-breakdown__title">Rincian Harga</h3>
-        <dl class="totals">
-          <div class="summary-row"><dt class="fee-label">Subtotal tiket</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
-          {% if totals.tax %}<div class="summary-row"><dt class="fee-label">Pajak konser 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
-          {% if totals.convenience %}<div class="summary-row"><dt class="fee-label">Convenience fee 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
-          {% if totals.admin %}<div class="summary-row"><dt class="fee-label">Biaya admin bioskop</dt><dd class="num">{{ totals.admin | rupiah }}</dd></div>{% endif %}
-          <div class="summary-row totals__grand">
-            <dt>Total sementara</dt>
-            <dd class="num">{{ totals.total | rupiah }}</dd>
           </div>
-        </dl>
+
+          <p class="fulfillment-pill fulfillment-pill--venue"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg> Fulfillment: Ambil di Booth / Gate Venue</p>
+
+          <ul class="ticket-list">
+            {% for item in items %}
+            <li class="ticket-row glass">
+              <div class="ticket-row__main">
+                <span class="chip chip--info">{{ item.category }}</span>
+                {% set parts = item.venue_name.split(' · ') %}
+                <h3>{{ parts[0] }}</h3>
+                <p class="ticket-row__venue">{% if parts | length > 1 %}{{ parts[1] }} &middot; {% endif %}{{ item.seat_label }}</p>
+              </div>
+
+              <div class="ticket-row__side">
+                <strong class="num">{{ item.price | rupiah }}</strong>
+                <form method="post" action="{{ url_for('checkout.remove', index=loop.index0) }}">
+                  <input type="hidden" name="next" value="cart">
+                  <button class="btn btn--danger" type="submit" aria-label="Hapus {{ item.seat_label }}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+                    Hapus
+                  </button>
+                </form>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          {% if selected_addons %}
+          <div class="cart-addon-mini">
+            <h3>Add-on Venue ({{ selected_addons | length }})</h3>
+            <ul>
+              {% for a in selected_addons %}
+              <li>
+                <span>{{ a.name }} &times;{{ a.qty }}{% if a.note %} &mdash; Catatan: &ldquo;{{ a.note }}&rdquo;{% endif %}</span>
+                <strong class="num">{{ a.line_total | rupiah }}</strong>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <div class="checkout__ticket-footer">
+            <a class="btn btn--ghost" href="{{ url_for('landing.index') }}">
+              <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+              Pilih tiket lain
+            </a>
+          </div>
+        </section>
       </div>
 
-      <a class="btn btn--primary btn--block cart-proceed-btn" id="proceed-to-checkout-btn" data-requires-auth="true" href="{{ url_for('checkout.index') }}">
-        <span>Lanjut ke Pembayaran</span>
-        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-      </a>
-    </aside>
+      <aside class="summary glass checkout__section" aria-labelledby="cart-summary-title">
+        <h2 id="cart-summary-title">Ringkasan Tiket Venue</h2>
+
+        <div class="summary-breakdown" aria-label="Rincian biaya tiket">
+          <h3 class="summary-breakdown__title">Rincian Harga</h3>
+          <dl class="totals">
+            <div class="summary-row"><dt class="fee-label">Subtotal tiket</dt><dd class="num">{{ totals.subtotal | rupiah }}</dd></div>
+            {% if totals.tax %}<div class="summary-row"><dt class="fee-label">Pajak konser 15%</dt><dd class="num">{{ totals.tax | rupiah }}</dd></div>{% endif %}
+            {% if totals.convenience %}<div class="summary-row"><dt class="fee-label">Convenience fee 5%</dt><dd class="num">{{ totals.convenience | rupiah }}</dd></div>{% endif %}
+            {% if totals.admin %}<div class="summary-row"><dt class="fee-label">Biaya admin bioskop</dt><dd class="num">{{ totals.admin | rupiah }}</dd></div>{% endif %}
+            {% if totals.addon_subtotal %}<div class="summary-row"><dt class="fee-label">Add-on venue</dt><dd class="num">{{ totals.addon_subtotal | rupiah }}</dd></div>{% endif %}
+            <div class="summary-row totals__grand">
+              <dt>Total sementara</dt>
+              <dd class="num">{{ totals.total | rupiah }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <a class="btn btn--primary btn--block cart-proceed-btn" id="proceed-to-checkout-btn" href="{{ url_for('checkout.index') }}">
+          <span>Lanjut Pembayaran Tiket</span>
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </a>
+      </aside>
+    </div>
+    {% endif %}
+
+    {% if merch_items %}
+    {# SECTION 2: MERCHANDISE PENGIRIMAN FISIK (Pengiriman Reguler ke Rumah) #}
+    <div class="checkout__grid" id="merch-delivery-section">
+      <div class="checkout__main-col">
+        <section class="checkout__section" aria-labelledby="cart-merch-title">
+          <div class="checkout__section-head">
+            <div>
+              <span class="eyebrow">MERCHANDISE PENGIRIMAN FISIK</span>
+              <h2 id="cart-merch-title">Pengiriman ke Rumah <span class="num">({{ merch_items | length }} produk)</span></h2>
+            </div>
+            <span class="fulfillment-pill fulfillment-pill--delivery">Pengiriman Reguler ke Rumah (Estimasi 2-3 hari)</span>
+          </div>
+
+          <ul class="ticket-list">
+            {% for m in merch_items %}
+            <li class="ticket-row glass" data-cart-merch-row="{{ m.item_id }}">
+              <div class="ticket-row__main">
+                <span class="chip chip--info">{{ m.category }}</span>
+                <h3>{{ m.name }}</h3>
+                <p class="ticket-row__venue">{{ m.desc }}</p>
+              </div>
+              <div class="addon-stepper">
+                <button type="button" class="addon-qty-btn" data-cart-merch-qty="{{ m.qty - 1 }}" data-cart-merch-id="{{ m.item_id }}" aria-label="Kurangi {{ m.name }}">&minus;</button>
+                <span class="addon-qty-val num">{{ m.qty }}</span>
+                <button type="button" class="addon-qty-btn addon-qty-btn--plus" data-cart-merch-qty="{{ m.qty + 1 }}" data-cart-merch-id="{{ m.item_id }}" aria-label="Tambah {{ m.name }}">+</button>
+              </div>
+              <div class="ticket-row__side">
+                <strong class="num">{{ m.line_total | rupiah }}</strong>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <div class="shipping-address-box">
+            <div class="shipping-address-box__head">
+              <span class="eyebrow">DIKIRIM KE</span>
+              <a href="{{ url_for('checkout.profile', tab='addresses') }}">Kelola Buku Alamat &rsaquo;</a>
+            </div>
+            <select id="cart-address-selector" class="input" aria-label="Pilih alamat pengiriman">
+              {% for addr in addresses %}
+              <option value="{{ addr.id }}" {% if addr.is_default %}selected{% endif %}>{{ addr.label }} &mdash; {{ addr.street }}, {{ addr.city }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </section>
+      </div>
+
+      <aside class="summary glass checkout__section" aria-labelledby="merch-summary-title">
+        <h2 id="merch-summary-title">Ringkasan Pengiriman Rumah</h2>
+        <div class="summary-breakdown">
+          <h3 class="summary-breakdown__title">Rincian Ongkir &amp; Produk</h3>
+          <dl class="totals">
+            <div class="summary-row"><dt class="fee-label">Subtotal ({{ merch_items | sum(attribute='qty') }} item)</dt><dd class="num">{{ merch_subtotal | rupiah }}</dd></div>
+            <div class="summary-row"><dt class="fee-label">Ongkos kirim standar</dt><dd class="num">{{ shipping_fee | rupiah }}</dd></div>
+            <div class="summary-row totals__grand"><dt>Total Pengiriman</dt><dd class="num">{{ merch_total | rupiah }}</dd></div>
+          </dl>
+        </div>
+
+        <a class="btn btn--primary btn--block cart-proceed-btn" href="{{ url_for('checkout.index', mode='merch') }}">
+          <span>Checkout Pengiriman Rumah</span>
+          <svg class="icon icon--sm" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </a>
+      </aside>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 </div>
+<script>
+(function () {
+  document.addEventListener('click', async function (e) {
+    var btn = e.target.closest('[data-cart-merch-id]');
+    if (!btn) return;
+    await fetch('/api/merch-cart/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        item_id: btn.getAttribute('data-cart-merch-id'),
+        qty: Number(btn.getAttribute('data-cart-merch-qty') || 0)
+      })
+    });
+    window.location.reload();
+  });
+  var addrSel = document.getElementById('cart-address-selector');
+  if (addrSel) {
+    addrSel.addEventListener('change', async function () {
+      await fetch('/checkout/api/addresses/default', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ address_id: addrSel.value })
+      });
+    });
+  }
+})();
+</script>
 {% endblock %}

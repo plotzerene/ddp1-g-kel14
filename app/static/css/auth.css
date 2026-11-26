@@ -16,30 +16,8 @@
   color: #FFFFFF;
 }
 
-[data-auth-guest][hidden],
-.auth-member-pill[hidden] {
+[data-auth-guest][hidden] {
   display: none !important;
-}
-
-.auth-member-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 8px 0 12px;
-  border-radius: 9999px;
-  border: 1px solid #006875;
-  background: #E6F4F5;
-  color: #006875;
-  font-size: 0.82rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-html[data-theme="dark"] .auth-member-pill {
-  border-color: #14B8A6;
-  background: #0F2D33;
-  color: #2DD4BF;
 }
 
 .auth-member-logout {
@@ -84,12 +62,22 @@ html[data-theme="dark"] .auth-member-pill {
   max-height: 90dvh;
   margin: auto;
   overflow-y: auto;
-  padding: 0 clamp(18px, 2.4vw, 32px) clamp(16px, 2.2dvh, 26px);
+  -webkit-overflow-scrolling: touch;
+  padding: 0 clamp(16px, 2.4vw, 32px) clamp(14px, 2.2dvh, 26px);
   background: var(--color-card);
   color: var(--color-foreground);
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
+}
+
+@media (max-height: 480px), (max-width: 400px) {
+  .auth-modal {
+    padding: 10px;
+  }
+  .auth-modal__panel {
+    max-height: 92dvh;
+  }
 }
 
 html[data-theme="light"] .auth-modal__panel,
@@ -321,28 +309,45 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
 }
 
 .auth-modal__sso {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
   min-height: 46px;
-  padding: 0 var(--space-3);
-  border: 1px solid rgba(202, 138, 4, 0.55);
+  padding: 8px 6rem;
+  text-align: center;
+  border: 1px solid #EAB308;
   border-radius: var(--radius-md);
-  background: rgba(202, 138, 4, 0.12);
-  color: var(--color-foreground);
+  background: #FFFDF0;
+  color: #854D0E;
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 .auth-modal__sso:hover {
-  background: rgba(202, 138, 4, 0.22);
-  border-color: var(--color-accent);
+  background: #FEF9C3;
+  border-color: #D97706;
+  color: #854D0E;
+}
+
+html[data-theme="dark"] .auth-modal__sso,
+html.dark:not([data-theme="light"]) .auth-modal__sso {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.35);
+  color: #FACC15;
+}
+
+html[data-theme="dark"] .auth-modal__sso:hover,
+html.dark:not([data-theme="light"]) .auth-modal__sso:hover {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #FACC15;
 }
 
 .auth-sso-logo {
@@ -352,11 +357,14 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
 }
 
 .auth-sso-tag {
-  margin-left: auto;
-  padding: 2px 8px;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 2px 9px;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: #0F766E;
+  color: #FFFFFF;
   font-size: 11px;
   font-weight: 700;
 }
@@ -386,8 +394,13 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
 }
 
 .auth-oauth-btn--block {
+  display: flex;
   width: 100%;
   min-height: 46px;
+}
+
+.auth-modal__sso > .auth-sso-logo {
+  flex: none;
 }
 
 .auth-oauth-btn:hover {
@@ -457,8 +470,13 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  background: rgba(202, 138, 4, 0.16);
-  color: var(--color-accent-hover);
+  background: rgba(13, 148, 136, 0.12);
+  color: #0F766E;
+}
+
+html[data-theme="dark"] .auth-lock-badge,
+html.dark .auth-lock-badge {
+  color: #2DD4BF;
 }
 
 .auth-success-icon {
@@ -466,24 +484,14 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
   color: var(--color-success);
 }
 
-.auth-member-link {
-  color: inherit;
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.auth-member-link:hover {
-  text-decoration: underline;
-}
-
 .auth-guard-notice {
   margin-bottom: var(--space-3);
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(217, 119, 6, 0.35);
-  background: #FEF3C7;
-  color: #92400E;
-  font-size: 0.84rem;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  background: rgba(13, 148, 136, 0.08);
+  color: var(--text-primary, var(--color-foreground));
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.45;
 }
@@ -495,4 +503,304 @@ html:not([data-theme="dark"]) body[data-step="profile"] .auth-modal__panel {
 .auth-entry:focus-visible {
   outline: 3px solid var(--color-info);
   outline-offset: 2px;
+}
+
+/* Apple Sheet Auth, Guest Checkout, Profile Popover & Location Sheet */
+.auth-sheet {
+  border-radius: 26px;
+  background: rgba(22, 31, 48, 0.88);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+}
+
+html[data-theme="light"] .auth-sheet,
+html:not([data-theme="dark"]) body:is([data-step="landing"], [data-step="detail"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) .auth-sheet {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.auth-modal__head--sheet {
+  position: relative;
+  align-items: center;
+  padding-top: 22px;
+}
+
+.auth-modal__sheet-brand {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.auth-modal__head--sheet .auth-modal__title-wrap {
+  padding-top: 24px;
+}
+
+.auth-modal__close--circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.14);
+  border-color: var(--color-hairline-strong);
+}
+
+.auth-sso-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.auth-guest-row {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+  text-align: center;
+}
+
+.auth-guest-link {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-info);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-guest-link:hover {
+  opacity: 0.85;
+}
+
+.auth-profile-wrap {
+  position: relative;
+}
+
+.auth-member-avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  /* Abu-abu netral, sama dengan avatar pada pil profil (.focus-user-pill__avatar). */
+  background: #6B7280;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+html[data-theme="dark"] .auth-member-avatar,
+html.dark .auth-member-avatar {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.auth-member-avatar--lg {
+  width: 38px;
+  height: 38px;
+  font-size: 0.9rem;
+}
+
+.profile-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: var(--z-modal);
+  width: max-content;
+  min-width: 280px;
+  max-width: min(92vw, 360px);
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-card);
+  box-shadow: var(--shadow-3);
+  display: grid;
+  gap: 4px;
+}
+
+.profile-popover__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.profile-popover__head strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.profile-popover__status {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--color-muted-fg);
+}
+
+.profile-popover__ui-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(120, 120, 128, 0.14);
+  color: #006875;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-theme="dark"] .profile-popover__ui-badge {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #2DD4BF;
+}
+
+.profile-popover__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-foreground);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-popover__item:hover {
+  background: var(--color-muted);
+  text-decoration: none;
+}
+
+.profile-popover__item--danger {
+  color: #EF4444;
+}
+
+.location-sheet {
+  width: min(94vw, 680px);
+}
+
+.location-sheet__body {
+  display: grid;
+  gap: 16px;
+}
+
+.location-sheet__lead {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.location-sheet__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: rgba(0, 104, 117, 0.12);
+  border: 1px solid rgba(0, 104, 117, 0.35);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-info);
+}
+
+.location-sheet__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22C55E;
+}
+
+.location-sheet__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.location-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.location-choice.is-selected {
+  border-color: var(--color-info);
+  background: rgba(0, 104, 117, 0.12);
+}
+
+.location-choice__text {
+  display: grid;
+  gap: 2px;
+}
+
+.location-choice__text strong {
+  font-size: 0.88rem;
+}
+
+.location-choice__text small {
+  font-size: 0.76rem;
+  color: var(--color-muted-fg);
+}
+
+.location-sheet__actions {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+
+/* Popover profil (Frame 19A/B): 316px, r24, fill kartu @94%, bayangan 0 12 36 @28%.
+   min-width 280px + nowrap pada lencana tetap agar "Mahasiswa UI (Diskon 15% Aktif)" satu baris. */
+.profile-popover {
+  width: 316px;
+  padding: 20px 18px 18px;
+  border-radius: 24px;
+  border-color: var(--fc-border);
+  background: color-mix(in srgb, var(--fc-card) 94%, transparent);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* Dropdown 100% opak (anti tembus pandang). Dua kelas = spesifisitas di atas .liquid-glass-modal
+   (liquid_glass.css dimuat terakhir dan sebelumnya menimpa latar jadi 82% + tanpa border/bayangan).
+   Alpha 1 disengaja: popover berada di dalam .site-header yang sudah ber-backdrop-filter, jadi blur
+   popover tidak menjangkau konten di luar kotak header dan alpha <1 membocorkan teks kartu di belakangnya. */
+.profile-popover.liquid-glass-modal {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #FFFFFF;
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.10);
+  color: #0F172A;
+}
+
+html[data-theme="dark"] .profile-popover.liquid-glass-modal,
+html.dark .profile-popover.liquid-glass-modal {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #181A20;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.30);
+  color: #F8FAFC;
+}
+
+/* Header naik di atas kartu konten selama dropdown terbuka (popover hidup di dalam stacking context header). */
+.site-header:has(.profile-popover:not([hidden])) {
+  z-index: 90;
 }

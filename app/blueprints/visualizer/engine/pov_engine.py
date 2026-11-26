@@ -29,7 +29,9 @@ from .geometry_3d import (
 from .obstruction import (
     Anthropometry, FrontSpectator, ObstructionContext, ObstructionResult, Posture,
 )
-from .sightline_ai import SightlineMetrics, SightlineScore, SightlineScorer
+from .sightline_ai import (
+    RoofProtection, SightlineMetrics, SightlineScore, SightlineScorer, assess_roof_protection,
+)
 
 if TYPE_CHECKING:
     from ..models.base_venue import ScreenSurface, SeatNode, TargetStage, Venue
@@ -155,6 +157,7 @@ class PovReport:
     score: SightlineScore
     reference_photos: tuple[dict, ...]
     compute_ms: float
+    roof_protection: RoofProtection | None = None
 
     @property
     def primary(self) -> TargetView:
@@ -248,6 +251,7 @@ class PovReport:
             "acoustics": self.acoustics.to_dict(),
             "score": self.score.to_dict(),
             "reference_photos": list(self.reference_photos),
+            "roof_protection": self.roof_protection.to_dict() if self.roof_protection else None,
             "summary": self.summary(),
         }
 
@@ -258,7 +262,7 @@ class PovReport:
 class PovEngine:
     """Satu instance per venue; menyimpan cache hasil agar heatmap & rekomendasi cepat."""
 
-    CACHE_LIMIT = 40_000
+    CACHE_LIMIT = 8_000  # clear-on-full; cukup untuk satu heatmap studio, menahan RAM tetap kecil
 
     def __init__(self, venue: "Venue") -> None:
         self.venue = venue
@@ -337,7 +341,7 @@ class PovEngine:
                  aspect: float = 16.0 / 9.0) -> PovReport:
         viewer = Anthropometry.from_cm(body_height_cm)
         front = Anthropometry.from_cm(front_height_cm)
-        lens = lens_for(lens_mode)
+        lens = lens_for(lens_mode, self.venue.LENS_BASE_FOV_DEG)
         active_target = self.venue.target(target_id)
         primary_target = self.venue.primary_target
         aspect = round(clamp(float(aspect), 0.4, 4.0), 2)
@@ -387,6 +391,7 @@ class PovEngine:
             score=self.scorer.score(metrics),
             reference_photos=tuple(self.venue.reference_photos(seat)),
             compute_ms=(time.perf_counter() - started) * 1000.0,
+            roof_protection=assess_roof_protection(seat, getattr(self.venue, "BOWL", None)),
         )
         if len(self._cache) >= self.CACHE_LIMIT:
             self._cache.clear()

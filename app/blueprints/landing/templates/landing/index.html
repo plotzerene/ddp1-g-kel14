@@ -1,44 +1,142 @@
-{# landing/index.html: Rekonstruksi Halaman Utama sesuai Artboard FigCraft 01_Home (Light) & 01_Home_Dark_Theme (Dark). #}
+{# landing/index.html: Rekonstruksi 1:1 Master Design (Hero + Cobe 3D Globe, Banner SSO UI, Top Promo 9-Dots, Lagi Tayang, Coming Soon, Official Merch). #}
 {% extends "base.html" %}
 {% set step = "landing" %}
 {% set theme_color = "#FFFFFF" %}
-{% block title %}Beli tiket bioskop & konser{% endblock %}
+{% block title %}Beli tiket bioskop &amp; konser{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}
 
 {% block content %}
-{% set categories = [
-  ("bioskop", "Bioskop", "projector.svg", "gold"),
-  ("konser", "Konser Musik", "music.svg", "teal"),
-  ("film", "Film", "clapperboard.svg", "neutral"),
-  ("food", "titiket.food", "food.svg", "neutral"),
-  ("sewa", "Sewa Tempat", "building.svg", "neutral"),
-] %}
 {% set makara_url = asset_url("makara_ui.png") %}
 
 <div class="landing-shell">
   <div id="catalog-section" class="catalog-landing-anchor">
-  {# 1. HERO & 5 CATEGORY CARDS + FEATURED MINI CAROUSEL #}
+  {# 1. HERO SECTION (50:50 Split — Headline + Search Kiri, Cobe 3D Globe 520x520 Kanan) #}
   <section class="hero-stage" aria-labelledby="hero-title">
-    <div class="container hero-stage__inner">
-      <div class="hero-heading">
-        <h1 id="hero-title">Feel the moments beyond</h1>
-        <p class="hero-subhead">Pilih kursi terbaik dengan pratinjau pandangan 3D sebelum membeli tiket.</p>
+    <div class="container hero-stage__split">
+      <div class="hero-left">
+        <span class="hero-eyebrow">
+          <span class="hero-eyebrow__dot" aria-hidden="true"></span>
+          <span>TIKET FILM &amp; KONSER &middot; POV 3D</span>
+        </span>
+        <h1 id="hero-title">Lihat panggung dan layarnya dulu, baru pilih kursimu.</h1>
+
+        <div class="hero-controls-row">
+          <label class="hero-location-box" for="hero-city-selector">
+            <span class="hero-location-box__lbl">LOKASI AKTIF</span>
+            <span class="hero-location-box__inner">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg>
+              <select id="hero-city-selector" aria-label="Pilih wilayah aktif">
+                <option value="JABODETABEK">JABODETABEK</option>
+                <option value="BANDUNG">BANDUNG</option>
+                <option value="SURABAYA">SURABAYA</option>
+                <option value="YOGYAKARTA">YOGYAKARTA</option>
+                <option value="BALI">BALI</option>
+                <option value="MEDAN">MEDAN</option>
+              </select>
+            </span>
+          </label>
+
+          <form class="hero-quick-search" id="hero-quick-search-form" action="{{ url_for('landing.index') }}" method="get" role="search">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="search" id="hero-quick-search" placeholder="Cari film, bioskop, atau konser" aria-label="Pencarian cepat film, bioskop, atau konser" autocomplete="off">
+          </form>
+        </div>
+
+        <div class="hero-cta-row">
+          <a class="btn hero-cta-primary liquid-glass-btn-primary" href="#lagi-tayang">Jelajahi Event</a>
+          <a class="btn hero-cta-glass liquid-glass-pill" href="{{ url_for('events.coldplay_overview') }}">Lihat Tur Dunia</a>
+        </div>
+
+        <dl class="hero-stats">
+          <div><dt>120+</dt><dd>Bioskop XXI</dd></div>
+          <div><dt>Tur Dunia</dt><dd>konser resmi</dd></div>
+          <div><dt>Rp 50 rb</dt><dd>mulai dari</dd></div>
+        </dl>
       </div>
 
-      <div class="quick-categories" role="group" aria-label="Kategori utama">
-        {% for key, label, icon_file, tone in categories %}
-        <button class="quick-cat quick-cat--{{ tone }}" type="button" data-category="{{ key }}" aria-pressed="false">
-          <span class="quick-cat__icon" aria-hidden="true">
-            <img class="quick-cat__svg" src="{{ url_for('static', filename='images/icons/categories/' + icon_file) }}"
-                 alt="" width="24" height="24">
-          </span>
-          <span class="quick-cat__label">{{ label }}</span>
-        </button>
-        {% endfor %}
-      </div>
+      <div class="hero-right">
+        <div class="hero-globe-stage backdrop-blur-md" data-cobe-globe="hero" data-globe-size="520" aria-label="Peta Tur Dunia Coldplay 3D Interaktif">
+          <div class="hero-globe-topbar">
+            <div class="hero-globe-meta">
+              <strong>Coldplay &middot; Music of the Spheres</strong>
+              <span class="hero-globe-sub">World Tour Tracker &middot; <span data-globe-counter>Tur 3 dari 4</span></span>
+            </div>
+            <div class="hero-globe-nav">
+              <button type="button" class="globe-nav-btn liquid-glass-pill" data-globe-prev aria-label="Negara tur sebelumnya">&lsaquo;</button>
+              <button type="button" class="globe-nav-btn liquid-glass-pill" data-globe-next aria-label="Negara tur berikutnya">&rsaquo;</button>
+            </div>
+          </div>
 
+          <div class="cobe-canvas-wrap">
+            <canvas id="hero-cobe-globe" data-cobe-canvas data-display-size="520" width="1040" height="1040"></canvas>
+
+            {# Pin bendera 3D: tiang menancap tepat di koordinat kota; dipindah tiap frame oleh cobe_globe.js dengan proyeksi Cobe yang sama, opacity 0 saat di belahan belakang bola. #}
+            <button type="button" class="globe-pin globe-pin--done" data-globe-stop="0" data-globe-pin="tokyo" aria-label="Tokyo (Completed)">
+              <img class="globe-pin__flag" src="{{ url_for('static', filename='images/flags/jp.svg') }}" alt="" width="27" height="18" draggable="false">
+              <span class="globe-pin__pole" aria-hidden="true"></span>
+              <span class="globe-pin__label liquid-glass-pill">Tokyo (Completed)</span>
+            </button>
+
+            <button type="button" class="globe-pin globe-pin--done" data-globe-stop="1" data-globe-pin="kaohsiung" aria-label="Kaohsiung (Completed)">
+              <img class="globe-pin__flag" src="{{ url_for('static', filename='images/flags/tw.svg') }}" alt="" width="27" height="18" draggable="false">
+              <span class="globe-pin__pole" aria-hidden="true"></span>
+              <span class="globe-pin__label liquid-glass-pill">Kaohsiung (Completed)</span>
+            </button>
+
+            <button type="button" class="globe-pin globe-pin--active" data-globe-stop="2" data-globe-pin="jakarta" aria-label="Jakarta (SUGBK)">
+              <img class="globe-pin__flag" src="{{ url_for('static', filename='images/flags/id.svg') }}" alt="" width="27" height="18" draggable="false">
+              <span class="globe-pin__pole" aria-hidden="true"></span>
+              <span class="globe-pin__label liquid-glass-pill">Jakarta (SUGBK)</span>
+            </button>
+
+            <button type="button" class="globe-pin globe-pin--upcoming" data-globe-stop="3" data-globe-pin="singapore" aria-label="Singapore (Upcoming)">
+              <img class="globe-pin__flag" src="{{ url_for('static', filename='images/flags/sg.svg') }}" alt="" width="27" height="18" draggable="false">
+              <span class="globe-pin__pole" aria-hidden="true"></span>
+              <span class="globe-pin__label liquid-glass-pill">Singapore (Upcoming)</span>
+            </button>
+
+            <div class="globe-active-card liquid-glass" data-globe-stop="2">
+              <div class="globe-active-card__head">
+                <span class="globe-pulse-dot" aria-hidden="true"></span>
+                <span> Jakarta (SUGBK) - NEXT SHOW: 19 NOV 2026</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-globe-legend" aria-label="Legenda status tur">
+            <span><i class="legend-dot legend-dot--done" aria-hidden="true"></i> Selesai</span>
+            <span><i class="legend-dot legend-dot--active" aria-hidden="true"></i> Berjalan</span>
+            <span><i class="legend-dot legend-dot--upcoming" aria-hidden="true"></i> Akan datang</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# 2. BANNER ALERT SSO UI (Tepat di bawah Hero) #}
+  <section class="sso-strip-wrap" id="promo-mahasiswa" aria-labelledby="sso-banner-title">
+    <div class="container">
+      <div class="sso-strip sso-strip--soft-yellow">
+        <div class="sso-strip__left">
+          {% if makara_url %}
+          <img class="sso-strip__logo" src="{{ makara_url }}" alt="Makara Universitas Indonesia" width="38" height="38">
+          {% endif %}
+          <p class="sso-strip__text" id="sso-banner-title">
+            <strong>Diskon Khusus Mahasiswa UI 15%</strong> &bull; Verifikasi SSO UI sekali klik saat checkout bioskop &amp; konser!
+          </p>
+        </div>
+        <div class="sso-strip__right">
+          <a class="sso-strip__cta liquid-glass-pill liquid-glass-btn-primary" href="{{ sso_ui_login_url }}" rel="noopener">Aktifkan SSO UI</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# 3. TOP PROMO CAROUSEL (3 Kartu Sejajar + Navigasi Bulat + 9 Dots) #}
+  <section class="promo-carousel-section" aria-label="Sorotan Promo Utama">
+    <div class="container">
       <div class="featured-carousel" id="promo" aria-roledescription="carousel" aria-label="Sorotan sedang tayang">
         <button class="slider-arrow slider-arrow--prev" type="button" id="promo-prev" aria-label="Sorotan sebelumnya">
           <svg class="icon icon--sm" aria-hidden="true"><use href="#i-chevron-left"/></svg>
@@ -67,31 +165,12 @@
         <button class="slider-arrow slider-arrow--next" type="button" id="promo-next" aria-label="Sorotan berikutnya">
           <svg class="icon icon--sm" aria-hidden="true"><use href="#i-chevron-right"/></svg>
         </button>
-        <div class="promo__dots" id="promo-dots" aria-hidden="true"></div>
+        <div class="promo__dots" id="promo-dots" aria-label="Indikator slide promo"></div>
       </div>
     </div>
   </section>
 
-  {# 2. SLIM SSO UI PROMO BANNER (Target #promo-mahasiswa & Artboard 01_Home_Catalog_Light) #}
-  <section class="sso-strip-wrap" id="promo-mahasiswa" aria-labelledby="sso-banner-title">
-    <div class="container">
-      <div class="sso-strip">
-        <div class="sso-strip__left">
-          {% if makara_url %}
-          <img class="sso-strip__logo" src="{{ makara_url }}" alt="Makara Universitas Indonesia" width="36" height="36">
-          {% endif %}
-          <p class="sso-strip__text" id="sso-banner-title">
-            <strong>Diskon Khusus Mahasiswa UI 15% &bull; Verifikasi SSO UI sekali klik saat checkout bioskop &amp; konser!</strong>
-          </p>
-        </div>
-        <div class="sso-strip__right">
-          <a class="sso-strip__cta liquid-glass-pill liquid-glass-btn-primary" href="{{ sso_ui_login_url }}" rel="noopener">Aktifkan SSO UI</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {# 3. SECTION "Lagi tayang" (GRID 5 KOLOM) #}
+  {# 4. SECTION "Lagi tayang" (GRID 5 KOLOM) #}
   <section class="catalog-section" id="lagi-tayang" aria-labelledby="now-playing-title">
     <div class="container">
       <div class="section-bar">
@@ -173,7 +252,7 @@
     </div>
   </section>
 
-  {# 4. SECTION "Coming Soon" (GRID 5 KOLOM + CTA INGATKAN SAYA) #}
+  {# 5. SECTION "Coming Soon" (GRID 5 KOLOM + CTA INGATKAN SAYA) #}
   <section class="catalog-section" id="coming-soon" aria-labelledby="coming-soon-title">
     <div class="container">
       <div class="section-bar">
@@ -256,6 +335,55 @@
       </ul>
     </div>
   </section>
+
+  {# 6. OFFICIAL MERCHANDISE STORE (Dikirim ke Rumah) #}
+  <section class="catalog-section merch-section" id="official-merch" aria-labelledby="merch-title">
+    <div class="container">
+      <div class="section-bar">
+        <div class="section-bar__left">
+          <div>
+            <h2 id="merch-title">Official Merchandise &amp; Koleksi Eksklusif</h2>
+            <p class="merch-section__sub">Merchandise resmi dikirim langsung ke alamat rumahmu.</p>
+          </div>
+          <div class="filter-tabs" role="group" aria-label="Filter Official Merchandise" data-filter-group="merch">
+            <button class="filter-chip liquid-glass-pill" type="button" data-merch-filter="all" aria-pressed="true">Semua</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-merch-filter="XXI Exclusive" aria-pressed="false">XXI Exclusive</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-merch-filter="Coldplay Tour Merch" aria-pressed="false">Coldplay Tour Merch</button>
+            <button class="filter-chip liquid-glass-pill" type="button" data-merch-filter="Aksesoris" aria-pressed="false">Aksesoris</button>
+          </div>
+        </div>
+        <a class="lihat-semua-link" href="{{ url_for('checkout.cart') }}#merch-delivery-section">Lihat Keranjang &rsaquo;</a>
+      </div>
+
+      <ul class="merch-grid" id="official-merch-grid">
+        {% for merch in merch_catalog %}
+        <li class="merch-card" data-merch-category="{{ merch.category }}">
+          <div class="merch-card__visual merch-card__visual--{{ merch.tone }}">
+            <span class="merch-card__icon-art" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
+                {% if 'Tumbler' in merch.name %}<path d="M9 2h6v2h1v3H8V4h1V2zm-1 6h8l-1 13H9L8 8z"/>
+                {% elif 'Tee' in merch.name %}<path d="M8.5 3 3 6l2 4 2-1v11h10V9l2 1 2-4-5.5-3a3.5 3.5 0 0 1-7 0z"/>
+                {% elif 'Popcorn' in merch.name %}<path d="M6 9h12l-1.4 11H7.4L6 9zM7 7a2.5 2.5 0 0 1 4-1.7A2.5 2.5 0 0 1 16 6.2 2.5 2.5 0 0 1 17 9H7V7z"/>
+                {% else %}<path d="M6 8h12l1 13H5L6 8zm3 0V6a3 3 0 0 1 6 0v2h-2V6a1 1 0 0 0-2 0v2H9z"/>{% endif %}
+              </svg>
+            </span>
+          </div>
+          <div class="merch-card__body">
+            <span class="merch-card__cat">{{ merch.category }}</span>
+            <h3 class="merch-card__title">{{ merch.name }}</h3>
+            <p class="merch-card__desc">{{ merch.desc }}</p>
+            <div class="merch-card__foot">
+              <strong class="merch-card__price num">{{ merch.price | rupiah }}</strong>
+              <button type="button" class="btn merch-add-btn liquid-glass-pill" data-merch-add="{{ merch.item_id }}" data-merch-name="{{ merch.name }}">
+                + Keranjang
+              </button>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
   </div>
 </div>
 
@@ -272,46 +400,9 @@
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
 </dialog>
-
-{# Modal Cepat untuk Kategori titiket.food & Sewa Tempat / Studio Bioskop #}
-<dialog class="quick-info-dialog liquid-glass-modal" id="quick-info-modal" aria-labelledby="quick-info-title">
-  <div class="quick-info-dialog__head">
-    <h2 id="quick-info-title">Informasi Layanan</h2>
-    <button type="button" class="btn btn--icon btn--ghost" id="quick-info-close" aria-label="Tutup dialog">
-      <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
-  </div>
-  <div class="quick-info-dialog__body" id="quick-info-food" hidden>
-    <p class="quick-info-sub">Pesan camilan dan minuman sebelum masuk studio.</p>
-    <div class="quick-info-list">
-      {% for name, desc, price in food_items %}
-      <article class="quick-info-item">
-        <div>
-          <strong>{{ name }}</strong>
-          <p>{{ desc }}</p>
-        </div>
-        <span class="quick-info-price num">{{ price | rupiah }}</span>
-      </article>
-      {% endfor %}
-    </div>
-  </div>
-  <div class="quick-info-dialog__body" id="quick-info-sewa" hidden>
-    <p class="quick-info-sub">Pilih tipe studio bioskop atau ajukan sewa tempat.</p>
-    <div class="quick-info-list">
-      {% for studio_type, title, text, image in studios %}
-      <article class="quick-info-item">
-        <div>
-          <strong>{{ title }}</strong>
-          <p>{{ text }}</p>
-        </div>
-        <a class="quick-info-link" href="{{ url_for('visualizer.index', type='cinema', studio=studio_type) }}">Cek 3D POV &rsaquo;</a>
-      </article>
-      {% endfor %}
-    </div>
-  </div>
-</dialog>
 {% endblock %}
 
 {% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/cobe_globe.js') }}"></script>
 <script type="module" src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}

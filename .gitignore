@@ -24,3 +24,11 @@ reference_assets/videos/
 promo_video/
 *.figcraft
 Craft Anything/
+
+# Model 3D mentah (Sketchfab): hanya turunan ringan (seat.glb, sofa_lod.glb) + Camp Nou (kecil) yang dipakai runtime.
+# Sumber mentah bisa dibuat ulang dari reference_assets/zips/ lalu `node tools/build_model_assets.mjs`.
+reference_assets/zips/
+app/static/models/cinema_theater_lounge_sofa/scene.bin
+app/static/models/cinema_theater_lounge_sofa/scene.gltf
+app/static/models/cinemamovie_theater_interior/cinema.glb
+tools/node_modules/

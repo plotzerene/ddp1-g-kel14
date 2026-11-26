@@ -253,28 +253,24 @@ html[data-theme="light"] .status-tayang-pill__dot {
   flex: none;
 }
 
-.meta-badge-rating,
-.detail__rating-pill {
+.meta-badge-rating {
   background: #2A2210;
   border-color: #FACC15;
   color: #FACC15;
 }
 
-.meta-badge-rating svg,
-.detail__rating-pill svg {
+.meta-badge-rating svg {
   color: #FBBF24;
   fill: #FBBF24;
 }
 
-html[data-theme="light"] .meta-badge-rating,
-html[data-theme="light"] .detail__rating-pill {
+html[data-theme="light"] .meta-badge-rating {
   background: #FEF8E7;
   border-color: #C59B27;
   color: #8A6A12;
 }
 
-html[data-theme="light"] .meta-badge-rating svg,
-html[data-theme="light"] .detail__rating-pill svg {
+html[data-theme="light"] .meta-badge-rating svg {
   color: #D97706;
   fill: #D97706;
 }
@@ -323,7 +319,6 @@ html[data-theme="light"] .meta-badge-muted {
   color: #334155;
 }
 
-.detail__rating-pill,
 .detail__concert-pill {
   display: inline-flex;
   align-items: center;
@@ -425,19 +420,6 @@ html[data-theme="light"] .synopsis-card__body {
   color: #334155;
 }
 
-/* Stepper 4 Langkah Halaman Detail Film (02A) */
-.detail-stepper .stepper__item.is-done .stepper__dot {
-  border-color: rgba(20, 184, 166, 0.45);
-  background: rgba(20, 184, 166, 0.16);
-  color: #2DD4BF;
-}
-
-html[data-theme="light"] .detail-stepper .stepper__item.is-done .stepper__dot {
-  border-color: rgba(0, 104, 117, 0.35);
-  background: rgba(0, 104, 117, 0.1);
-  color: #006875;
-}
-
 .trivia-card {
   display: grid;
   gap: 8px;
@@ -512,6 +494,8 @@ html[data-theme="light"] .produksi-section__heading {
   display: grid;
   gap: 4px;
   padding: 14px 16px;
+  min-height: 96px; /* kanvas 03A: kartu produksi 284x96 */
+  align-content: center;
   border-radius: 12px;
   background: #161F30;
   border: 1px solid #334155;
@@ -1280,8 +1264,7 @@ html[data-theme="light"] .schedule-selection-bar__value {
 }
 
 .detail__tab.is-active {
-  background: #2563EB;
-  color: #FFFFFF;
+  color: var(--fc-gate-key);
 }
 
 .concert-layout {
@@ -1413,8 +1396,8 @@ html[data-theme="light"] .schedule-selection-bar__value {
 }
 
 .cat-card__type.is-seated {
-  background: rgba(59, 130, 246, 0.14);
-  color: #3B82F6;
+  background: var(--fc-gate-fill);
+  color: var(--fc-gate-key);
 }
 
 .cat-card__warn {
@@ -1473,8 +1456,8 @@ html[data-theme="light"] .schedule-selection-bar__value {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: rgba(37, 99, 235, 0.14);
-  color: #3B82F6;
+  background: var(--fc-gate-fill);
+  color: var(--fc-gate-key);
   font-weight: 800;
   font-size: 0.85rem;
   display: grid;
@@ -1520,7 +1503,7 @@ html[data-theme="light"] .sidebar-card {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #3B82F6;
+  color: var(--fc-gate-key);
 }
 
 .sidebar-card__title {
@@ -1550,7 +1533,7 @@ html[data-theme="light"] .sidebar-card {
 .sidebar-checklist .i {
   width: 18px;
   height: 18px;
-  color: #3B82F6;
+  color: var(--fc-gate-key);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -1775,8 +1758,8 @@ html[data-theme="light"] .cat-card__type.is-standing {
 }
 
 html[data-theme="light"] .cat-card__type.is-seated {
-  background: rgba(37, 99, 235, 0.10);
-  color: #1D4ED8;
+  background: var(--fc-gate-fill);
+  color: #006875;
 }
 
 html[data-theme="light"] .cat-card__warn {
@@ -1785,5 +1768,574 @@ html[data-theme="light"] .cat-card__warn {
 }
 
 html[data-theme="light"] .rule-card__num {
-  color: #1D4ED8;
+  color: #006875;
+}
+
+/* Concert Hero Banner, Mini Cobe Globe, Fun Facts & Ticket Price Sidebar (Frame 04A/B) */
+.concert-hero-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 28px;
+  background: linear-gradient(125deg, var(--fc-surface-slate) 0%, #5B21B6 52%, #BE185D 100%);
+  color: #FFFFFF;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+}
+
+.concert-hero-banner__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 75% 30%, rgba(34, 211, 238, 0.35), transparent 45%),
+    radial-gradient(circle at 25% 80%, rgba(250, 204, 21, 0.25), transparent 50%);
+  pointer-events: none;
+}
+
+.concert-hero-banner__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .concert-hero-banner__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.concert-hero-banner__poster {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.concert-hero-banner__poster img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+
+.venue-chip-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #5EEAD4;
+}
+
+.concert-hero-banner__title {
+  margin: 10px 0 6px;
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+.concert-hero-banner__schedule,
+.concert-hero-banner__promoter {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+  color: rgba(248, 250, 252, 0.9);
+}
+
+.tour-globe-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tour-globe-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+@media (max-width: 780px) {
+  .tour-globe-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tour-globe-canvas-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--color-hairline-strong);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="dark"] .tour-globe-canvas-card {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.tour-globe-canvas-card canvas {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.tour-globe-nav-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.tour-globe-counter {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-muted-fg);
+}
+
+.tour-nav-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tour-route-list h3 {
+  margin: 0 0 10px;
+  font-size: 0.96rem;
+}
+
+.tour-stop-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.tour-stop-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tour-stop-item__meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tour-stop-item__city {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.tour-stop-item__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--color-muted-fg);
+}
+
+.tour-stop-item.is-active,
+.tour-stop-item.is-focused {
+  border-color: #14B8A6;
+  background: rgba(20, 184, 166, 0.1);
+}
+
+.tour-stop-item__status {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 9999px;
+}
+
+.tour-stop-item__status--done {
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--color-muted-fg);
+}
+
+.tour-stop-item__status--active {
+  background: rgba(20, 184, 166, 0.18);
+  color: #0D9488;
+}
+
+html[data-theme="dark"] .tour-stop-item__status--active {
+  color: #2DD4BF;
+}
+
+.tour-stop-item__status--upcoming {
+  background: rgba(245, 158, 11, 0.16);
+  color: #B85C00;
+}
+
+html[data-theme="dark"] .tour-stop-item__status--upcoming {
+  color: #FACC15;
+}
+
+.fun-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (min-width: 980px) {
+  .fun-facts-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 479px) {
+  .fun-facts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.fun-fact-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+  display: grid;
+  gap: 6px;
+}
+
+.fun-fact-card__title {
+  font-size: 0.92rem;
+  color: var(--color-foreground);
+}
+
+.fun-fact-card__detail {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-muted-fg);
+}
+
+.sidebar-price-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.sidebar-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+
+.sidebar-price-row:hover {
+  border-color: #14B8A6;
+  text-decoration: none;
+}
+
+.sidebar-price-row__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-price-row__val {
+  font-weight: 700;
+  color: var(--color-info);
+}
+
+/* ==========================================================================
+   V2 Detail Film (Frame 03A/B): kartu kaca Liquid Glass 1:1 dengan kanvas FigCraft
+   Kiri  : poster 2:3 + backlight ambient teal + tepi specular
+   Kanan : pill metadata, kartu Sinopsis & Trivia, grid 3 kolom produksi, chip pemeran
+   ========================================================================== */
+/* Kartu 1280 px di tengah (kanvas: kartu x=440..1720 pada bingkai 1440), radius 28 */
+html body .detail-movie {
+  max-width: 1376px;
+}
+
+html body .detail-movie .movie-body {
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 28px;
+  padding: 24px;
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: var(--radius-sheet);
+  background: var(--lg-fill, rgba(255, 255, 255, 0.65));
+  -webkit-backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* Poster: backlight ambient lembut di belakang, tepi specular 1px di atas gambar */
+html body .detail-movie .movie-poster-slot {
+  position: relative;
+  isolation: isolate;
+}
+
+.detail-movie .movie-poster-slot::before {
+  content: "";
+  position: absolute;
+  inset: 6% -8% -4%;
+  z-index: -1;
+  background: radial-gradient(62% 58% at 50% 55%, rgba(13, 148, 136, 0.25), rgba(13, 148, 136, 0) 72%);
+  filter: blur(26px);
+  pointer-events: none;
+}
+
+.detail-movie .movie-poster-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+html body .detail-movie .movie-poster-slot .detail__poster {
+  aspect-ratio: 2 / 3;       /* poster utuh (kepala & bawah tidak terpotong); lebar 320 -> tinggi 480 */
+  object-fit: cover;
+  object-position: center top;
+  border: 0;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px -10px rgba(15, 23, 42, 0.38);
+}
+
+.detail-movie .detail__age-badge {
+  z-index: 1;
+  border-radius: 9px;
+}
+
+/* Pill metadata (IMDb, durasi, usia, genre): kaca netral, radius chip 18 */
+html body .detail-movie .meta-badge {
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: 18px;
+  background: var(--lg-pill-fill, rgba(255, 255, 255, 0.75));
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+  color: var(--lg-text, var(--color-foreground));
+  white-space: nowrap;
+}
+
+html body .detail-movie .meta-badge-rating svg {
+  color: #FFB800;
+  fill: #FFB800;
+}
+
+html body .detail-movie .meta-badge-teal {
+  background: rgba(13, 148, 136, 0.14);
+  border-color: rgba(13, 148, 136, 0.38);
+  color: #006875;
+}
+
+html[data-theme="dark"] body .detail-movie .meta-badge-teal {
+  color: #2DD4BF;
+}
+
+/* Kartu Sinopsis, Trivia, spesifikasi produksi, bilah bawah: kaca r24/r20 */
+html body .detail-movie .synopsis-card,
+html body .detail-movie .spec-card,
+html body .detail-movie .movie-bottom-bar {
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  background: var(--lg-fill, rgba(255, 255, 255, 0.65));
+  -webkit-backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+}
+
+html body .detail-movie .synopsis-card,
+html body .detail-movie .trivia-card {
+  border-radius: 24px;
+  padding: 20px 22px;
+}
+
+html body .detail-movie .trivia-card {
+  border: 1px solid rgba(13, 148, 136, 0.34);
+  background: linear-gradient(180deg, rgba(13, 148, 136, 0.16), rgba(13, 148, 136, 0.07));
+  -webkit-backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html body .detail-movie .spec-card {
+  border-radius: 20px;
+}
+
+html body .detail-movie .movie-bottom-bar {
+  border-radius: 24px;
+}
+
+html body .detail-movie .detail__cast-chip {
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: 18px;
+  background: var(--lg-pill-fill, rgba(255, 255, 255, 0.75));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html body .detail-movie .status-tayang-pill {
+  border-radius: 18px;
+}
+
+@media (max-width: 860px) {
+  html body .detail-movie .movie-body {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .detail-movie .movie-poster-col {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .detail-movie .produksi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   Detail Konser: parity FigCraft Frame 04A/B (tools/inspect_frame.py tree 04A|04B)
+   Banner lebar penuh, tab teks dengan indikator 4px #006875, kolom 860 | 380 (jarak 40),
+   kartu Harga Tiket 380 r24 dengan baris 44px r14.
+   ========================================================================== */
+.detail:has(.concert-hero-banner) {
+  max-width: 1376px;
+}
+
+.concert-hero-banner {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  border-radius: 0;
+  padding: 40px 0 56px;
+}
+
+.concert-hero-banner__content {
+  width: min(1280px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.detail__tabs {
+  gap: 32px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--fc-border);
+  border-radius: 0;
+  background: none;
+  width: 100%;
+}
+
+.detail__tab {
+  padding: 16px 20px 18px;
+  border-radius: 0;
+  font-size: 15px;
+  box-shadow: inset 0 -4px 0 transparent;
+}
+
+.detail__tab.is-active {
+  font-weight: 600;
+  box-shadow: inset 0 -4px 0 var(--fc-teal);
+}
+
+.concert-layout {
+  grid-template-columns: minmax(0, 860px) minmax(300px, 380px);
+  gap: 40px;
+  justify-content: center;
+}
+
+.ticket-price-sidebar {
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.ticket-price-sidebar .sidebar-price-list {
+  max-height: none;
+  overflow: visible;
+  gap: 8px;
+}
+
+.ticket-price-sidebar .sidebar-card__title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.sidebar-price-row {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--fc-border);
+  border-radius: 14px;
+  background: var(--fc-card);
+}
+
+.sidebar-price-row__val {
+  color: var(--fc-price);
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .concert-layout { grid-template-columns: minmax(0, 1fr); }
+  .concert-hero-banner { padding: 28px 0 36px; }
+}
+
+/* CTA harga tiket nonaktif (kota non-Jakarta dipilih di rute tur) */
+.sidebar-card__cta[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+
+/* Overview Coldplay: jarak vertikal antar kontainer (Rute World Tour, Fun Facts, Ringkasan Pertunjukan) */
+.concert-main {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
 }

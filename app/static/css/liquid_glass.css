@@ -23,15 +23,27 @@
      4. bayangan luar lembut (kedalaman)
    ========================================================================== */
 
-/* Token: bawaan gelap (obsidian) */
-body,
+/* Token: tema gelap (spesifikasi Apple Liquid Glass: slate 65%, blur 24px, saturate 190%) */
+body {
+  --lg-fill: rgba(15, 23, 42, 0.65);
+  --lg-fill-hover: rgba(30, 41, 59, 0.74);
+  --lg-fill-strong: rgba(15, 23, 42, 0.82);
+  --lg-fill-active: rgba(0, 104, 117, 0.62);
+  --lg-filter: blur(24px) saturate(190%) contrast(90%);
+  --lg-border: rgba(255, 255, 255, 0.12);
+  --lg-spring: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  --lg-lift-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.48);
+  --lg-pill-fill: rgba(30, 41, 59, 0.75);
+}
+
+/* Token: obsidian (kanvas 3D selalu gelap) */
 .liquid-glass--obsidian,
 .viewport {
   --lg-fill: rgba(8, 9, 12, 0.52);
   --lg-fill-hover: rgba(22, 25, 32, 0.62);
   --lg-fill-strong: rgba(12, 14, 19, 0.80);
   --lg-fill-active: rgba(0, 104, 117, 0.55);
-  --lg-filter: blur(28px) saturate(160%);
+  --lg-filter: blur(24px) saturate(190%) contrast(90%);
   --lg-rim: linear-gradient(135deg,
       rgba(255, 255, 255, 0.40) 0%,
       rgba(255, 255, 255, 0.10) 38%,
@@ -47,20 +59,23 @@ body,
 
 /* Token: terang (milky), untuk tema terang eksplisit dan halaman yang bawaannya terang */
 html[data-theme="light"] body,
-html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
-  --lg-fill: rgba(255, 255, 255, 0.58);
-  --lg-fill-hover: rgba(255, 255, 255, 0.76);
-  --lg-fill-strong: rgba(255, 255, 255, 0.82);
+html:not([data-theme]) body:is([data-step="landing"], [data-step="detail"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
+  --lg-fill: rgba(255, 255, 255, 0.65);
+  --lg-fill-hover: rgba(255, 255, 255, 0.80);
+  --lg-fill-strong: rgba(255, 255, 255, 0.84);
   --lg-fill-active: rgba(0, 104, 117, 0.88);
-  --lg-filter: blur(24px) saturate(180%);
+  --lg-filter: blur(24px) saturate(190%) contrast(90%);
+  --lg-border: rgba(255, 255, 255, 0.45);
+  --lg-lift-shadow: 0 18px 40px -8px rgba(15, 23, 42, 0.16);
+  --lg-pill-fill: rgba(255, 255, 255, 0.75);
   --lg-rim: linear-gradient(135deg,
       rgba(255, 255, 255, 0.40) 0%,
       rgba(255, 255, 255, 0.85) 18%,
       rgba(255, 255, 255, 0.20) 55%,
       rgba(15, 23, 42, 0.14) 100%);
   --lg-rim-flat: inset 1px 1px 0 rgba(255, 255, 255, 0.95), inset -1px -1px 0 rgba(15, 23, 42, 0.10);
-  --lg-inset: inset 0 1px 1px rgba(255, 255, 255, 0.90), inset 0 -1px 1px rgba(15, 23, 42, 0.06);
-  --lg-shadow: 0 8px 32px rgba(15, 23, 42, 0.10), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --lg-inset: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 1px rgba(15, 23, 42, 0.06);
+  --lg-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
   --lg-text: #0F172A;
   --lg-text-muted: #475569;
   --lg-scrim: rgba(15, 23, 42, 0.32);
@@ -76,7 +91,7 @@ html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data
 
 /* Halaman terang: latar #F8FAFC memudar ke #FFFFFF */
 html[data-theme="light"] body,
-html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
+html:not([data-theme]) body:is([data-step="landing"], [data-step="detail"], [data-step="promo"], [data-step="cart"], [data-step="checkout"], [data-step="profile"]) {
   background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 640px) no-repeat, #FFFFFF;
 }
 
@@ -162,24 +177,23 @@ html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data
   text-decoration: none;
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 180ms ease,
-    box-shadow 180ms ease;
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.liquid-glass-pill:hover {
+/* Hover: terangkat 2px + kilau specular atas-kiri yang menguat (tanpa filter kusam). */
+.liquid-glass-pill:hover,
+.liquid-glass--interactive:hover {
+  transform: translateY(-2px);
   background: var(--lg-fill-hover);
-  filter: brightness(1.06);
-  transform: translateY(-1px);
+  box-shadow: var(--lg-inset), inset 1px 1px 0 rgba(255, 255, 255, 0.55), var(--lg-lift-shadow);
   text-decoration: none;
   color: var(--lg-text);
 }
 
-.liquid-glass-pill:active {
-  transform: scale(0.97);
-  filter: brightness(0.98);
+.liquid-glass-pill:active,
+.liquid-glass--interactive:active {
+  transform: scale(0.985);
+  transition-duration: 0.12s;
 }
 
 .liquid-glass-pill:focus-visible,
@@ -197,15 +211,21 @@ html:not([data-theme]) body:is([data-step="landing"], [data-step="promo"], [data
   color: #FFFFFF;
 }
 
-/* Aksi beli: kaca bertinta kuning aksen titiket */
+/* Aksi beli (Frame 03/04 "Pilih Jadwal & Kursi"): kaca teal bergradien, teks putih (bukan kuning). */
 .liquid-glass-pill--accent,
 .liquid-glass-pill--accent:hover {
-  background: rgba(250, 204, 21, 0.92);
-  color: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background: linear-gradient(180deg, #14919B 0%, #0F7A83 52%, #006875 100%);
+  color: #FFFFFF;
 }
 
 .liquid-glass-pill--accent:hover {
-  background: rgba(234, 179, 8, 0.95);
+  background: linear-gradient(180deg, #0891B2 0%, #006875 100%);
+}
+
+html[data-theme="dark"] .liquid-glass-pill--accent,
+html.dark .liquid-glass-pill--accent {
+  background: linear-gradient(180deg, #14B8A6 0%, #0891B2 52%, #0F7A83 100%);
 }
 
 /* Tombol aksi utama Liquid Glass + teks kontras AAA (#0F172A) di semua state & hover */
@@ -214,27 +234,55 @@ html .btn.liquid-glass-btn-primary,
 html[data-theme="light"] .btn.liquid-glass-btn-primary {
   position: relative;
   isolation: isolate;
-  border: 1px solid rgba(202, 138, 4, 0.45);
-  background: linear-gradient(180deg, rgba(254, 240, 138, 0.96) 0%, rgba(250, 204, 21, 0.94) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #14919B 0%, #0F7A83 52%, #006875 100%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
-  color: #0F172A;
-  font-weight: 700;
+  color: #FFFFFF;
+  font-weight: 600;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    0 6px 18px rgba(234, 179, 8, 0.22);
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 1px rgba(0, 52, 60, 0.35),
+    0 8px 18px rgba(0, 104, 117, 0.24);
+}
+
+html[data-theme="dark"] .liquid-glass-btn-primary,
+html[data-theme="dark"] .btn.liquid-glass-btn-primary,
+html.dark .btn.liquid-glass-btn-primary {
+  background: linear-gradient(180deg, #14B8A6 0%, #0891B2 52%, #0F7A83 100%);
+  color: #FFFFFF;
 }
 
 .liquid-glass-btn-primary:hover:not([aria-disabled="true"]),
 html .btn.liquid-glass-btn-primary:hover:not([aria-disabled="true"]),
 html[data-theme="light"] .btn.liquid-glass-btn-primary:hover:not([aria-disabled="true"]) {
-  background: linear-gradient(180deg, rgba(254, 249, 195, 0.98) 0%, rgba(250, 204, 21, 0.98) 100%);
-  border-color: rgba(202, 138, 4, 0.75);
-  color: #0F172A;
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #0891B2 0%, #006875 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #FFFFFF;
   filter: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 24px rgba(234, 179, 8, 0.34);
+    inset 0 1px 1px rgba(255, 255, 255, 0.65),
+    0 12px 28px rgba(0, 104, 117, 0.36);
+}
+
+/* Pill sekunder Liquid Glass (Frame 13A/B: Lihat Semua Menu & Merchandise) */
+.liquid-glass-pill--secondary,
+html .btn.liquid-glass-pill--secondary {
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  border: 1px solid rgba(15, 122, 131, 0.40);
+  background: rgba(15, 122, 131, 0.12);
+  color: #0F7A83;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+html[data-theme="dark"] .liquid-glass-pill--secondary,
+html.dark .liquid-glass-pill--secondary {
+  color: #2DD4BF;
 }
 
 .liquid-glass-badge {
@@ -255,16 +303,18 @@ html[data-theme="light"] .btn.liquid-glass-btn-primary:hover:not([aria-disabled=
   padding: 0;
   border-radius: 9999px;
   cursor: pointer;
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 180ms ease, background-color 240ms ease;
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .liquid-glass-switch:hover {
+  transform: translateY(-2px);
   background: var(--lg-fill-hover);
-  filter: brightness(1.06);
+  box-shadow: var(--lg-inset), var(--lg-lift-shadow);
 }
 
 .liquid-glass-switch:active {
-  transform: scale(0.94);
+  transform: scale(0.985);
+  transition-duration: 0.12s;
 }
 
 .liquid-glass-switch svg {
@@ -457,5 +507,292 @@ dialog.liquid-glass-modal[open],
   html.is-theme-switching body,
   html.is-theme-switching body * {
     transition: none !important;
+  }
+}
+
+.liquid-glass-pill--secondary { white-space: nowrap; }
+
+/* 6. V2: pil/badge kaca semi-transparan + aksi utama teal
+   .lg-chip = badge teks bersih (mis. "Dikirim ke Rumah", batas waktu bayar)
+   ========================================================================== */
+.lg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--lg-border);
+  background: var(--lg-pill-fill);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 6px 16px -4px rgba(0, 0, 0, 0.08);
+  color: var(--lg-text);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.liquid-glass-btn-primary:active:not([aria-disabled="true"]),
+html .btn.liquid-glass-btn-primary:active:not([aria-disabled="true"]) {
+  transform: scale(0.985);
+  transition-duration: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass--interactive,
+  .lg-chip {
+    transition: none;
+  }
+
+  .liquid-glass--interactive:hover,
+  .liquid-glass--interactive:active,
+  .liquid-glass-btn-primary:active {
+    transform: none;
+  }
+}
+
+
+/* ==========================================================================
+   Apple Liquid Tactile Tap: animasi sentuh terpadu untuk semua tombol
+   (button, .btn, .pill-btn, [role="button"]). Elemen SVG (blok peta, kursi) dikecualikan.
+
+   Memakai properti `translate` dan `scale`, bukan `transform`, supaya tidak menimpa
+   transform bawaan komponen (mis. tombol yang dipusatkan dengan translate(-50%)).
+   Lepas tombol membal dengan kurva pegas (0.34, 1.56, 0.64, 1).
+   ========================================================================== */
+:root {
+  --tap-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --tap-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:is(button, .btn, .pill-btn, [role="button"]):not(svg *) {
+  transition:
+    transform 0.28s var(--tap-bounce),
+    translate 0.28s var(--tap-bounce),
+    scale 0.28s var(--tap-bounce),
+    opacity 0.2s ease,
+    box-shadow 0.24s var(--tap-spring),
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+  will-change: transform, translate, scale;
+}
+
+:is(button, .btn, .pill-btn, [role="button"]):not(svg *):not(:disabled):not([aria-disabled="true"]):hover {
+  translate: 0 -1.5px;
+}
+
+/* Bayangan hover hanya untuk tombol bermedia (nol spesifisitas: bayangan komponen tetap menang) */
+:where(.btn, .pill-btn, .liquid-glass-pill):not(:disabled):not([aria-disabled="true"]):not(:active):hover {
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+:is(button, .btn, .pill-btn, [role="button"]):not(svg *):not(:disabled):not([aria-disabled="true"]):active {
+  translate: 0 0;
+  scale: 0.965;
+  opacity: 0.92;
+  transition-duration: 0.08s;
+}
+
+/* Kilau specular saat ditekan: tombol kaca utama */
+:where(.btn-liquid, .liquid-glass-btn-primary, .btn--teal-primary, .liquid-glass-pill--accent, .pay-submit, .theater-cta__btn--primary) {
+  position: relative;
+}
+
+:is(.btn-liquid, .liquid-glass-btn-primary, .btn--teal-primary, .liquid-glass-pill--accent, .pay-submit, .theater-cta__btn--primary)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+:is(.btn-liquid, .liquid-glass-btn-primary, .btn--teal-primary, .liquid-glass-pill--accent, .pay-submit, .theater-cta__btn--primary):active::after {
+  opacity: 1;
+  transition: opacity 0.05s ease;
+}
+
+/* Aksesibilitas: tanpa gerak skala/geser, hanya transisi warna dan opasitas halus */
+@media (prefers-reduced-motion: reduce) {
+  :is(button, .btn, .pill-btn, [role="button"]):not(svg *) {
+    transition:
+      opacity 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
+    will-change: auto;
+  }
+
+  :is(button, .btn, .pill-btn, [role="button"]):not(svg *):not(:disabled):not([aria-disabled="true"]):hover,
+  :is(button, .btn, .pill-btn, [role="button"]):not(svg *):not(:disabled):not([aria-disabled="true"]):active {
+    translate: none;
+    scale: none;
+  }
+}
+
+
+/* ==========================================================================
+   Satu gerak saja: komponen kaca yang sudah memiliki `transform: scale(0.985)` /
+   `transform: translateY(-2px)` (dikunci tes) tidak boleh ditambah properti mandiri
+   `scale`/`translate` dari sistem tap global, jadi hover & tekan tidak bertumpuk.
+   Spesifisitas sengaja di atas aturan global (html body + rantai :not yang sama).
+   ========================================================================== */
+html body :is(.liquid-glass-pill, .liquid-glass--interactive, .liquid-glass-switch, .liquid-glass-btn-primary):not(svg *):not(:disabled):not([aria-disabled="true"]):hover,
+html body :is(.liquid-glass-pill, .liquid-glass--interactive, .liquid-glass-switch, .liquid-glass-btn-primary):not(svg *):not(:disabled):not([aria-disabled="true"]):active {
+  scale: none;
+  translate: none;
+}
+
+
+/* HUD di dalam viewport 3D (chip, skor, tombol layar penuh): token obsidian di atas hanya untuk
+   tema gelap; tema terang memakai kaca putih 75% dengan teks navy. */
+html[data-theme="light"] .viewport {
+  --lg-fill: rgba(255, 255, 255, 0.75);
+  --lg-fill-hover: rgba(255, 255, 255, 0.88);
+  --lg-fill-strong: rgba(255, 255, 255, 0.9);
+  --lg-fill-active: rgba(0, 104, 117, 0.85);
+  --lg-border: rgba(255, 255, 255, 0.6);
+  --lg-rim: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.35) 50%, rgba(15, 23, 42, 0.12) 100%);
+  --lg-rim-flat: inset 1px 1px 0 rgba(255, 255, 255, 0.9), inset -1px -1px 0 rgba(15, 23, 42, 0.1);
+  --lg-inset: inset 0 1px 1px rgba(255, 255, 255, 0.6), inset 0 -1px 1px rgba(15, 23, 42, 0.06);
+  --lg-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  --lg-text: #0F172A;
+  --lg-text-muted: #64748B;
+}
+
+
+/* ==========================================================================
+   Bar rekomendasi selebar halaman (bioskop & stadion): kriteria di kiri, hasil + aksi di kanan.
+   Token proyek: --lg-fill / --lg-border / blur 24px (setara --glass-bg / --glass-border di spesifikasi).
+   ========================================================================== */
+.liquid-glass.reco-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-top: 24px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--lg-border);
+  border-radius: 20px;
+}
+
+.reco-bar__presets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lg-text) 8%, transparent);
+}
+
+.reco-bar__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lg-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.reco-bar__pill:hover { color: var(--lg-text); }
+
+.reco-bar__pill[aria-checked="true"] {
+  background: var(--lg-fill-active);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px -6px rgba(0, 104, 117, 0.7);
+}
+
+.reco-bar__result {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.reco-bar__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: right;
+}
+
+.reco-bar__seat {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lg-text);
+}
+
+.reco-bar__score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lg-text-muted);
+}
+
+/* Warna status sama dengan Seat Insight: terang lebih pekat, gelap lebih cerah agar kontras di atas kaca. */
+.reco-bar__score[data-tier="good"] { color: #4ADE80; }
+.reco-bar__score[data-tier="mid"] { color: #FACC15; }
+.reco-bar__score[data-tier="low"] { color: #F87171; }
+html[data-theme="light"] .reco-bar__score[data-tier="good"] { color: #15803D; }
+html[data-theme="light"] .reco-bar__score[data-tier="mid"] { color: #A16207; }
+html[data-theme="light"] .reco-bar__score[data-tier="low"] { color: #B91C1C; }
+
+.reco-bar__cta {
+  min-height: 44px;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+@media (max-width: 899px) {
+  .reco-bar__result { width: 100%; justify-content: space-between; }
+  .reco-bar__info { text-align: left; }
+}
+
+@media (max-width: 559px) {
+  .liquid-glass.reco-bar { padding: 16px; }
+  .reco-bar__presets { width: 100%; border-radius: 20px; }
+  .reco-bar__pill { flex: 1 1 100%; justify-content: center; }
+  .reco-bar__result { flex-direction: column; align-items: stretch; gap: 12px; }
+  .reco-bar__cta { width: 100%; }
+}
+
+/* ==========================================================================
+   TikBuddy AI Concierge Placement Overrides (Visualizer memakai .ai-widget)
+   ========================================================================== */
+.ai-widget.tikbuddy-root {
+  z-index: 90;
+}
+
+body.is-theater-open .ai-widget.tikbuddy-root {
+  display: none;
+}
+
+@media (max-width: 768px), (max-height: 480px) {
+  .ai-widget.tikbuddy-root {
+    right: 14px;
+    bottom: 76px;
+  }
+}
+
+@media (max-height: 480px) {
+  .ai-widget.tikbuddy-root {
+    bottom: 62px;
+  }
+  .ai-widget.tikbuddy-root .ai-panel {
+    max-height: calc(100dvh - 120px);
   }
 }

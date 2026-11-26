@@ -372,6 +372,7 @@ class OrderStore:
                     bucket[idx] = copy
                     return dict(copy)
             bucket.insert(0, copy)
+            del bucket[50:]  # riwayat per pemilik dibatasi agar RAM tidak tumbuh tanpa batas
             return dict(copy)
 
     def list_for(self, owner: str) -> list[dict[str, Any]]:
@@ -409,3 +410,338 @@ class OrderStore:
 
 def get_order_store() -> OrderStore:
     return current_app.config.setdefault("ORDERS_STORE", OrderStore())
+
+
+# =========================================================================== #
+# 5. Add-on Venue (Ambil di Tempat), Merch Kirim ke Rumah, Buku Alamat & Tamu
+# =========================================================================== #
+ADDON_SESSION_KEY = "tiketpov_addons"
+MERCH_SESSION_KEY = "tiketpov_merch_delivery"
+ADDRESS_SESSION_KEY = "tiketpov_addresses"
+ADDRESS_DEFAULT_SESSION_KEY = "tiketpov_default_addr"
+GUEST_SESSION_KEY = "tiketpov_guest"
+MERCH_SHIPPING_FEE = 18_000
+
+VENUE_ADDONS: tuple[dict[str, Any], ...] = (
+    {
+        "item_id": "combo-popcorn",
+        "name": "Combo Popcorn + Minuman",
+        "category": "fnb",
+        "category_label": "Makanan",
+        "price": 45_000,
+        "desc": "1 Popcorn Caramel Jumbo + 1 Minuman Dingin ukuran Large",
+        "placeholder": "Contoh: Less sugar, es sedikit, pisah saus",
+        "fulfillment": "Ambil di Venue",
+        "tone": "amber",
+    },
+    {
+        "item_id": "iced-lemon-tea",
+        "name": "Iced Lemon Tea",
+        "category": "minuman",
+        "category_label": "Minuman",
+        "price": 22_000,
+        "desc": "Teh lemon segar 500 ml dalam cup eksklusif venue",
+        "placeholder": "Contoh: Less sugar, es sedikit, pisah saus",
+        "fulfillment": "Ambil di Venue",
+        "tone": "teal",
+    },
+    {
+        "item_id": "xxi-tumbler-addon",
+        "name": "XXI Tumbler Official",
+        "category": "merch",
+        "category_label": "Merchandise Resmi",
+        "price": 85_000,
+        "desc": "Tumbler edisi spesial ambil langsung di booth lounge",
+        "placeholder": "Contoh: Ukuran L, kemas terpisah",
+        "fulfillment": "Ambil di Venue",
+        "tone": "indigo",
+    },
+    {
+        "item_id": "tour-tshirt-addon",
+        "name": "Official Tour T-Shirt",
+        "category": "merch",
+        "category_label": "Merchandise Resmi",
+        "price": 250_000,
+        "desc": "Kaos resmi Coldplay World Tour (ambil di Gate Booth SUGBK)",
+        "placeholder": "Contoh: Ukuran L, kemas terpisah",
+        "fulfillment": "Ambil di Venue",
+        "tone": "purple",
+    },
+    {
+        "item_id": "tour-totebag-addon",
+        "name": "Official Tour Tote Bag",
+        "category": "merch",
+        "category_label": "Merchandise Resmi",
+        "price": 150_000,
+        "desc": "Tote bag kanvas resmi tur dunia (ambil di Gate Booth)",
+        "placeholder": "Contoh: Ukuran L, kemas terpisah",
+        "fulfillment": "Ambil di Venue",
+        "tone": "cyan",
+    },
+)
+
+VENUE_ADDON_MAP: dict[str, dict[str, Any]] = {a["item_id"]: a for a in VENUE_ADDONS}
+
+OFFICIAL_MERCH_CATALOG: tuple[dict[str, Any], ...] = (
+    {
+        "item_id": "xxi-tumbler-750",
+        "name": "XXI Limited Stainless Tumbler 750ml",
+        "category": "XXI Exclusive",
+        "price": 185_000,
+        "desc": "Botol minum stainless double-wall resmi Cinema XXI.",
+        "tone": "blue",
+        "fulfillment": "Dikirim ke Rumah",
+    },
+    {
+        "item_id": "coldplay-official-tee",
+        "name": "Coldplay Music of the Spheres Official Tee",
+        "category": "Coldplay Tour Merch",
+        "price": 350_000,
+        "desc": "Kaos katun combed 24s resmi edisi tur Asia Jakarta.",
+        "tone": "purple",
+        "fulfillment": "Dikirim ke Rumah",
+    },
+    {
+        "item_id": "xxi-popcorn-tin",
+        "name": "XXI Signature Popcorn Bucket Tin Box",
+        "category": "XXI Exclusive",
+        "price": 120_000,
+        "desc": "Kaleng kolektor edisi terbatas dengan tutup kedap udara.",
+        "tone": "amber",
+        "fulfillment": "Dikirim ke Rumah",
+    },
+    {
+        "item_id": "coldplay-eco-totebag",
+        "name": "Coldplay Tour Eco Canvas Tote Bag",
+        "category": "Aksesoris",
+        "price": 150_000,
+        "desc": "Tas kanvas ramah lingkungan berbahan katun daur ulang.",
+        "tone": "teal",
+        "fulfillment": "Dikirim ke Rumah",
+    },
+)
+
+OFFICIAL_MERCH_MAP: dict[str, dict[str, Any]] = {m["item_id"]: m for m in OFFICIAL_MERCH_CATALOG}
+
+DEFAULT_ADDRESSES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "addr-depok",
+        "tag": "Kos",
+        "label": "Kosan Kukusan Depok (Utama)",
+        "recipient": "Evans Kano",
+        "phone": "+62 812 3456 7890",
+        "street": "Jalan Raya Kukusan No. 29, Beji, Depok",
+        "city": "Kota Depok, Jawa Barat - 16424",
+        "coords": "-6.3689, 106.8317",
+    },
+    {
+        "id": "addr-palopo",
+        "tag": "Rumah",
+        "label": "Rumah Palopo",
+        "recipient": "Evans Kano",
+        "phone": "+62 812 3456 7890",
+        "street": "Jl. Sultan Hasanuddin No. 12, Palopo",
+        "city": "Kota Palopo, Sulawesi Selatan - 91921",
+        "coords": "-2.9945, 120.1947",
+    },
+)
+
+
+class AddonCart:
+    """Keranjang Add-on F&B dan Merch yang diambil di venue (terikat timer kursi)."""
+
+    def __init__(self, store: MutableMapping[str, Any] | None = None) -> None:
+        self._store = session if store is None else store
+
+    def _raw(self) -> dict[str, dict[str, Any]]:
+        raw = self._store.get(ADDON_SESSION_KEY, {})
+        return raw if isinstance(raw, dict) else {}
+
+    def _save(self, mapping: dict[str, dict[str, Any]]) -> None:
+        self._store[ADDON_SESSION_KEY] = mapping
+        if hasattr(self._store, "modified"):
+            self._store.modified = True  # type: ignore[attr-defined]
+
+    def items(self) -> list[dict[str, Any]]:
+        raw = self._raw()
+        result: list[dict[str, Any]] = []
+        for meta in VENUE_ADDONS:
+            entry = raw.get(meta["item_id"])
+            if not isinstance(entry, dict):
+                continue
+            qty = max(0, int(entry.get("qty", 0)))
+            if qty <= 0:
+                continue
+            note = str(entry.get("note", "")).strip()[:120]
+            result.append({
+                **meta,
+                "qty": qty,
+                "note": note,
+                "line_total": meta["price"] * qty,
+            })
+        return result
+
+    def set_item(self, item_id: str, qty: int, note: str | None = None) -> bool:
+        if item_id not in VENUE_ADDON_MAP:
+            return False
+        raw = dict(self._raw())
+        clean_qty = max(0, min(20, int(qty)))
+        if clean_qty == 0:
+            raw.pop(item_id, None)
+        else:
+            prev = raw.get(item_id) if isinstance(raw.get(item_id), dict) else {}
+            clean_note = str(prev.get("note", "") if note is None else note).strip()[:120]
+            raw[item_id] = {"qty": clean_qty, "note": clean_note}
+        self._save(raw)
+        return True
+
+    def clear(self) -> None:
+        self._save({})
+
+    @property
+    def count(self) -> int:
+        return sum(item["qty"] for item in self.items())
+
+    @property
+    def subtotal(self) -> int:
+        return sum(item["line_total"] for item in self.items())
+
+
+class MerchCart:
+    """Keranjang Merchandise Fisik (Dikirim ke Rumah, bebas countdown kursi)."""
+
+    def __init__(self, store: MutableMapping[str, Any] | None = None) -> None:
+        self._store = session if store is None else store
+
+    def _raw(self) -> dict[str, int]:
+        raw = self._store.get(MERCH_SESSION_KEY, {})
+        return raw if isinstance(raw, dict) else {}
+
+    def _save(self, mapping: dict[str, int]) -> None:
+        self._store[MERCH_SESSION_KEY] = mapping
+        if hasattr(self._store, "modified"):
+            self._store.modified = True  # type: ignore[attr-defined]
+
+    def items(self) -> list[dict[str, Any]]:
+        raw = self._raw()
+        out: list[dict[str, Any]] = []
+        for meta in OFFICIAL_MERCH_CATALOG:
+            qty = max(0, int(raw.get(meta["item_id"], 0)))
+            if qty <= 0:
+                continue
+            out.append({**meta, "qty": qty, "line_total": meta["price"] * qty})
+        return out
+
+    def add(self, item_id: str, delta: int = 1) -> bool:
+        if item_id not in OFFICIAL_MERCH_MAP:
+            return False
+        raw = dict(self._raw())
+        next_qty = max(0, min(20, int(raw.get(item_id, 0)) + int(delta)))
+        if next_qty == 0:
+            raw.pop(item_id, None)
+        else:
+            raw[item_id] = next_qty
+        self._save(raw)
+        return True
+
+    def set_qty(self, item_id: str, qty: int) -> bool:
+        if item_id not in OFFICIAL_MERCH_MAP:
+            return False
+        raw = dict(self._raw())
+        clean_qty = max(0, min(20, int(qty)))
+        if clean_qty == 0:
+            raw.pop(item_id, None)
+        else:
+            raw[item_id] = clean_qty
+        self._save(raw)
+        return True
+
+    def clear(self) -> None:
+        self._save({})
+
+    @property
+    def count(self) -> int:
+        return sum(item["qty"] for item in self.items())
+
+    @property
+    def subtotal(self) -> int:
+        return sum(item["line_total"] for item in self.items())
+
+    @property
+    def shipping_fee(self) -> int:
+        return MERCH_SHIPPING_FEE if self.count > 0 else 0
+
+
+class AddressBook:
+    """Buku alamat pengiriman fisik untuk pesanan merchandise."""
+
+    def __init__(self, store: MutableMapping[str, Any] | None = None) -> None:
+        self._store = session if store is None else store
+
+    def list(self) -> list[dict[str, Any]]:
+        custom = self._store.get(ADDRESS_SESSION_KEY, [])
+        custom_list = [dict(a) for a in custom if isinstance(a, dict)] if isinstance(custom, list) else []
+        combined = [dict(a) for a in DEFAULT_ADDRESSES] + custom_list
+        default_id = str(self._store.get(ADDRESS_DEFAULT_SESSION_KEY) or DEFAULT_ADDRESSES[0]["id"])
+        has_match = any(a["id"] == default_id for a in combined)
+        if not has_match and combined:
+            default_id = combined[0]["id"]
+        for addr in combined:
+            addr["is_default"] = addr["id"] == default_id
+        return combined
+
+    def active(self) -> dict[str, Any]:
+        all_addrs = self.list()
+        return next((a for a in all_addrs if a.get("is_default")), all_addrs[0])
+
+    def set_default(self, addr_id: str) -> bool:
+        if not any(a["id"] == addr_id for a in self.list()):
+            return False
+        self._store[ADDRESS_DEFAULT_SESSION_KEY] = addr_id
+        if hasattr(self._store, "modified"):
+            self._store.modified = True  # type: ignore[attr-defined]
+        return True
+
+    def add(
+        self,
+        *,
+        tag: str,
+        label: str,
+        recipient: str,
+        phone: str,
+        street: str,
+        city: str,
+        make_default: bool = True,
+    ) -> dict[str, Any]:
+        custom = self._store.get(ADDRESS_SESSION_KEY, [])
+        custom_list = [dict(a) for a in custom if isinstance(a, dict)] if isinstance(custom, list) else []
+        entry = {
+            "id": f"addr-{secrets.token_hex(3)}",
+            "tag": (tag or "Rumah").strip()[:20],
+            "label": (label or f"{tag or 'Alamat'} Baru").strip()[:50],
+            "recipient": (recipient or "Penerima").strip()[:60],
+            "phone": (phone or "+62 812 3456 7890").strip()[:30],
+            "street": street.strip()[:160],
+            "city": city.strip()[:80],
+            "coords": "-6.3689, 106.8317",
+        }
+        custom_list.append(entry)
+        # Keep cookie size bounded
+        self._store[ADDRESS_SESSION_KEY] = custom_list[-4:]
+        if make_default:
+            self._store[ADDRESS_DEFAULT_SESSION_KEY] = entry["id"]
+        if hasattr(self._store, "modified"):
+            self._store.modified = True  # type: ignore[attr-defined]
+        return entry
+
+
+def is_guest_checkout() -> bool:
+    return bool(session.get(GUEST_SESSION_KEY))
+
+
+def set_guest_checkout(enabled: bool) -> None:
+    if enabled:
+        session[GUEST_SESSION_KEY] = True
+    else:
+        session.pop(GUEST_SESSION_KEY, None)
+    session.modified = True

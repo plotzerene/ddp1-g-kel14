@@ -21,6 +21,7 @@ huruf terakhir paling dekat layar. Nomor kursi 1 ada di sisi kiri penonton.
 from __future__ import annotations
 
 import hashlib
+import math
 import random
 import string
 from dataclasses import dataclass
@@ -207,8 +208,9 @@ class ReclinerSeat(CinemaSeat):
         return self.RECLINE_DEG
 
     def frame_dict(self) -> dict:
+        # Sandaran kaki dilipat rata (retracted) agar tidak menghalangi kepala penonton di depan.
         return {**super().frame_dict(),
-                "footrest": {"raised": True, "length_m": 0.62, "top_y": 0.50}}
+                "footrest": {"raised": False, "length_m": 0.62, "top_y": 0.12}}
 
 
 class MotionSeat(CinemaSeat):
@@ -239,6 +241,8 @@ class CinemaStudio(Venue):
     tagline_text: ClassVar[str]
     seat_class: ClassVar[type[CinemaSeat]] = CinemaSeat
     PHOTOS: ClassVar[tuple[tuple[str, str], ...]] = ()
+    #: Menatap layar lebar dari kursi: FOV vertikal 68° (rentang realistis 65–70°), bukan 55° bawaan.
+    LENS_BASE_FOV_DEG: ClassVar[float | None] = 68.0
 
     def __init__(self) -> None:
         spec = self.SPEC
@@ -429,6 +433,7 @@ class CinemaStudio(Venue):
         return ScoringProfile(
             kind="cinema", weights=CINEMA_WEIGHTS, ideal_h_fov_deg=spec.ideal_h_fov_deg,
             fov_sigma_low=spec.fov_sigma[0], fov_sigma_high=spec.fov_sigma[1],
+            ideal_depth_m=(spec.screen_width_m / 2.0) / math.tan(math.radians(spec.ideal_h_fov_deg / 2.0)),
             standard_label=spec.standard_label, comfort_spl_db=(78.0, 88.0),
         )
 
@@ -455,6 +460,7 @@ class CinemaStudio(Venue):
                 "rows": spec.rows, "seats_per_row": spec.seats_per_row,
                 "seat_pitch": spec.seat_pitch_m, "row_depth": spec.row_depth_m,
                 "row_rise": spec.row_rise_m, "first_row_distance": spec.first_row_distance_m,
+                "aisle_after": list(spec.aisle_after), "aisle_width": spec.aisle_width_m,
                 "standard_label": spec.standard_label, "ideal_h_fov_deg": spec.ideal_h_fov_deg,
             },
             "screen": self._screen.surface.to_dict(),
@@ -513,18 +519,19 @@ class RegularStudio(CinemaStudio):
     )
 
     def interior_theme(self) -> dict:
-        return {"wall": "#3a0d12", "wall_accent": "#5a141b", "ceiling": "#0c0a0d", "carpet": "#231419",
-                "seat": "#c0202a", "seat_dark": "#7d1118", "armrest": "#141416",
+        # Palet bioskop modern: panel akustik arang, pilar kayu walnut gelap, plafon hitam, karpet abu-abu gelap.
+        return {"wall": "#161B26", "wall_accent": "#0D111A", "ceiling": "#08090C", "carpet": "#0E1118",
+                "seat": "#6B1124", "seat_dark": "#430a16", "armrest": "#18181B",
                 "step_light": "#ffb347", "sconce": "#ff9d5c"}
 
 
 class PremiereStudio(CinemaStudio):
     display_name = "The Premiere"
-    tagline_text = "5 baris × 4 pasang recliner kulit, legroom 1.8 m"
+    tagline_text = "5 baris × 4 pasang recliner kulit, legroom 1.9 m"
     seat_class = ReclinerSeat
     SPEC = StudioSpec(
         studio_type="premiere", rows=5, seats_per_row=8, seat_pitch_m=0.92,
-        row_depth_m=1.80, row_rise_m=0.45, first_row_distance_m=6.0,
+        row_depth_m=1.90, row_rise_m=0.45, first_row_distance_m=6.0,
         screen_width_m=10.0, screen_height_m=4.2, screen_bottom_m=1.5,
         aisle_after=(4,), aisle_width_m=1.3, price_key="premiere",
         ideal_h_fov_deg=45.0, fov_sigma=(12.0, 20.0), standard_label="THX ≥ 36° (ideal ±45°)",
@@ -559,7 +566,7 @@ class PremiereStudio(CinemaStudio):
         return tables
 
     def interior_theme(self) -> dict:
-        return {"wall": "#3b1d14", "wall_accent": "#6b3a22", "ceiling": "#0d0a09", "carpet": "#2a1a12",
+        return {"wall": "#1C1614", "wall_accent": "#29211D", "ceiling": "#08090C", "carpet": "#0E1118",
                 "seat": "#5e1f1c", "seat_dark": "#3a1210", "headrest": "#c8aa7a", "armrest": "#2a100e",
                 "step_light": "#ffc46b", "sconce": "#ffb760", "table": "#20120c", "lamp": "#ffcf8a"}
 
@@ -590,8 +597,8 @@ class IMAXStudio(CinemaStudio):
                                   spec.screen_bottom_m, self.SCREEN_RADIUS_M)
 
     def interior_theme(self) -> dict:
-        return {"wall": "#0b1022", "wall_accent": "#16224a", "ceiling": "#06070d", "carpet": "#2a1c14",
-                "seat": "#c8202c", "seat_dark": "#84131b", "armrest": "#101014",
+        return {"wall": "#111622", "wall_accent": "#0D111A", "ceiling": "#08090C", "carpet": "#0E1118",
+                "seat": "#6B1124", "seat_dark": "#430a16", "armrest": "#18181B",
                 "step_light": "#4d8dff", "sconce": "#3d7bff"}
 
     def special_features(self) -> dict:
@@ -633,9 +640,9 @@ class FourDXStudio(CinemaStudio):
                     seat.motion_pivot = pivot      # type: ignore[attr-defined]
 
     def interior_theme(self) -> dict:
-        return {"wall": "#111116", "wall_accent": "#1d1d26", "ceiling": "#050507", "carpet": "#15151a",
-                "seat": "#1c1c22", "seat_dark": "#0e0e12", "seat_piping": "#d0202a", "armrest": "#0b0b0e",
-                "step_light": "#ff3b4a", "sconce": "#d0202a", "base": "#2a2a33"}
+        return {"wall": "#161B26", "wall_accent": "#0D111A", "ceiling": "#08090C", "carpet": "#0E1118",
+                "seat": "#2b2d31", "seat_dark": "#16171a", "seat_piping": "#4a4d54", "armrest": "#111214",
+                "step_light": "#ffd9a0", "sconce": "#ffd9a0", "base": "#3a3c42"}
 
     def special_features(self) -> dict:
         pivots = {}

@@ -15,8 +15,8 @@
     <span class="cart-empty-card__icon" aria-hidden="true">
       <svg class="icon icon--lg" aria-hidden="true"><use href="#i-user"/></svg>
     </span>
-    <h1 id="profile-guest-title">Masuk ke Akun Member</h1>
-    <p>Masuk atau daftar terlebih dahulu untuk melihat daftar pesanan, melanjutkan pembayaran, dan membuka e-tiket Anda.</p>
+    <h1 id="profile-guest-title">Masuk ke Akun</h1>
+    <p>Masuk atau daftar terlebih dahulu untuk melihat daftar pesanan, buku alamat pengiriman, dan membuka e-tiket Anda.</p>
     <div class="eticket-actions">
       <button type="button" class="btn btn--primary" data-auth-open="login">Masuk Akun</button>
       <button type="button" class="btn btn--secondary" data-auth-open="register">Daftar Akun Baru</button>
@@ -35,7 +35,7 @@
       {% if user.is_ui_student %}
       <span class="chip chip--info">Mahasiswa UI &bull; Diskon 15%</span>
       {% else %}
-      <span class="chip chip--info">Akun Member &bull; {{ user.provider | default('Email') }}</span>
+      <span class="chip chip--info">Akun Terverifikasi &bull; {{ user.provider | default('Email') }}</span>
       {% endif %}
       <button type="button" class="btn btn--outline-danger btn--sm" data-auth-logout>
         Keluar Akun
@@ -43,7 +43,7 @@
     </div>
   </section>
 
-  <nav class="profile-tabs" role="tablist" aria-label="Kategori status pesanan">
+  <nav class="profile-tabs" role="tablist" aria-label="Kategori profil dan pesanan">
     <button type="button" class="profile-tab" role="tab" data-profile-tab="pending"
             aria-selected="{{ 'true' if active_tab == 'pending' else 'false' }}">
       Menunggu Pembayaran (<span id="pending-tab-count">{{ pending_orders | length }}</span>)
@@ -55,6 +55,14 @@
     <button type="button" class="profile-tab" role="tab" data-profile-tab="cancelled"
             aria-selected="{{ 'true' if active_tab == 'cancelled' else 'false' }}">
       Dibatalkan (<span id="cancelled-tab-count">{{ cancelled_orders | length }}</span>)
+    </button>
+    <button type="button" class="profile-tab" role="tab" data-profile-tab="addresses"
+            aria-selected="{{ 'true' if active_tab == 'addresses' else 'false' }}">
+      Buku Alamat Pengiriman
+    </button>
+    <button type="button" class="profile-tab" role="tab" data-profile-tab="account"
+            aria-selected="{{ 'true' if active_tab == 'account' else 'false' }}">
+      Pengaturan Akun
     </button>
   </nav>
 
@@ -74,19 +82,27 @@
             <span class="order-card__code num">No. Pesanan: {{ ord.code }}</span>
             <h2>{{ ord.tickets[0].event_title if ord.tickets else 'Pemesanan Tiket' }}</h2>
           </div>
+          {% set is_qris = (ord.method_key == 'qris') %}
           <span class="order-status-pill order-status-pill--pending num">
-            Menunggu Bayar &bull; <span data-countdown-sec="{{ ord.remaining_seconds }}">{{ '%02d:%02d' | format(ord.remaining_seconds // 60, ord.remaining_seconds % 60) }}</span>
+            {{ 'Menunggu Pembayaran via QRIS' if is_qris else 'Menunggu Bayar' }} &bull; <span data-countdown-sec="{{ ord.remaining_seconds }}">{{ '%02d:%02d' | format(ord.remaining_seconds // 60, ord.remaining_seconds % 60) }}</span>
           </span>
         </div>
         <div class="order-card__meta">
-          <span>Metode: <strong>{{ ord.method }}</strong></span>
-          {% if ord.payment_code %}<span>Kode Bayar / VA: <strong class="num">{{ ord.payment_code }}</strong></span>{% endif %}
+          <span>Metode: <strong>{{ 'QRIS' if is_qris else ord.method }}</strong></span>
+          {# QRIS dibayar dengan memindai kode QR, bukan nomor VA: label kode bayar disembunyikan. #}
+          {% if ord.payment_code and not is_qris %}<span>Kode Bayar / VA: <strong class="num">{{ ord.payment_code }}</strong></span>{% endif %}
           <span>Posisi: <strong>{% for t in ord.tickets %}{{ t.item.seat_label }}{% if not loop.last %}, {% endif %}{% endfor %}</strong></span>
         </div>
         <div class="order-card__footer">
           <strong class="num">{{ ord.totals.total | rupiah }}</strong>
           <div class="order-card__actions">
-            <a class="btn btn--primary btn--sm" href="{{ url_for('checkout.resume_order', code=ord.code) }}">Lanjutkan Pembayaran</a>
+            {% if is_qris %}
+            <button type="button" class="btn btn--primary btn--sm" data-open-qris="{{ ord.code }}" data-qris-total="{{ ord.totals.total | rupiah }}">
+              <svg class="icon icon--sm" aria-hidden="true"><use href="#i-qr"/></svg>
+              <span>Tampilkan QRIS</span>
+            </button>
+            {% endif %}
+            <a class="btn {{ 'btn--secondary' if is_qris else 'btn--primary' }} btn--sm" href="{{ url_for('checkout.resume_order', code=ord.code) }}">Lanjutkan Pembayaran</a>
             <button type="button" class="btn btn--outline-danger btn--sm" data-profile-cancel="{{ ord.code }}">Batalkan</button>
           </div>
         </div>
@@ -220,8 +236,120 @@
       {% endfor %}
     {% endif %}
   </section>
+
+  {# Tab 4: Buku Alamat Pengiriman (Frame 17A/B) #}
+  <section class="order-list" id="panel-addresses" role="tabpanel" {% if active_tab != 'addresses' %}hidden{% endif %}>
+    <div class="checkout__section">
+      <div class="checkout__section-head">
+        <h2>Buku Alamat Pengiriman</h2>
+        <button type="button" class="btn btn--primary btn--sm" id="open-address-sheet-btn">+ Tambah Alamat Baru</button>
+      </div>
+      <div class="address-book-grid" id="address-book-grid">
+        {% for addr in addresses | default([]) %}
+        <article class="address-card{% if addr.is_default %} is-default{% endif %}">
+          <div class="address-card__head">
+            <strong>{{ addr.label }}</strong>
+            {% if addr.is_default %}
+            <span class="chip chip--info">Alamat Utama</span>
+            {% endif %}
+          </div>
+          <p class="address-card__recipient">{{ addr.recipient }} &middot; {{ addr.phone }}</p>
+          <p class="address-card__street">{{ addr.street }}, {{ addr.city }}</p>
+          {% if not addr.is_default %}
+          <button type="button" class="btn btn--secondary btn--sm" data-set-default-addr="{{ addr.id }}">Jadikan Utama</button>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# Tab 5: Pengaturan Akun #}
+  <section class="order-list" id="panel-account" role="tabpanel" {% if active_tab != 'account' %}hidden{% endif %}>
+    <div class="checkout__section">
+      <h2>Profil &amp; Identitas</h2>
+      <dl class="totals">
+        <div><dt>NAMA LENGKAP</dt><dd>{{ user.name }}</dd></div>
+        <div><dt>EMAIL TERDAFTAR</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>NIK TERSIMPAN</dt><dd class="num">3174 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 0001</dd></div>
+        <div><dt>NOMOR WHATSAPP</dt><dd class="num">+62 812 3456 7890</dd></div>
+      </dl>
+    </div>
+  </section>
   {% endif %}
 </div>
+
+{# Apple Sheet Modal: Tambah Alamat Baru (Frame 18A/B) #}
+<div class="auth-modal" id="address-sheet-modal" hidden>
+  <div class="auth-modal__scrim" data-address-close></div>
+  <div class="auth-modal__panel liquid-glass-modal" role="dialog" aria-modal="true" aria-labelledby="address-sheet-title">
+    <div class="auth-modal__head auth-modal__head--sheet">
+      <div class="auth-modal__title-wrap">
+        <h2 id="address-sheet-title">Tambah Alamat Pengiriman</h2>
+      </div>
+      <button type="button" class="auth-modal__close auth-modal__close--circle" data-address-close aria-label="Tutup modal alamat">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </div>
+    <form class="auth-form" id="new-address-form">
+      <div class="auth-field">
+        <label for="addr-tag">Label Tempat</label>
+        <select id="addr-tag" name="tag" class="input">
+          <option value="Kos">Kos</option>
+          <option value="Rumah">Rumah</option>
+          <option value="Kantor">Kantor</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label for="addr-label">Nama Alamat</label>
+        <input id="addr-label" name="label" class="input" type="text" placeholder="Contoh: Kosan Kukusan Depok" required>
+      </div>
+      <div class="auth-field">
+        <label for="addr-recipient">Nama Penerima</label>
+        <input id="addr-recipient" name="recipient" class="input" type="text" value="{{ user.name if user else 'Evans Kano' }}" required>
+      </div>
+      <div class="auth-field">
+        <label for="addr-phone">Nomor WhatsApp Penerima</label>
+        <input id="addr-phone" name="phone" class="input" type="tel" value="+62 812 3456 7890" required>
+      </div>
+      <div class="auth-field">
+        <label for="addr-street">Alamat Lengkap &amp; Patokan</label>
+        <input id="addr-street" name="street" class="input" type="text" placeholder="Jalan Raya Kukusan No. 29, Beji" required>
+      </div>
+      <div class="auth-field">
+        <label for="addr-city">Kota &amp; Kode Pos</label>
+        <input id="addr-city" name="city" class="input" type="text" placeholder="Kota Depok, Jawa Barat - 16424" required>
+      </div>
+      <label class="auth-check">
+        <input type="checkbox" name="make_default" checked>
+        <span>Jadikan sebagai alamat utama</span>
+      </label>
+      <button type="submit" class="auth-btn-primary">Simpan Alamat</button>
+    </form>
+  </div>
+</div>
+
+<dialog class="eticket-modal liquid-glass-modal qris-modal" id="profile-qris-modal" aria-labelledby="profile-qris-title">
+  <div class="eticket-modal__head">
+    <h2 id="profile-qris-title">Bayar via QRIS</h2>
+    <button type="button" class="btn btn--secondary btn--sm" id="profile-qris-close">Tutup</button>
+  </div>
+  <div class="qris-modal__body">
+    <div class="qris-preview" aria-label="QR Code Pembayaran QRIS">
+      <svg viewBox="0 0 21 21" width="176" height="176" role="img" aria-label="QR Code Pembayaran QRIS" shape-rendering="crispEdges">
+        <rect width="21" height="21" fill="#FFFFFF"/>
+        <path fill="#0F172A" d="M1 1h7v7H1zm1 1v5h5V2zm1 1h3v3H3zm10-2h7v7h-7zm1 1v5h5V2zm1 1h3v3h-3zM1 13h7v7H1zm1 1v5h5v-5zm1 1h3v3H3zm6-13h2v2H9zm0 4h1v2H9zm2 0h1v4h-1zm-2 4h3v2H9zm0 3h2v2H9zm3 0h2v1h-2zm2-4h2v2h-2zm2 0h2v1h-2zm2 1h2v2h-2zm-5 3h3v2h-3zm4 0h3v1h-3zm0 2h2v3h-2zm-4 1h3v2h-3zm-2 2h2v2h-2zm5 1h3v2h-3z"/>
+      </svg>
+    </div>
+    <div class="qris-modal__meta">
+      <strong>titiket.com Digital Ticketing</strong>
+      <span>NMID: ID1020304050607</span>
+      <span>No. Pesanan: <b class="num" id="profile-qris-code"></b></span>
+      <span>Total: <b class="num" id="profile-qris-total"></b></span>
+    </div>
+    <p class="qris-modal__hint">Pindai kode QR di aplikasi bank atau dompet digital Anda, lalu lanjutkan pembayaran.</p>
+  </div>
+</dialog>
 
 <dialog class="eticket-modal" id="profile-eticket-modal" aria-labelledby="profile-eticket-title">
   <div class="eticket-modal__head">

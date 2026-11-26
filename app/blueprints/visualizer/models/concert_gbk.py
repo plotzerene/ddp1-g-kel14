@@ -59,10 +59,14 @@ class TierSpec:
 
 @dataclass(frozen=True)
 class BowlProfile:
-    """Mangkuk oval GBK: elips dalam 132 × 190 m, dua tingkat tribun, atap cincin."""
+    """Mangkuk oval SUGBK: elips dalam 110 × 165 m, dua tingkat tribun, atap cincin.
 
-    rx_inner: float = 66.0
-    rz_inner: float = 95.0
+    Elips dalam = bentang lantai dasar (rumput + lintasan lari atletik): sumbu panjang 165 m (z),
+    sumbu pendek 110 m (x). Tepi tribun bawah mundur di belakang lintasan, bukan menempel ke lapangan.
+    """
+
+    rx_inner: float = 55.0
+    rz_inner: float = 82.5
     row_depth: float = 0.80
     seat_pitch: float = 0.50
     tiers: tuple[TierSpec, ...] = (
@@ -406,6 +410,8 @@ class ColdplayGBKStadium(Venue):
     """Coldplay Music of the Spheres — Stadion Utama Gelora Bung Karno."""
 
     BOWL: ClassVar[BowlProfile] = BowlProfile()
+    #: 178 cm → tinggi mata berdiri 0,936 × 1,78 = 1,666 m (rentang 1,65–1,75 m untuk penonton dewasa).
+    DEFAULT_VIEWER_CM: ClassVar[float | None] = 178.0
     RUNWAY: ClassVar[dict] = {"x0": -1.5, "x1": 1.5, "z0": -55.0, "z1": -15.0, "y": 1.8}
     BANDS: ClassVar[dict[str, str]] = {
         "depan": "Baris Depan", "tengah": "Baris Tengah", "belakang": "Baris Belakang"}
@@ -419,7 +425,10 @@ class ColdplayGBKStadium(Venue):
         SpotSpec(3, "mid", "Spot 3: Tengah Lapangan",
                  "Di belakang menara suara, sejajar meja FOH. Lebih lega.", 0.0, 24.0, 2.5),
         SpotSpec(4, "back", "Spot 4: Belakang Lapangan",
-                 "Paling lega, dekat tribun selatan.", 0.0, 68.0, 1.5),
+                 "Paling lega, dekat tribun selatan.", 0.0, 60.0, 1.5),
+        SpotSpec(5, "fan_zone", "Spot 5: Zona Festival (28 m)",
+                 "Di sisi runway, 28 m dari bibir panggung utama — pandangan penuh ke videotron.",
+                 -5.0, -27.0, 3.0),
     )
     PHOTOS_FESTIVAL: ClassVar = (
         ("images/gbk_coldplay_festival_pov.jpg", "POV Festival — lautan kepala dan dua LED bundar"),
@@ -702,20 +711,24 @@ class ColdplayGBKStadium(Venue):
             "label_pos": block.label_point(self.BOWL),
             "row_count": len(rows),
             "seats_per_row": rows[len(rows) // 2].seat_count,
+            "row_seats": [row.seat_count for row in rows],
             "bands": [{"key": key, "label": label, "row": bands[key]} for key, label in self.BANDS.items()],
             "sides": [{"key": key, "label": label} for key, (label, _) in self.SIDES.items()],
             "mini_grid": self._mini_grid(block),
         })
         return data
 
-    @staticmethod
-    def _field_outline() -> list[list[float]]:
-        """Area Festival: persegi panjang di depan panggung + ujung selatan setengah elips."""
-        half, top, straight_end, steps = 38.0, -53.0, 40.0, 24
-        points = [[-half, top], [half, top]]
-        points += [[round(half * math.cos(math.pi * i / steps), 2),
-                    round(straight_end + half * math.sin(math.pi * i / steps), 2)] for i in range(steps + 1)]
-        return points
+    @classmethod
+    def _field_outline(cls) -> list[list[float]]:
+        """Area Festival: elips sejajar kontur dalam tribun GBK, dipotong garis depan panggung (z = -53 m).
+
+        Mundur 13 m dari tepi lapangan (= 2,6 m di dalam lintasan lari 10,4 m), jadi rumput terisi sampai
+        dekat trek tanpa pernah menimpanya.
+        """
+        bowl, inset, top, steps = cls.BOWL, 13.0, -53.0, 64
+        start = math.degrees(math.acos(-top / (bowl.rz_inner - inset)))     # elips memotong z = top di bearing ini
+        bearings = [start + (360.0 - 2.0 * start) * i / steps for i in range(steps + 1)]
+        return [[round(p.x, 2), round(p.z, 2)] for p in (bowl.point(b, -inset) for b in bearings)]
 
     @cached_property
     def _layout(self) -> dict:

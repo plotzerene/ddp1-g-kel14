@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% set step = "detail" %}
+{% set stepper_active = "landing" %}
+{% set theme_color = "#FFFFFF" %}
 {% block title %}{{ event.title }} · {{ info.location }}{% endblock %}
 
 {% block head_extra %}
@@ -10,59 +13,31 @@
   <nav class="detail__crumb" aria-label="Breadcrumb">
     <a href="{{ url_for('landing.index') }}">Beranda</a>
     <span aria-hidden="true">/</span>
-    <a href="{{ url_for('events.concerts') }}">Konser Musik</a>
-    <span aria-hidden="true">/</span>
     <span aria-current="page">{{ event.title }}</span>
   </nav>
 
-  <section class="detail__hero detail__hero--concert" aria-label="Info Utama Konser">
-    <div class="detail__poster-wrap">
-      {% if poster_url %}
-      <img class="detail__poster" src="{{ poster_url }}" alt="Poster {{ event.title }}" width="320" height="480">
-      {% else %}
-      <div class="detail__poster detail__poster--empty" aria-hidden="true">{{ event.title[:1] }}</div>
-      {% endif %}
-      <span class="detail__age-badge">Stadion GBK</span>
-    </div>
-
-    <div class="detail__info">
-      <div class="detail__badges">
-        <span class="detail__concert-pill">Tur Dunia Resmi</span>
-        <span class="detail__genre-pill">{{ info.promoter }}</span>
+  {# Banner Stadion SUGBK (Frame 04A/B) #}
+  <section class="concert-hero-banner" aria-label="Info Utama Konser">
+    <div class="concert-hero-banner__bg" aria-hidden="true"></div>
+    <div class="concert-hero-banner__content">
+      <div class="concert-hero-banner__poster">
+        {% if poster_url %}
+        <img src="{{ poster_url }}" alt="Poster {{ event.title }}" width="220" height="310">
+        {% else %}
+        <div class="detail__poster detail__poster--empty" aria-hidden="true">{{ event.title[:1] }}</div>
+        {% endif %}
       </div>
 
-      <h1 class="detail__title">{{ event.title }}</h1>
-      {% if event.subtitle %}
-      <p class="detail__tagline">{{ event.subtitle }}</p>
-      {% endif %}
-
-      <dl class="detail__quick-meta">
-        <div>
-          <dt>Lokasi</dt>
-          <dd>{{ info.location }}</dd>
-        </div>
-        <div>
-          <dt>Jadwal Konser</dt>
-          <dd>{{ info.schedule }}</dd>
-        </div>
-        <div>
-          <dt>Promotor Resmi</dt>
-          <dd>{{ info.promoter }}</dd>
-        </div>
-        <div>
-          <dt>Promo Mahasiswa UI</dt>
-          <dd class="detail__discount-tag">Hemat 15% dengan SSO UI</dd>
-        </div>
-      </dl>
-
-      <div class="detail__actions">
-        <a class="detail__cta liquid-glass-pill liquid-glass-pill--accent" href="{{ buy_url }}">Lihat POV 3D &amp; Pilih Tiket</a>
-        <a class="detail__cta-secondary liquid-glass-pill" href="{{ url_for('events.coldplay_tickets') }}">Kategori &amp; Harga</a>
-        <a class="detail__cta-secondary liquid-glass-pill" href="{{ url_for('landing.index') }}">Kembali</a>
+      <div class="concert-hero-banner__info">
+        <span class="venue-chip-pill">STADION UTAMA GELORA BUNG KARNO</span>
+        <h1 class="concert-hero-banner__title">Coldplay — Music of the Spheres</h1>
+        <p class="concert-hero-banner__schedule">{{ info.schedule }}</p>
+        <p class="concert-hero-banner__promoter">{{ info.promoter }} &middot; Hemat 15% dengan SSO UI</p>
       </div>
     </div>
   </section>
 
+  {# 2 Tab Navigasi Saja: Ringkasan & Syarat & Ketentuan #}
   <nav class="detail__tabs" aria-label="Menu konser">
     {% for t in tabs %}
     <a class="detail__tab{% if t.active %} is-active{% endif %}" href="{{ t.href }}" {% if t.active %}aria-current="page"{% endif %}>{{ t.label }}</a>
@@ -72,6 +47,63 @@
   <div class="concert-layout">
     <div class="concert-main">
       {% if tab == 'overview' %}
+      <section class="detail__panel tour-globe-panel" aria-labelledby="tour-route-title">
+        <div class="tour-globe-panel__head">
+          <div>
+            <h2 class="detail__section-title" id="tour-route-title">Rute World Tour menuju Jakarta</h2>
+            <p class="detail__synopsis">Tokyo &rarr; Kaohsiung &rarr; Jakarta (SUGBK) &rarr; Singapore</p>
+          </div>
+        </div>
+
+        <div class="tour-globe-grid" data-cobe-globe="concert" data-globe-size="340">
+          <div class="tour-globe-canvas-card">
+            <div class="tour-globe-nav-overlay">
+              <button type="button" class="tour-nav-btn liquid-glass-pill" data-globe-prev aria-label="Rute sebelumnya">&lsaquo;</button>
+              <span class="tour-globe-counter" data-globe-counter>Tur 3 dari 4</span>
+              <button type="button" class="tour-nav-btn liquid-glass-pill" data-globe-next aria-label="Rute berikutnya">&rsaquo;</button>
+            </div>
+            <div class="cobe-canvas-wrap">
+              <canvas id="concert-cobe-globe" data-cobe-canvas data-display-size="340" width="680" height="680"></canvas>
+            </div>
+          </div>
+
+          <div class="tour-route-list">
+            <h3>Jadwal Negara &amp; Kota Tur</h3>
+            <ul class="tour-stop-items">
+              {% for stop in tour_stops %}
+              <li>
+                <button type="button" class="tour-stop-item{% if stop.state == 'active' %} is-active{% endif %}" data-globe-stop="{{ stop.index }}" data-stop-state="{{ stop.state }}">
+                  <span class="tour-stop-item__meta">
+                    <strong class="tour-stop-item__city">{{ stop.city }}{% if stop.country %}, {{ stop.country }}{% endif %}</strong>
+                    {% if stop.venue or stop.date %}
+                    <span class="tour-stop-item__sub">
+                      {% if stop.venue %}<span>{{ stop.venue }}</span>{% endif %}
+                      {% if stop.venue and stop.date %}<span aria-hidden="true">&middot;</span>{% endif %}
+                      {% if stop.date %}<span class="num">{{ stop.date }}</span>{% endif %}
+                    </span>
+                    {% endif %}
+                  </span>
+                  <span class="tour-stop-item__status tour-stop-item__status--{{ stop.state }}">{{ stop.status | default('Mendatang') }}</span>
+                </button>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail__panel" aria-labelledby="fun-facts-title">
+        <h2 class="detail__section-title" id="fun-facts-title">Fun Facts &amp; Konsep Tur</h2>
+        <div class="fun-facts-grid">
+          {% for fact in fun_facts %}
+          <article class="fun-fact-card">
+            <strong class="fun-fact-card__title">{{ fact.title }}</strong>
+            <p class="fun-fact-card__detail">{{ fact.detail }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
       <section class="detail__panel" aria-labelledby="overview-title">
         <h2 class="detail__section-title" id="overview-title">Ringkasan Pertunjukan &amp; Tata Panggung</h2>
         <p class="detail__synopsis">
@@ -86,63 +118,6 @@
           </article>
           {% endfor %}
         </div>
-
-        <dl class="detail__facts">
-          <div><dt>Lokasi</dt><dd>{{ info.location }}</dd></div>
-          <div><dt>Jadwal</dt><dd>{{ info.schedule }}</dd></div>
-          <div><dt>Promotor</dt><dd>{{ info.promoter }}</dd></div>
-        </dl>
-      </section>
-
-      {% elif tab == 'tickets' %}
-      <section class="detail__panel" aria-labelledby="tickets-title">
-        <div class="tickets-header">
-          <div>
-            <h2 class="detail__section-title" id="tickets-title">Kategori Tiket Resmi GBK</h2>
-            <p class="detail__synopsis">Pilih kategori duduk atau area berdiri sebelum cek POV 3D.</p>
-          </div>
-          <a class="detail__cta" href="{{ buy_url }}">Buka Peta 3D GBK</a>
-        </div>
-
-        <ul class="cat-list">
-          {% for c in categories %}
-          <li class="cat-card">
-            <div class="cat-card__main">
-              <div class="cat-card__title-row">
-                {% if c.color %}
-                <span class="cat-swatch" style="background: {{ c.color }};" aria-hidden="true"></span>
-                {% endif %}
-                <strong class="cat-card__name">{{ c.label }}</strong>
-                <span class="cat-card__type {% if c.standing %}is-standing{% else %}is-seated{% endif %}">
-                  {% if c.standing %}Free Standing (Berdiri Bebas){% else %}Duduk Bernomor{% endif %}
-                </span>
-                {% if c.restricted %}
-                <span class="cat-card__warn">Pandangan Samping / Terbatas</span>
-                {% endif %}
-              </div>
-              {% if c.description %}
-              <p class="cat-card__desc">{{ c.description }}</p>
-              {% endif %}
-              {% if c.perks %}
-              <ul class="cat-card__perks">
-                {% for perk in c.perks %}
-                <li>{{ perk }}</li>
-                {% endfor %}
-              </ul>
-              {% endif %}
-            </div>
-
-            <div class="cat-card__aside">
-              {% if c.price %}
-              <strong class="cat-card__price num">{{ c.price | rupiah }}</strong>
-              {% endif %}
-              <a class="detail__cta cat-card__btn" href="{{ c.select_url or buy_url }}">
-                {% if c.standing %}Pilih Spot{% else %}Pilih Kursi{% endif %}
-              </a>
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
       </section>
 
       {% elif tab == 'terms' %}
@@ -164,27 +139,46 @@
       {% endif %}
     </div>
 
-    <aside class="concert-sidebar">
-      <div class="sidebar-card">
-        <span class="sidebar-card__eyebrow">Panduan Penukaran Gelang</span>
-        <h3 class="sidebar-card__title">Informasi Penonton GBK</h3>
-        <ul class="sidebar-checklist">
+    <aside class="concert-sidebar" id="harga-tiket">
+      <div class="sidebar-card ticket-price-sidebar">
+        <span class="sidebar-card__eyebrow">Daftar Harga Tiket Resmi</span>
+        <h2 class="sidebar-card__title">Harga Tiket CAT 1–8 &amp; Festival</h2>
+        <ul class="sidebar-price-list">
+          {% for c in categories %}
           <li>
-            <svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>
-            <span>Bawa KTP / SIM / Paspor asli sesuai akun pembeli.</span>
+            <a class="sidebar-price-row" href="{{ c.select_url or buy_url }}">
+              <span class="sidebar-price-row__left">
+                {% if c.color %}<span class="cat-swatch" style="background: {{ c.color }};" aria-hidden="true"></span>{% endif %}
+                <strong>{{ c.label }}</strong>
+              </span>
+              <span class="sidebar-price-row__val num">{{ c.price | rupiah }}</span>
+            </a>
           </li>
-          <li>
-            <svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg>
-            <span>E-tiket memakai Code128 &amp; QR pindai tunggal.</span>
-          </li>
-          <li>
-            <svg class="i" aria-hidden="true"><use href="#i-check"/></svg>
-            <span>Diskon 15% otomatis untuk akun SSO UI saat checkout.</span>
-          </li>
+          {% endfor %}
         </ul>
-        <a class="detail__cta sidebar-card__cta" href="{{ buy_url }}">Simulasi POV 3D GBK</a>
+        <a class="detail__cta sidebar-card__cta liquid-glass-btn-primary" id="concert-cta" href="{{ buy_url }}" data-default-label="Pilih Kategori &amp; POV 3D">Pilih Kategori &amp; POV 3D</a>
       </div>
     </aside>
   </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/cobe_globe.js') }}"></script>
+<script>
+/* CTA harga tiket mengikuti kota yang dipilih di rute tur: hanya Jakarta (SUGBK) yang bisa dibeli. */
+(function () {
+  var cta = document.getElementById('concert-cta');
+  if (!cta) return;
+  var LABELS = { done: 'Konser Telah Berakhir', upcoming: 'Penjualan Tiket Belum Dibuka' };
+  document.addEventListener('tour-stop-change', function (event) {
+    var stop = document.querySelector('[data-globe-stop="' + event.detail.index + '"]');
+    var state = (stop && stop.getAttribute('data-stop-state')) || 'active';
+    var closed = state !== 'active';
+    cta.textContent = closed ? LABELS[state] : cta.getAttribute('data-default-label');
+    cta.setAttribute('aria-disabled', String(closed));
+    cta.tabIndex = closed ? -1 : 0;
+  });
+})();
+</script>
 {% endblock %}

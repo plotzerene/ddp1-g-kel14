@@ -271,9 +271,10 @@ class RouteTests(unittest.TestCase):
     def test_pages_render(self):
         for path in ("/", "/intro", "/home", "/visualizer/studio/xxi-regular", "/visualizer/studio/gbk-coldplay", "/cart"):
             self.assertEqual(self.client.get(path).status_code, 200, path)
+        # V2: checkout kosong tidak lagi redirect, melainkan mode pratinjau dengan banner "belum ada tiket".
         empty_checkout = self.client.get("/checkout/")
-        self.assertEqual(empty_checkout.status_code, 302)
-        self.assertTrue(empty_checkout.headers["Location"].endswith("/cart"))
+        self.assertEqual(empty_checkout.status_code, 200)
+        self.assertIn("checkout-preview-banner", empty_checkout.get_data(as_text=True))
         self.assertEqual(self.client.get("/visualizer/?event=coldplay-gbk").status_code, 302)
         self.assertEqual(self.client.get("/visualizer/studio/tidak-ada").status_code, 404)
 
@@ -331,8 +332,13 @@ class RouteTests(unittest.TestCase):
         body = {"venue_id": "xxi-regular", "seat_id": available.seat_id, "body_height_cm": 165}
         self.assertEqual(self.client.post("/visualizer/api/cart", json=body).status_code, 201)
         self.assertEqual(self.client.post("/visualizer/api/cart", json=body).get_json()["status"], "exists")
-        guest_redirect = self.client.get("/checkout/")
-        self.assertEqual(guest_redirect.status_code, 302)
+        # V2: tamu melihat halaman checkout; gerbang login berupa sheet modal (#auth-modal), bukan redirect 302.
+        guest_checkout = self.client.get("/checkout/")
+        self.assertEqual(guest_checkout.status_code, 200)
+        self.assertIn('id="auth-modal"', guest_checkout.get_data(as_text=True))
+        guest_pay = self.client.post("/checkout/pay", data={"method": "qris"})  # tanpa identitas pemesan
+        self.assertEqual(guest_pay.status_code, 302)
+        self.assertIn("auth=required", guest_pay.headers["Location"])
         self.assertEqual(
             self.client.post("/auth/login", json={"email": "penguji@example.com", "password": "password123"}).status_code,
             200,
@@ -369,7 +375,7 @@ class RouteTests(unittest.TestCase):
         self.assertIn("Kursi", seated.get_json()["message"])          # tribun duduk tetap menyebut kursi
 
     def test_landing_is_light_and_has_no_mtix(self):
-        intro_page = self.client.get("/").get_data(as_text=True)
+        intro_page = self.client.get("/intro").get_data(as_text=True)
         self.assertIn('name="theme-color" content="#08090C"', intro_page)
         page = self.client.get("/home").get_data(as_text=True)
         self.assertIn('name="theme-color" content="#FFFFFF"', page)

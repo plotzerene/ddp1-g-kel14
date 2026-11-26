@@ -14,7 +14,7 @@
   border: 1px solid #E2E8F0;
   background:
     radial-gradient(640px 260px at 96% 0%, rgba(0, 104, 117, 0.10), transparent 65%),
-    radial-gradient(480px 220px at 0% 100%, rgba(197, 155, 39, 0.08), transparent 65%),
+    radial-gradient(480px 220px at 0% 100%, rgba(13, 148, 136, 0.08), transparent 65%),
     #F8FAFC;
   box-shadow: var(--shadow-1);
 }
@@ -276,7 +276,8 @@ html[data-theme="dark"] .promo-code-box {
 }
 
 .promo-code-value {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-variant-numeric: tabular-nums; /* SF proporsional + angka lebar tetap: tanpa Menlo */
+  letter-spacing: 0.04em;
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--color-foreground);

@@ -1,0 +1,22 @@
+{# Pil profil + dropdown: satu sumber untuk header biasa dan header fokus (dulu dua salinan yang melenceng). #}
+<button type="button" class="focus-user-pill" id="profile-popover-trigger" data-profile-toggle aria-expanded="false" aria-haspopup="menu">
+  <span class="focus-user-pill__avatar" aria-hidden="true">{{ user_initials or 'EK' }}</span>
+  <span class="focus-user-pill__name" data-auth-member-name>{{ user_display or 'Evans Kano' }}</span>
+  <svg class="icon focus-user-pill__chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="profile-popover liquid-glass-modal" id="profile-popover-menu" role="menu" hidden>
+  <div class="profile-popover__head">
+    <span class="auth-member-avatar auth-member-avatar--lg" aria-hidden="true">{{ user_initials or 'EK' }}</span>
+    <div>
+      <strong data-auth-member-name>{{ user_display or 'Evans Kano' }}</strong>
+      <span class="profile-popover__status">Akun Terverifikasi</span>
+      {% if current_user and current_user.is_ui_student %}
+      <span class="profile-popover__ui-badge">Mahasiswa UI (Diskon 15% Aktif)</span>
+      {% endif %}
+    </div>
+  </div>
+  <a class="profile-popover__item" role="menuitem" href="{{ url_for('checkout.profile') }}">Tiket &amp; Pesanan Saya</a>
+  <a class="profile-popover__item" role="menuitem" href="{{ url_for('checkout.profile', tab='addresses') }}">Buku Alamat Pengiriman</a>
+  <a class="profile-popover__item" role="menuitem" href="{{ url_for('checkout.profile', tab='account') }}">Pengaturan Akun</a>
+  <button type="button" class="profile-popover__item profile-popover__item--danger" role="menuitem" data-auth-logout>Keluar</button>
+</div>

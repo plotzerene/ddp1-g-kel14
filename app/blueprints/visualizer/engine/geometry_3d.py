@@ -213,17 +213,22 @@ class LensMode(str, Enum):
 
 @dataclass(frozen=True)
 class CameraLens:
-    """FOV vertikal diturunkan dari faktor zoom: fov = 2·atan(tan(fov₀/2) / zoom)."""
+    """FOV vertikal diturunkan dari faktor zoom: fov = 2·atan(tan(fov₀/2) / zoom).
+
+    `base_fov_deg` = FOV "mata normal" (zoom 1×). Bawaannya 55°; bioskop memakai 68° (rentang
+    realistis 65–70° untuk pandangan menatap layar lebar) lewat `Venue.LENS_BASE_FOV_DEG`.
+    """
 
     mode: LensMode
     label: str
     zoom_factor: float
+    base_fov_deg: float = 55.0
 
     BASE_VERTICAL_FOV_DEG: ClassVar[float] = 55.0
 
     @property
     def vertical_fov_deg(self) -> float:
-        half = math.radians(self.BASE_VERTICAL_FOV_DEG / 2.0)
+        half = math.radians(self.base_fov_deg / 2.0)
         return math.degrees(2.0 * math.atan(math.tan(half) / self.zoom_factor))
 
     def horizontal_fov_deg(self, aspect: float) -> float:
@@ -246,11 +251,27 @@ LENSES: dict[LensMode, CameraLens] = {
 }
 
 
-def lens_for(mode: str | LensMode | None) -> CameraLens:
+def lens_set(base_fov_deg: float | None = None) -> dict[LensMode, CameraLens]:
+    """Daftar lensa untuk satu venue; `None`/55° = bawaan (`LENSES`)."""
+    if base_fov_deg is None or abs(base_fov_deg - CameraLens.BASE_VERTICAL_FOV_DEG) < 1e-9:
+        return LENSES
+    return {
+        mode: CameraLens(
+            mode,
+            f"Mata Normal {base_fov_deg:g}°" if mode is LensMode.NORMAL else lens.label,
+            lens.zoom_factor,
+            base_fov_deg,
+        )
+        for mode, lens in LENSES.items()
+    }
+
+
+def lens_for(mode: str | LensMode | None, base_fov_deg: float | None = None) -> CameraLens:
+    lenses = lens_set(base_fov_deg)
     try:
-        return LENSES[LensMode(mode)] if mode else LENSES[LensMode.NORMAL]
+        return lenses[LensMode(mode)] if mode else lenses[LensMode.NORMAL]
     except ValueError:
-        return LENSES[LensMode.NORMAL]
+        return lenses[LensMode.NORMAL]
 
 
 # --------------------------------------------------------------------------- #

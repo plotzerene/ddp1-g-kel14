@@ -350,6 +350,11 @@ class SeatNode(ABC):
 class Venue(ABC):
     """Kontrak yang dipakai PovEngine, recommender, dan API layout."""
 
+    #: FOV vertikal lensa "mata normal" (derajat). None → bawaan engine (55°).
+    LENS_BASE_FOV_DEG: ClassVar[float | None] = None
+    #: Tinggi badan awal pengunjung (cm) di slider. None → `DEFAULT_BODY_CM` (170).
+    DEFAULT_VIEWER_CM: ClassVar[float | None] = None
+
     def __init__(self, venue_id: str, name: str, kind: VenueKind, tagline: str) -> None:
         self.venue_id = venue_id
         self.name = name

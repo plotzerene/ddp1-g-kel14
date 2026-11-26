@@ -10,7 +10,6 @@ from flask import Blueprint, render_template
 intro_bp = Blueprint("intro", __name__)
 
 
-@intro_bp.get("/")
 @intro_bp.get("/intro")
 def index():
     return render_template("intro.html")

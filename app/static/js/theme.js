@@ -7,24 +7,46 @@
   var themeColor = document.querySelector('meta[name="theme-color"]');
   var colorScheme = document.querySelector('meta[name="color-scheme"]');
 
-  // Tema efektif: pilihan eksplisit, atau bawaan halaman (beranda, promo, keranjang, checkout, dan profil terang; visualizer gelap).
+  function readStoredTheme() {
+    try {
+      var saved = localStorage.getItem(KEY);
+      if (saved === "light" || saved === "dark") return saved;
+    } catch (e) {}
+    return null;
+  }
+
+  // Tema efektif: selalu hormati pilihan tersimpan di localStorage di semua halaman, lalu fallback ke default dark.
   function effectiveTheme() {
+    var stored = readStoredTheme();
+    if (stored) return stored;
     var explicit = root.getAttribute("data-theme");
     if (explicit === "light" || explicit === "dark") return explicit;
     var step = document.body && document.body.getAttribute("data-step");
-    return (step === "landing" || step === "promo" || step === "cart" || step === "checkout" || step === "profile")
-      ? "light"
-      : "dark";
+    var knownStep = (step === "landing" || step === "detail" || step === "promo" || step === "cart" || step === "checkout" || step === "profile");
+    return knownStep ? "dark" : "dark";
   }
 
   function render() {
     var current = effectiveTheme();
+    if (root.getAttribute("data-theme") !== current) {
+      root.setAttribute("data-theme", current);
+    }
+    root.classList.toggle("dark", current === "dark");
     if (btn) {
       btn.setAttribute("data-current", current);
       btn.setAttribute("aria-label", current === "dark" ? "Beralih ke tema terang" : "Beralih ke tema gelap");
     }
     if (themeColor) themeColor.setAttribute("content", current === "light" ? "#FFFFFF" : "#0B0F17");
     if (colorScheme) colorScheme.setAttribute("content", current);
+    try {
+      window.dispatchEvent(new CustomEvent("titiket:themechange", { detail: { theme: current } }));
+    } catch (e) {}
+  }
+
+  function syncFromStorage() {
+    var current = readStoredTheme() || "dark";
+    root.setAttribute("data-theme", current);
+    render();
   }
 
   if (btn) {
@@ -80,10 +102,7 @@
     }
     var curtain = document.getElementById("page-fade-curtain");
     if (curtain) {
-      var targetTheme = "light";
-      try {
-        if (localStorage.getItem(KEY) === "dark") targetTheme = "dark";
-      } catch (e) {}
+      var targetTheme = readStoredTheme() || "dark";
       curtain.setAttribute("data-target-theme", targetTheme);
     }
     root.classList.add("is-leaving-to-home");
@@ -96,6 +115,11 @@
     if (event.persisted) {
       root.classList.remove("is-leaving-to-home", "is-page-fading-in");
     }
+    syncFromStorage();
+  });
+
+  window.addEventListener("storage", function (event) {
+    if (event.key === KEY) syncFromStorage();
   });
 
   window.TitiketTransition = {

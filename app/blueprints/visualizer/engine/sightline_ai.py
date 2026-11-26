@@ -53,6 +53,7 @@ class ScoringProfile:
     ideal_h_fov_deg: float = 45.0
     fov_sigma_low: float = 12.0                 # toleransi bila layar terasa terlalu kecil
     fov_sigma_high: float = 18.0                # toleransi bila layar terlalu besar/dekat
+    ideal_depth_m: float = 0.0                  # kedalaman baris ideal dari layar (bioskop); 0 = pakai kurva FOV lama
     standard_label: str = "THX ≥ 36°"
     comfort_spl_db: tuple[float, float] = (76.0, 90.0)
     proximity_near_m: float = 8.0
@@ -112,6 +113,18 @@ def fov_score(h_fov_deg: float, ideal_deg: float, sigma_low: float, sigma_high: 
     return 100.0 * math.exp(-(((h_fov_deg - ideal_deg) / sigma) ** 2))
 
 
+def screen_coverage_score(off_axis_deg: float, distance_m: float, ideal_depth_m: float, max_score: float = 96.0) -> float:
+    """Cakupan layar bioskop: puncak di sumbu tengah layar, turun simetris ke kiri dan kanan.
+
+    score = max_score * cos(sudut ke tengah layar) * faktor_jarak, faktor_jarak = kurva Gauss terhadap
+    kedalaman baris ideal (jarak tegak lurus layar). Kursi tengah baris sweet spot ≈ 92–96%.
+    """
+    off = math.radians(off_axis_deg)
+    depth_ratio = (distance_m * math.cos(off)) / max(ideal_depth_m, 1e-6)
+    distance_factor = math.exp(-(((depth_ratio - 1.0) / 0.45) ** 2))
+    return max_score * math.cos(off) * distance_factor
+
+
 def neck_score(neck_pitch_deg: float, neck_yaw_deg: float, top_edge_deg: float) -> float:
     """Leher netral = tengah target dekat garis mata dan tidak perlu menoleh.
 
@@ -159,15 +172,14 @@ def proximity_score(distance_m: float, led_h_deg: float, near_m: float, far_m: f
 
 
 def grade_of(total: float) -> str:
-    if total >= 85.0:
+    """Label status Seat Insight (Frame 06): 90+ Sempurna, 80-89 Sangat baik, 70-79 Cukup, di bawah 70 Kurang."""
+    if total >= 90.0:
         return "Sempurna"
+    if total >= 80.0:
+        return "Sangat baik"
     if total >= 70.0:
-        return "Bagus"
-    if total >= 55.0:
         return "Cukup"
-    if total >= 40.0:
-        return "Kurang"
-    return "Terbatas"
+    return "Kurang"
 
 
 class SightlineScorer:
@@ -183,7 +195,9 @@ class SightlineScorer:
     def components(self, m: SightlineMetrics) -> dict[str, float]:
         p = self.profile
         every = {
-            "fov": fov_score(m.h_fov_deg, p.ideal_h_fov_deg, p.fov_sigma_low, p.fov_sigma_high),
+            "fov": (screen_coverage_score(m.off_axis_deg, m.distance_m, p.ideal_depth_m)
+                    if p.kind == "cinema" and p.ideal_depth_m > 0.0
+                    else fov_score(m.h_fov_deg, p.ideal_h_fov_deg, p.fov_sigma_low, p.fov_sigma_high)),
             "neck": neck_score(m.neck_pitch_deg, m.neck_yaw_deg, m.top_edge_deg),
             "off_axis": off_axis_score(m.off_axis_deg, p.kind),
             "obstruction": clamp(100.0 - m.obstruction_impact_pct, 0.0, 100.0),
@@ -298,7 +312,7 @@ class IdealStrategy(RecommendationStrategy):
 
 class NeckComfortStrategy(RecommendationStrategy):
     key = "neck_comfort"
-    labels = {"cinema": "Leher Anti Pegal", "concert": "Leher Anti Pegal"}
+    labels = {"cinema": "Leher Anti Pegal"}
     description = "Mengutamakan posisi kepala netral: tidak mendongak dan tidak menoleh lama."
 
     def utility(self, report, ctx):
@@ -313,36 +327,50 @@ class NeckComfortStrategy(RecommendationStrategy):
         ]
 
 
-class ClosestBStageStrategy(RecommendationStrategy):
-    key = "closest_bstage"
-    labels = {"concert": "Terdekat ke B-Stage"}
-    description = "Posisi paling dekat ke B-Stage di tengah lapangan, tetap memperhitungkan visibilitasnya."
+class BestAcousticStrategy(RecommendationStrategy):
+    key = "best_acoustic"
+    labels = {"concert": "Akustik Terbaik"}
+    description = "Suara paling kuat dan jelas: dekat speaker utama atau menara delay di tengah lapangan."
 
     def utility(self, report, ctx):
-        b_stage = report.targets["b_stage"]
-        closeness = clamp(100.0 * (1.0 - b_stage.view.distance_m / 180.0), 0.0, 100.0)
-        return 0.8 * closeness + 0.2 * b_stage.stage_visible_pct
+        return 0.6 * report.score.breakdown["acoustic"] + 0.4 * _ramp(report.acoustics.nearest_delay_ms, 45.0, 400.0)
 
     def reasons(self, report, ctx):
-        b_stage = report.targets["b_stage"]
+        a = report.acoustics
         return [
-            f"Hanya sekitar {b_stage.view.distance_m:.0f} m dari B-Stage.",
-            "B-Stage terlihat jelas." if b_stage.stage_visible_pct >= 85.0
-            else "B-Stage sebagian tertutup menara suara.",
-            f"Panggung utama tetap terlihat dari jarak {report.metrics.distance_m:.0f} m.",
+            f"Speaker terdekat: {a.nearest_source} (±{a.nearest_distance_m:.0f} m).",
+            f"Suara tiba sekitar {a.nearest_delay_ms:.0f} ms.",
+            f"Level suara {a.spl_db:.0f} dB, {a.loudness_note}.",
+        ]
+
+
+class ClearStageViewStrategy(RecommendationStrategy):
+    key = "clear_stage_view"
+    labels = {"concert": "Pandangan Panggung Bebas"}
+    description = "Panggung dan LED terlihat penuh, tanpa terhalang pilar, menara, maupun penonton di depan."
+
+    def utility(self, report, ctx):
+        parts = report.score.breakdown
+        return 0.5 * parts["visibility"] + 0.5 * parts["obstruction"]
+
+    def reasons(self, report, ctx):
+        return [
+            f"Sekitar {report.metrics.visible_pct:.0f}% panggung terlihat tanpa terhalang struktur.",
+            view_phrase(report.clear_view_pct),
+            center_phrase(report.metrics.off_axis_deg, "panggung"),
         ]
 
 
 class MaxImmersionStrategy(RecommendationStrategy):
     key = "max_immersion"
-    labels = {"cinema": "Imersif Maksimal (Layar Memenuhi Pandangan)"}
+    labels = {"cinema": "Imersi Maksimal (Tengah)"}
     description = "Layar sebesar mungkin di pandanganmu tanpa harus mendongak berlebihan."
 
     def utility(self, report, ctx):
         m = report.metrics
         fill = min(m.h_fov_deg, 80.0) / 80.0 * 70.0
         penalty = max(0.0, m.top_edge_deg - SMPTE_MAX_TOP_EDGE_DEG) * 3.0
-        return fill + 0.3 * report.score.breakdown["neck"] - penalty
+        return fill + 0.3 * report.score.breakdown["neck"] + 0.2 * report.score.breakdown["off_axis"] - penalty
 
     def reasons(self, report, ctx):
         m = report.metrics
@@ -378,7 +406,8 @@ class SmartSeatRecommender:
 
     STRATEGIES: ClassVar[dict[str, RecommendationStrategy]] = {
         s.key: s for s in (
-            IdealStrategy(), NeckComfortStrategy(), ClosestBStageStrategy(), MaxImmersionStrategy(),
+            IdealStrategy(), NeckComfortStrategy(), BestAcousticStrategy(), ClearStageViewStrategy(),
+            MaxImmersionStrategy(),
         )
     }
     MAX_PER_GROUP: ClassVar[int] = 1
@@ -430,3 +459,62 @@ class SmartSeatRecommender:
             "recommendations": [pick.to_dict() for pick in picks],
             "note": None if picks else "Tidak ada tiket tersedia.",
         }
+
+
+# --------------------------------------------------------------------------- #
+# Perlindungan atap stadion (GBK ring roof overhang)
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True)
+class RoofProtection:
+    """Status perlindungan atap cincin SUGBK terhadap cuaca hujan & tampias."""
+
+    level: str            # "covered" | "splash" | "open"
+    label: str
+    coverage_pct: int
+    note: str
+
+    def to_dict(self) -> dict:
+        return {
+            "level": self.level,
+            "label": self.label,
+            "coverage_pct": self.coverage_pct,
+            "note": self.note,
+        }
+
+
+def assess_roof_protection(seat: "SeatNode", bowl: object | None) -> RoofProtection | None:
+    """Hitung tingkat perlindungan atap berdasarkan jarak posisi terhadap overhang cincin GBK."""
+    if bowl is None:
+        return None
+    if getattr(seat, "seat_type", "") == "festival":
+        return RoofProtection(
+            level="open",
+            label="Area Terbuka (Tanpa Atap)",
+            coverage_pct=0,
+            note="Area lapangan terbuka di luar jangkauan atap cincin SUGBK.",
+        )
+
+    row = getattr(seat, "row", None)
+    if row is None or not hasattr(bowl, "roof_depth"):
+        return None
+    tier_name = row.tier.name
+    depth = float(row.depth)
+    roof_inner = float(bowl.roof_depth[0])
+    rx_roof = float(bowl.rx_inner) + roof_inner
+    rz_roof = float(bowl.rz_inner) + roof_inner
+    pos = seat.floor_position
+    radial_ratio = math.hypot(pos.x / max(rx_roof, 1e-6), pos.z / max(rz_roof, 1e-6))
+
+    if tier_name == "lower" and (depth < roof_inner + 7.5 or radial_ratio < 1.10):
+        return RoofProtection(
+            level="splash",
+            label="Berisiko Tampias Angin",
+            coverage_pct=55,
+            note="Tribun bawah baris depan dekat tepi overhang atap · berpotensi terkena tampias saat hujan berangin.",
+        )
+    return RoofProtection(
+        level="covered",
+        label="100% Terlindungi Atap",
+        coverage_pct=100,
+        note="Berada penuh di bawah naungan atap cincin SUGBK.",
+    )

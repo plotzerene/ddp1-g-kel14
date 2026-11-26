@@ -1,9 +1,9 @@
 {#
-  Screen 07 Ticket Success: kartu e-tiket resmi dengan status LUNAS.
-  Film bioskop hanya memakai QR Code, sedangkan konser hanya memakai barcode horizontal Code128.
+  eticket.html — Boarding Pass horizontal (acuan: reference_assets/images/Gemini_Generated_Image_…jpeg) + bukti merchandise + voucher add-on + Panduan Rute
 #}
 {% extends "base.html" %}
 {% set step = "checkout" %}
+{% set back_href = (url_for('events.coldplay_overview') if tickets and tickets[0].venue_type == 'concert' else (url_for('events.movie', slug=tickets[0].item.event_id) if tickets else url_for('landing.index'))) %}
 {% set theme_color = "#FFFFFF" %}
 {% block title %}E-Tiket Resmi {{ order.code }}{% endblock %}
 
@@ -12,113 +12,376 @@
 {% endblock %}
 
 {% block content %}
-<div class="container checkout">
-  <header class="checkout__head eticket-head">
-    <div class="eticket-status-row">
-      <span class="badge-lunas">
-        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
-        LUNAS · Pembayaran Berhasil
-      </span>
-      <span class="chip chip--info num">{{ order.code }}</span>
-    </div>
-
-    <h1>E-Tiket Anda Sudah Terbit</h1>
+{% set merch_only = (not tickets) and merch_items %}
+<div class="container checkout eticket-page">
+  {% if tickets %}
+  <h1 class="visually-hidden">E-Tiket Anda Sudah Terbit</h1>
+  {% else %}
+  <header class="eticket-head">
+    <span class="badge-lunas">
+      <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
+      Pembayaran berhasil &middot; pesanan merchandise diproses
+    </span>
+    <h1>Bukti Pesanan Merchandise</h1>
     <p>
-      Dibayar pada {{ order.paid_at }} via <strong>{{ order.method }}</strong> ·
+      Dibayar pada {{ order.paid_at }} via <strong>{{ order.method }}</strong> &middot;
       Atas nama <strong>{{ order.buyer.name }}</strong> ({{ order.buyer.email }})
     </p>
-
-    <div class="eticket-actions">
-      <button class="btn btn--primary" type="button" onclick="window.print()">
-        <svg class="i" aria-hidden="true"><use href="#i-download"/></svg>
-        Unduh E-Tiket (PDF)
-      </button>
-      <a class="btn btn--secondary" href="{{ url_for('landing.index') }}">
-        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-        Kembali ke Beranda
-      </a>
-    </div>
   </header>
+  {% endif %}
 
-  <ul class="eticket-list">
-    {% for ticket in tickets %}
-    {% set item = ticket.item %}
-    {% set is_concert = (ticket.venue_type == "concert") or (ticket.event_type == "concert") %}
-    <li class="eticket glass checkout__section {{ 'eticket--concert' if is_concert else 'eticket--cinema' }}">
-      <div class="eticket__info">
-        <div class="eticket__top-tags">
-          <span class="chip chip--accent">{{ item.category }}</span>
-          <span class="eticket__paid-pill">TERVERIFIKASI</span>
-        </div>
+  <div class="eticket-stage{% if merch_only %} eticket-stage--merch-only{% elif merch_items or addons %} eticket-stage--has-extra{% endif %}{% if crowd_guide %} eticket-stage--concert{% endif %}">
+    {# Boarding pass horizontal: hanya untuk pesanan yang berisi tiket #}
+    {% if tickets %}
+    <div class="eticket-pass-col">
+      <ul class="eticket-list">
+        {% for ticket in tickets %}
+        {% set item = ticket.item %}
+        {% set is_concert = (ticket.venue_type == "concert") or (ticket.event_type == "concert") %}
+        {% set studio_parts = ticket.studio_cinema.split(' \u2022 ') %}
+        {% set title_parts = ticket.event_title.split(': ', 1) if is_concert else [ticket.event_title] %}
+        <li class="boarding-pass {{ 'boarding-pass--concert' if is_concert else 'boarding-pass--cinema' }}">
+          <div class="bp__main">
+            <div class="bp__top">
+              <span class="brand-logo bp__logo" role="img" aria-label="titiket.com">
+                <span class="brand-logo__name">titiket</span><span class="brand-logo__dot" aria-hidden="true"></span><span class="brand-logo__tld">com</span>
+              </span>
+              <span class="bp__status">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#i-check"/></svg>
+                Pembayaran Berhasil &middot; E-Tiket &amp; Bukti Transaksi Terbit
+              </span>
+            </div>
 
-        <h2>{{ item.seat_label }}</h2>
-        <p class="eticket__venue">{{ ticket.event_title }}</p>
+            <div class="bp__hero">
+              {% if ticket.poster_url %}<img class="bp__poster" src="{{ ticket.poster_url }}" alt="" aria-hidden="true" onerror="this.style.display='none'">{% endif %}
+              <span class="bp__pill">{{ 'World Tour 2026' if is_concert else 'Cinema XXI Pass' }}</span>
+              {% if title_parts | length > 1 %}
+              <h2 class="bp__title">{{ title_parts[0] }}</h2>
+              <p class="bp__sub">{{ title_parts[1] }}</p>
+              {% else %}
+              <h2 class="bp__title">{{ ticket.event_title }}</h2>
+              {% endif %}
+              <p class="bp__venue">
+                <span>{{ ticket.studio_cinema }}</span>
+                {% if is_concert %}
+                <span class="bp__gate"><small>PINTU MASUK</small> <strong>{{ crowd_guide.gate_code if crowd_guide else 'GATE 5' }}</strong> &middot; {{ (crowd_guide.gate_name.split(' (')[0] if crowd_guide else 'Pintu Barat') }} &middot; SUGBK</span>
+                <span class="bp__fulfill bp__fulfill--wristband">Tukar Wristband di Venue (Plaza Barat/Tenggara)</span>
+                {% else %}
+                <span class="bp__fulfill bp__fulfill--scan">E-Tiket Langsung Scan di Studio</span>
+                {% endif %}
+              </p>
+              <dl class="bp__meta">
+                <div><dt>TANGGAL</dt><dd><strong>{{ ticket.show_date }}</strong></dd></div>
+                <div><dt>WAKTU</dt><dd><strong class="num">{{ ticket.show_time }}</strong></dd></div>
+                <div><dt>POSISI</dt><dd><strong>{{ item.seat_label }}</strong>{% if item.category | lower not in item.seat_label | lower %}<span>{{ item.category }}</span>{% endif %}</dd></div>
+                <div><dt>PEMEGANG</dt><dd><strong>{{ ticket.holder or order.buyer.name }}</strong><span>{{ ticket.holder_email }}</span></dd></div>
+              </dl>
+            </div>
+          </div>
 
-        <dl class="pov-meta eticket__schedule">
-          <div><dt>Tanggal Tayang</dt><dd>{{ ticket.show_date }}</dd></div>
-          <div><dt>Waktu</dt><dd class="num">{{ ticket.show_time }}</dd></div>
-          <div><dt>{{ 'Studio & Bioskop' if not is_concert else 'Venue Stadion' }}</dt><dd>{{ ticket.studio_cinema }}</dd></div>
-          <div><dt>Kode Booking</dt><dd class="num">{{ order.code }}</dd></div>
-        </dl>
-
-        <p class="eticket__price num">{{ item.price | rupiah }}</p>
-        <p class="eticket__terms">
-          {% if is_concert %}
-          <strong>Syarat &amp; Ketentuan Penukaran:</strong> Tunjukkan Barcode e-tiket ini kepada petugas venue untuk pemindaian langsung di pintu masuk stadion. E-tiket ini sah dan tidak dapat dibatalkan atau dipindahtangankan. Harap hadir di lokasi minimal 60 menit sebelum acara dimulai.
-          {% else %}
-          <strong>Syarat &amp; Ketentuan Penukaran:</strong> Tunjukkan QR Code ini kepada petugas bioskop untuk pemindaian langsung di pintu masuk studio. E-tiket ini sah dan tidak dapat dibatalkan atau dipindahtangankan. Harap hadir di lokasi minimal 15 menit sebelum waktu penayangan dimulai.
-          {% endif %}
-        </p>
-      </div>
-
-      {% if is_concert %}
-      <div class="eticket__barcode-wrap" aria-label="Barcode Code128 {{ ticket.code }}">
-        <svg class="eticket__barcode" viewBox="0 0 180 34" role="img" aria-label="Code128 {{ ticket.code }}" shape-rendering="crispEdges">
-          <rect width="180" height="34" fill="#FFFFFF"/>
-          <g fill="#0F172A">
-            <rect x="4" y="3" width="2" height="28"/>
-            <rect x="8" y="3" width="1" height="28"/>
-            <rect x="11" y="3" width="3" height="28"/>
-            {% for ch in ticket.code %}
-            {% set code_idx = loop.index0 %}
-            {% set base_x = 18 + (code_idx * 10) %}
-            {% set w1 = ((loop.index * 2) % 3) + 1 %}
-            {% set w2 = ((loop.index + 1) % 2) + 1 %}
-            {% if base_x < 164 %}
-            <rect x="{{ base_x }}" y="3" width="{{ w1 }}" height="28"/>
-            <rect x="{{ base_x + w1 + 2 }}" y="3" width="{{ w2 }}" height="28"/>
-            <rect x="{{ base_x + w1 + w2 + 4 }}" y="3" width="1" height="28"/>
+          <aside class="bp__stub" aria-label="Kode tiket">
+            {% if is_concert %}
+            <div class="eticket__barcode-wrap" aria-label="Barcode Code128 {{ ticket.code }}">
+              <svg class="eticket__barcode" viewBox="0 0 180 34" preserveAspectRatio="none" role="img" aria-label="Code128 {{ ticket.code }}" shape-rendering="crispEdges">
+                <rect width="180" height="34" fill="#FFFFFF"/>
+                <g fill="#0F172A">
+                  <rect x="4" y="3" width="2" height="28"/>
+                  <rect x="8" y="3" width="1" height="28"/>
+                  <rect x="11" y="3" width="3" height="28"/>
+                  {% for ch in ticket.code %}
+                  {% set code_idx = loop.index0 %}
+                  {% set base_x = 18 + (code_idx * 10) %}
+                  {% set w1 = ((loop.index * 2) % 3) + 1 %}
+                  {% set w2 = ((loop.index + 1) % 2) + 1 %}
+                  {% if base_x < 164 %}
+                  <rect x="{{ base_x }}" y="3" width="{{ w1 }}" height="28"/>
+                  <rect x="{{ base_x + w1 + 2 }}" y="3" width="{{ w2 }}" height="28"/>
+                  <rect x="{{ base_x + w1 + w2 + 4 }}" y="3" width="1" height="28"/>
+                  {% endif %}
+                  {% endfor %}
+                  <rect x="168" y="3" width="2" height="28"/>
+                  <rect x="172" y="3" width="3" height="28"/>
+                </g>
+              </svg>
+            </div>
+            {% else %}
+            <div class="eticket__code" aria-label="QR Code Tiket {{ ticket.code }}">
+              {% set size = ticket.matrix | length %}
+              <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="QR Code Tiket {{ ticket.code }}" shape-rendering="crispEdges">
+                <rect width="{{ size }}" height="{{ size }}" fill="#FFFFFF"/>
+                {% for row in ticket.matrix %}{% set y = loop.index0 %}{% for cell in row %}{% if cell %}<rect x="{{ loop.index0 }}" y="{{ y }}" width="1" height="1" fill="#0F172A"/>{% endif %}{% endfor %}{% endfor %}
+              </svg>
+            </div>
             {% endif %}
-            {% endfor %}
-            <rect x="168" y="3" width="2" height="28"/>
-            <rect x="172" y="3" width="3" height="28"/>
-          </g>
-        </svg>
-        <span class="eticket__barcode-text num">{{ ticket.code }}</span>
-      </div>
-      {% else %}
-      <div class="eticket__code" aria-label="QR Code Tiket {{ ticket.code }}">
-        {% set size = ticket.matrix | length %}
-        <svg viewBox="0 0 {{ size }} {{ size }}" role="img" aria-label="QR Code Tiket {{ ticket.code }}" shape-rendering="crispEdges">
-          <rect width="{{ size }}" height="{{ size }}" fill="#F8FAFC"/>
-          {% for row in ticket.matrix %}{% set y = loop.index0 %}{% for cell in row %}{% if cell %}<rect x="{{ loop.index0 }}" y="{{ y }}" width="1" height="1" fill="#0F0F23"/>{% endif %}{% endfor %}{% endfor %}
-        </svg>
-        <span class="num">{{ ticket.code }}</span>
-      </div>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
+            <dl class="bp__id"><dt>NOMOR TIKET</dt><dd class="num">{{ ticket.code }}</dd></dl>
+            <span class="bp__price">Harga tiket: <strong class="num">{{ item.price | rupiah }}</strong></span>
+          </aside>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
 
-  <section class="summary glass checkout__section eticket-summary" aria-labelledby="paid-title">
-    <h2 id="paid-title">Rincian Pembayaran</h2>
-    <dl class="totals">
-      <div><dt>Subtotal tiket</dt><dd class="num">{{ order.totals.subtotal | rupiah }}</dd></div>
-      {% if order.totals.tax %}<div><dt>Pajak konser 15%</dt><dd class="num">{{ order.totals.tax | rupiah }}</dd></div>{% endif %}
-      {% if order.totals.convenience %}<div><dt>Convenience fee 5%</dt><dd class="num">{{ order.totals.convenience | rupiah }}</dd></div>{% endif %}
-      {% if order.totals.admin %}<div><dt>Biaya admin bioskop</dt><dd class="num">{{ order.totals.admin | rupiah }}</dd></div>{% endif %}
-      <div class="totals__grand"><dt>Total dibayar</dt><dd class="num">{{ order.totals.total | rupiah }}</dd></div>
-    </dl>
-  </section>
+    {# Kolom kiri bawah: voucher add-on + bukti pengiriman merchandise #}
+    {% if merch_items or addons %}
+    <div class="eticket-extra-col">
+      {# Voucher Pengambilan Add-on (Konter F&B XXI / Booth Merchandise GBK) #}
+      {% set has_concert_ticket = tickets | selectattr('venue_type', 'equalto', 'concert') | list | length > 0 %}
+      {% if addons %}
+      <section class="checkout__section pickup-voucher-card" aria-labelledby="pickup-voucher-title">
+        <div class="checkout__section-head">
+          <div>
+            <span class="eyebrow">{{ 'VOUCHER MERCHANDISE KONSER GBK' if has_concert_ticket else 'VOUCHER F&B BIOSKOP XXI' }}</span>
+            <h2 id="pickup-voucher-title">{{ 'Ambil di Booth Merchandise Resmi GBK' if has_concert_ticket else 'Ambil di Konter F&B XXI' }}</h2>
+          </div>
+          <span class="chip chip--info num">ADDON-{{ order.code }}</span>
+        </div>
+        <ul class="pickup-voucher-list">
+          {% for a in addons %}
+          {% set is_merch_addon = ('merch' in (a.category_label | default('') | lower)) or ('merch' in (a.name | default('') | lower)) or has_concert_ticket %}
+          <li>
+            <div>
+              <strong>{{ a.name }} &times;{{ a.qty }}</strong>
+              <span class="pickup-voucher-place">{{ 'Ambil di Booth Merchandise Resmi GBK' if is_merch_addon else 'Ambil di Konter F&B XXI' }}</span>
+              {% if a.note %}<p class="pickup-voucher-note">&#8627; Catatan: &ldquo;{{ a.note }}&rdquo;</p>{% endif %}
+            </div>
+            <span class="num">{{ a.line_total | rupiah }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {# Bukti Pengiriman & Pesanan Merchandise (Dikirim ke Rumah) #}
+      {% if merch_items %}
+      <section class="merch-receipt" aria-labelledby="merch-receipt-title">
+        <h2 id="merch-receipt-title">Bukti Pengiriman &amp; Pesanan Merchandise</h2>
+        <dl class="merch-receipt__info">
+          <div><dt>Alamat Tujuan</dt><dd>{% if shipping_address %}<strong>{{ shipping_address.label }}</strong><span>{{ shipping_address.street }}, {{ shipping_address.city }}</span>{% else %}<span>Alamat belum tercatat</span>{% endif %}</dd></div>
+          <div><dt>Detail Kurir</dt><dd><strong>Kurir Reguler</strong><span>Pengiriman ke Rumah</span></dd></div>
+          <div><dt>Estimasi</dt><dd><strong>2-3 hari</strong><span>sejak pesanan dibayar</span></dd></div>
+        </dl>
+        <table class="merch-receipt__items">
+          <thead><tr><th scope="col">Produk</th><th scope="col">Kuantitas</th></tr></thead>
+          <tbody>
+            {% for m in merch_items %}
+            <tr><td>{{ m.name }}</td><td class="num">&times;{{ m.qty }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Detail Pesanan + aksi #}
+    <aside class="eticket-side-col">
+      <section class="eticket-summary" aria-labelledby="paid-title">
+        <h2 id="paid-title">Detail Pesanan</h2>
+        <dl class="totals">
+          <div><dt>Kode pesanan</dt><dd class="num">{{ order.code }}</dd></div>
+          <div><dt>Metode</dt><dd>{{ order.method }}</dd></div>
+          <div><dt>Dibayar pada</dt><dd>{{ order.paid_at }}</dd></div>
+          <div><dt>Atas nama</dt><dd>{{ order.buyer.name }}</dd></div>
+          <div><dt>Subtotal</dt><dd class="num">{{ order.totals.subtotal | rupiah }}</dd></div>
+          {% if order.totals.tax %}<div><dt>Pajak hiburan 15%</dt><dd class="num">{{ order.totals.tax | rupiah }}</dd></div>{% endif %}
+          {% if order.totals.convenience %}<div><dt>Biaya layanan 5%</dt><dd class="num">{{ order.totals.convenience | rupiah }}</dd></div>{% endif %}
+          {% if order.totals.admin %}<div><dt>Biaya admin bioskop</dt><dd class="num">{{ order.totals.admin | rupiah }}</dd></div>{% endif %}
+          {% if order.totals.addon_subtotal %}<div><dt>Add-on venue</dt><dd class="num">{{ order.totals.addon_subtotal | rupiah }}</dd></div>{% endif %}
+          {% if order.totals.shipping_fee %}<div><dt>Ongkos kirim</dt><dd class="num">{{ order.totals.shipping_fee | rupiah }}</dd></div>{% endif %}
+          <div class="totals__grand"><dt>Total dibayar</dt><dd class="num">{{ order.totals.total | rupiah }}</dd></div>
+        </dl>
+      </section>
+
+      <div class="eticket-actions">
+        <button class="btn btn--primary liquid-glass-pill liquid-glass-btn-primary" type="button" id="save-wallet-btn">
+          Simpan ke Apple Wallet
+        </button>
+        <button class="btn btn--secondary liquid-glass-pill eticket-btn-secondary" type="button" onclick="window.print()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+          <span>Unduh E-Tiket PDF</span>
+        </button>
+        {% if tickets %}
+        {% set primary = tickets[0] %}
+        {% set primary_concert = (primary.venue_type == 'concert') or (primary.event_type == 'concert') %}
+        {% set friend_invite_url = url_for('visualizer.studio', venue_id=primary.item.venue_id, friend_seat=primary.item.seat_id) if primary_concert else url_for('visualizer.studio', venue_id=primary.item.venue_id, film=primary.item.event_id, friend_seat=primary.item.seat_id) %}
+        <button class="btn btn--secondary liquid-glass-pill eticket-btn-secondary" type="button" id="save-calendar-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span>Simpan ke Kalender</span>
+        </button>
+        <button class="btn btn--secondary liquid-glass-pill eticket-btn-secondary" type="button" id="invite-friend-btn" data-friend-url="{{ friend_invite_url }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/></svg>
+          <span>Ajak Teman Duduk Dekat</span>
+        </button>
+        {% endif %}
+        <a class="eticket-actions__home" href="{{ url_for('landing.index') }}">
+          <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+          Kembali ke Beranda
+        </a>
+      </div>
+    </aside>
+
+    {# Panduan Rute: hanya untuk pesanan bertiket (ada venue yang dituju) #}
+    {% if tickets %}
+    {% set first_ticket = tickets[0] if tickets else none %}
+    {% set route_dest = ('Stadion Utama Gelora Bung Karno' if first_ticket.venue_type == 'concert' else first_ticket.studio_cinema.split(' \u2022 ')[0]) if first_ticket else 'Stadion Utama Gelora Bung Karno' %}
+    {% set is_concert_route = first_ticket and first_ticket.venue_type == 'concert' %}
+    {% set hint_transit = 'Stasiun MRT Istora Mandiri (Pintu B) / Stasiun KRL Palmerah' if (is_concert_route or not first_ticket) else 'Stasiun MRT / halte TransJakarta terdekat dari ' ~ route_dest %}
+    {% set hint_car = 'Parkir Timur / Drop-off Lobby Utama Venue' if (is_concert_route or not first_ticket) else 'Drop-off Lobby Utama / area parkir ' ~ route_dest %}
+    <section class="route-guide-card" aria-labelledby="route-guide-title" data-route-mode="transit" data-route-dest="{{ route_dest }}"
+             data-hint-transit="{{ hint_transit }}" data-hint-car="{{ hint_car }}">
+      <h2 id="route-guide-title">Panduan Rute ke Venue</h2>
+      <span class="eyebrow">TITIK ASAL</span>
+      <div class="route-hub-pills" role="group" aria-label="Pilih hub keberangkatan">
+        <button type="button" class="route-hub" data-route-hub="Bandara Soekarno-Hatta" aria-pressed="false">Bandara Soetta</button>
+        <button type="button" class="route-hub" data-route-hub="Stasiun Gambir" aria-pressed="false">Stasiun Gambir</button>
+        <button type="button" class="route-hub" data-route-hub="Stasiun Palmerah" aria-pressed="false">Stasiun Palmerah</button>
+        <button type="button" class="route-hub" data-route-hub="Terminal Blok M MRT" aria-pressed="true">Blok M / MRT</button>
+      </div>
+
+      <span class="eyebrow">MODA</span>
+      <div class="route-segmented" role="group" aria-label="Pilih moda perjalanan">
+        <button type="button" data-route-mode-btn="transit" aria-pressed="true">Transportasi Umum</button>
+        <button type="button" data-route-mode-btn="car" aria-pressed="false">Kendaraan Pribadi</button>
+      </div>
+
+      <p class="route-guide-card__hint" id="route-hint" aria-live="polite">{{ hint_transit }}</p>
+
+      <ul class="route-modes-list">
+        <li data-route-mode-row="transit">
+          <span class="route-modes-list__icon" aria-hidden="true"></span>
+          <strong>MRT &middot; Stasiun Istora Mandiri</strong>
+          <span>Keluar via Pintu 5 GBK</span>
+        </li>
+        <li data-route-mode-row="transit">
+          <span class="route-modes-list__icon" aria-hidden="true"></span>
+          <strong>KRL &middot; Stasiun Palmerah</strong>
+          <span>Keluar via Pintu 10 GBK</span>
+        </li>
+        <li data-route-mode-row="car">
+          <span class="route-modes-list__icon" aria-hidden="true"></span>
+          <strong>Kendaraan Pribadi &middot; Parkir Timur GBK</strong>
+          <span>Titik drop-off di area Parkir Timur</span>
+        </li>
+      </ul>
+
+      <div class="route-guide-card__actions">
+        <a class="route-guide-card__cta" id="open-gmaps-route"
+           href="https://www.google.com/maps/dir/?api=1&origin=Terminal+Blok+M+MRT&destination={{ route_dest | urlencode }}&travelmode=transit"
+           target="_blank" rel="noopener noreferrer">
+          Buka Rute di Google Maps &#8599;
+        </a>
+        {% if is_concert_route and first_ticket %}
+        <a class="route-guide-card__spatial liquid-glass-pill" id="btn-spatial-route-3d"
+           href="{{ url_for('visualizer.studio', venue_id=first_ticket.item.venue_id, mode='wayfinding', seat=first_ticket.item.seat_id) }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <span>Lihat Rute Spasial 3D</span>
+        </a>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if crowd_guide %}
+    <section class="crowd-estimator-card liquid-glass" id="crowd-estimator-card" aria-labelledby="crowd-estimator-title">
+      <div class="crowd-estimator__head">
+        <div class="crowd-estimator__title-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <h2 id="crowd-estimator-title">Estimasi Alur Kedatangan</h2>
+        </div>
+        <span class="crowd-estimator__gate chip chip--info num">{{ crowd_guide.gate_code }} &middot; {{ crowd_guide.sector_label }}</span>
+      </div>
+      <p class="crowd-estimator__sub">{{ crowd_guide.gate_name }}</p>
+
+      <ul class="crowd-slots" aria-label="Proyeksi kepadatan pintu masuk">
+        {% for slot in crowd_guide.slots %}
+        <li class="crowd-slot crowd-slot--{{ slot.level }}{% if slot.recommended %} is-recommended{% endif %}">
+          <div class="crowd-slot__row">
+            <strong class="crowd-slot__time num">{{ slot.time }}</strong>
+            <span class="crowd-slot__status">{{ slot.status }}</span>
+          </div>
+          <div class="crowd-slot__track" aria-hidden="true">
+            <span class="crowd-slot__fill" style="width: {{ slot.fill_pct }}%;"></span>
+          </div>
+          <p class="crowd-slot__detail">{{ slot.detail }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="crowd-check-tip">
+        <div class="crowd-check-tip__head">
+          <span class="crowd-check-tip__title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+            <strong>Tips Jalur Pemeriksaan Barang</strong>
+          </span>
+          <span class="crowd-check-tip__lane num">Lajur Bebas Antrean ({{ crowd_guide.gate_code }})</span>
+        </div>
+        <p><strong>{{ crowd_guide.body_check_lane }}</strong> &middot; {{ crowd_guide.body_check_tip }}</p>
+      </div>
+    </section>
+    {% endif %}
+    {% endif %}
+  </div>
 </div>
+<script>
+(function () {
+  var card = document.querySelector('.route-guide-card');
+  var hubs = document.querySelectorAll('[data-route-hub]');
+  var gmapsLink = document.getElementById('open-gmaps-route');
+  var dest = card ? encodeURIComponent(card.getAttribute('data-route-dest') || '') : '';
+  function mapsUrl() {
+    var on = document.querySelector('[data-route-hub][aria-pressed="true"]');
+    var origin = encodeURIComponent((on && on.getAttribute('data-route-hub')) || 'Jakarta');
+    var mode = card && card.getAttribute('data-route-mode') === 'car' ? 'driving' : 'transit';
+    return 'https://www.google.com/maps/dir/?api=1&origin=' + origin + '&destination=' + dest + '&travelmode=' + mode;
+  }
+  var hint = document.getElementById('route-hint');
+  function syncMaps() {
+    if (gmapsLink) gmapsLink.href = mapsUrl();
+    if (hint && card) hint.textContent = card.getAttribute(card.getAttribute('data-route-mode') === 'car' ? 'data-hint-car' : 'data-hint-transit');
+  }
+  hubs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      hubs.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+      syncMaps();
+    });
+  });
+  var modeBtns = document.querySelectorAll('[data-route-mode-btn]');
+  modeBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+      if (card) card.setAttribute('data-route-mode', btn.getAttribute('data-route-mode-btn'));
+      syncMaps();
+    });
+  });
+  var walletBtn = document.getElementById('save-wallet-btn');
+  var toastRegion = document.getElementById('toast-region');
+  if (walletBtn) {
+    walletBtn.addEventListener('click', function () {
+      if (!toastRegion) return;
+      var item = document.createElement('div');
+      item.className = 'toast toast--info';
+      item.textContent = 'Pass Apple Wallet (.pkpass) siap ditambahkan.';
+      toastRegion.appendChild(item);
+      window.setTimeout(function () { item.remove(); }, 2800);
+    });
+  }
+})();
+</script>
+{% if tickets %}
+{% set primary = tickets[0] %}
+{% set primary_concert = (primary.venue_type == 'concert') or (primary.event_type == 'concert') %}
+{% set calendar_payload = {
+  'order_code': order.code,
+  'title': primary.event_title,
+  'show_date': primary.show_date,
+  'show_time': primary.show_time,
+  'location': primary.studio_cinema,
+  'gate': 'GATE 5 · Pintu Barat · SUGBK' if primary_concert else primary.studio_cinema,
+  'is_concert': primary_concert,
+  'ticket_codes': tickets | map(attribute='code') | list,
+  'seats': tickets | map(attribute='item.seat_label') | list
+} %}
+<script type="application/json" id="eticket-calendar-data">{{ calendar_payload | tojson }}</script>
+<script defer src="{{ url_for('static', filename='js/eticket.js') }}"></script>
+{% endif %}
 {% endblock %}

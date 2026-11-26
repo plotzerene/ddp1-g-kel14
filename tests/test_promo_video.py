@@ -23,17 +23,17 @@ class PromoVideoTests(unittest.TestCase):
         self.assertIn("component={TitiketPromoMain}", root)
         self.assertIn('import "../../app/static/css/liquid_glass.css";', root)
         timeline = read(SRC / "TitiketPromo/timeline.ts")
-        for name, value in (("FPS", 60), ("WIDTH", 1920), ("HEIGHT", 1080), ("DURATION_IN_FRAMES", 1200)):
+        for name, value in (("FPS", 60), ("WIDTH", 1920), ("HEIGHT", 1080), ("DURATION_IN_FRAMES", 1320)):
             with self.subTest(constant=name):
                 self.assertIn(f"export const {name} = {value};", timeline)
 
     def test_seven_scenes_fill_timeline_without_gaps(self):
         timeline = read(SRC / "TitiketPromo/timeline.ts")
         spans = [(int(a), int(b)) for a, b in re.findall(r"from: (\d+), durationInFrames: (\d+)", timeline)]
-        self.assertEqual(spans, [(0, 180), (180, 180), (360, 240), (600, 240), (840, 180), (1020, 120), (1140, 60)])
+        self.assertEqual(spans, [(0, 180), (180, 180), (360, 240), (600, 240), (840, 180), (1020, 120), (1140, 180)])
         for (start, length), (next_start, _) in zip(spans, spans[1:]):
             self.assertEqual(start + length, next_start)
-        self.assertEqual(spans[-1][0] + spans[-1][1], 1200)
+        self.assertEqual(spans[-1][0] + spans[-1][1], 1320)
 
     def test_global_font_stack(self):
         css = read(SRC / "styles/global.css")
@@ -107,7 +107,7 @@ class PromoVideoTests(unittest.TestCase):
         main = read(SRC / "TitiketPromo/sound.tsx")
         self.assertIn('import { Audio, interpolate, Sequence, staticFile } from "remotion";', main)
         self.assertIn('<Audio src={staticFile("audio/bgm_promo.m4a")} volume={bgmVolume} />', main)
-        frames_src = re.search(r"const BGM_FRAMES = \[(.*?)\];", main).group(1).replace("DURATION_IN_FRAMES - 1", "1199")
+        frames_src = re.search(r"const BGM_FRAMES = \[(.*?)\];", main).group(1).replace("DURATION_IN_FRAMES - 60", "1260").replace("DURATION_IN_FRAMES - 1", "1319")
         frames = [int(x) for x in frames_src.split(",")]
         volumes = [float(x) for x in re.search(r"const BGM_VOLUMES = \[(.*?)\];", main).group(1).split(",")]
 
@@ -119,7 +119,7 @@ class PromoVideoTests(unittest.TestCase):
 
         # Detik 0-5 senyap (efek air di BGM tidak terdengar), konser 0,45, sisanya sesuai kurva sebelumnya.
         expected = {0: 0.0, 150: 0.0, 300: 0.0, 330: 0.7, 450: 0.7, 600: 0.25, 720: 0.25, 840: 0.25,
-                    855: 0.35, 930: 0.35, 1005: 0.35, 1020: 0.7, 1100: 0.7, 1140: 0.7, 1199: 0.0}
+                    855: 0.35, 930: 0.35, 1005: 0.35, 1020: 0.7, 1100: 0.7, 1140: 0.7, 1260: 0.7, 1319: 0.0}
         for frame, level in expected.items():
             with self.subTest(frame=frame):
                 self.assertAlmostEqual(volume(frame), level, places=3)

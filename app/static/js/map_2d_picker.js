@@ -104,9 +104,34 @@ export class Map2DPicker {
     this.selectedSeat = null;
     this.selectedBlock = null;
     this.standingBlock = 'festival';
+    this.mobileZoomed = false;
+    this.lastTapTs = 0;
+    this.friendSeatId = null;
+    this.friendLayer = null;
+    this.seatLayer = null;
+    this.clusterLayer = null;
+    this.clusterSeatIds = [];
+    this.clusterMidpoint = null;
+    this._cinemaScale = 100;
+    this._resetBound = false;
+    this._scrubActive = false;
+    this._scrubTimer = null;
+    this._scrubStart = null;
+    this._scrubSeat = null;
+    this._scrubAffected = [];
+    this._suppressClickUntil = 0;
+    this._loupeEl = null;
   }
 
   render(layout) {
+    if (this._scrubTimer) {
+      window.clearTimeout(this._scrubTimer);
+      this._scrubTimer = null;
+    }
+    this._scrubActive = false;
+    this._scrubStart = null;
+    this._scrubSeat = null;
+    this._clearScrubVisuals();
     this.layout = layout;
     this.seatNodes.clear();
     this.blockNodes.clear();
@@ -116,9 +141,15 @@ export class Map2DPicker {
     this.selectedSeat = null;
     this.selectedBlock = null;
     this.standingBlock = 'festival';
+    this.friendSeatId = null;
+    this.clusterSeatIds = [];
+    this.clusterMidpoint = null;
+    this.clusterLayer = null;
+    this.resetMobileZoom();
     if (layout.kind === 'cinema') this._renderCinema();
     else this._renderStadium();
     this._bindEvents();
+    this._bindZoomReset();
     this.renderLegend();
   }
 
@@ -141,38 +172,45 @@ export class Map2DPicker {
 
   _cinemaScreenLabel(layout, screen) {
     const name = String(layout.name || '').toUpperCase();
-    if (screen.arc || name.includes('IMAX')) return 'LAYAR IMAX · CURVED';
-    if (name.includes('PREMIERE')) return 'LAYAR THE PREMIERE';
-    if (name.includes('4DX')) return 'LAYAR 4DX MOTION';
+    if (screen.arc || name.includes('IMAX')) return 'LAYAR BIOSKOP · IMAX';
+    if (name.includes('PREMIERE')) return 'LAYAR BIOSKOP · PREMIERE';
+    if (name.includes('4DX')) return 'LAYAR BIOSKOP · 4DX';
     return 'LAYAR BIOSKOP';
   }
 
   _renderCinema() {
     const L = this.layout;
     const { room, spec, screen } = L;
+    const S = this._cinemaScale;
     const halfW = room.width / 2;
     const root = svg('svg', {
       class: 'map-svg map-svg--cinema',
-      viewBox: `${-halfW - 1.4} -0.7 ${room.width + 2.8} ${room.depth + 1.4}`,
+      viewBox: `${((-halfW - 1.4) * S).toFixed(1)} ${(-0.7 * S).toFixed(1)} ${((room.width + 2.8) * S).toFixed(1)} ${((room.depth + 1.4) * S).toFixed(1)}`,
       role: 'group',
       'aria-label': `Denah kursi ${L.name}. Layar berada di sisi atas.`,
     });
 
-    svg('rect', { class: 'room', x: -halfW, y: -0.5, width: room.width, height: room.depth + 0.65, rx: 0.4 }, root);
+    svg('rect', {
+      class: 'room',
+      x: -halfW * S,
+      y: -0.5 * S,
+      width: room.width * S,
+      height: (room.depth + 0.65) * S,
+      rx: 0.4 * S,
+    }, root);
 
-    const screenPts = this._buildScreenArc(screen);
+    const screenPts = this._buildScreenArc(screen).map(([px, pz]) => [px * S, pz * S]);
     this.screenArcPts = screenPts;
-    const labelPts = screenPts.map(([px, pz]) => [px, pz + 0.92]);
-    const path = 'M' + screenPts.map(([px, pz]) => `${px.toFixed(3)},${pz.toFixed(3)}`).join(' L');
-    const labelPath = 'M' + labelPts.map(([px, pz]) => `${px.toFixed(3)},${pz.toFixed(3)}`).join(' L');
+    const labelPts = screenPts.map(([px, pz]) => [px, pz + 0.92 * S]);
+    const path = 'M' + screenPts.map(([px, pz]) => `${px.toFixed(1)},${pz.toFixed(1)}`).join(' L');
+    const labelPath = 'M' + labelPts.map(([px, pz]) => `${px.toFixed(1)},${pz.toFixed(1)}`).join(' L');
     const defs = svg('defs', {}, root);
     const uid = `screen-arc-${Math.random().toString(36).slice(2, 8)}`;
     svg('path', { id: uid, d: labelPath, fill: 'none' }, defs);
 
     svg('path', { class: 'screen-glow', d: path }, root);
-    svg('path', { class: 'screen-housing', d: path }, root);
     svg('path', { class: 'screen-line', d: path }, root);
-    const screenText = svg('text', { class: 'screen-label', 'font-size': '0.46' }, root);
+    const screenText = svg('text', { class: 'screen-label', 'font-size': String(0.46 * S) }, root);
     const textPath = svg('textPath', {
       href: `#${uid}`,
       startOffset: '50%',
@@ -181,20 +219,23 @@ export class Map2DPicker {
     textPath.textContent = this._cinemaScreenLabel(L, screen);
     this.cone = svg('path', { class: 'sight-cone', d: '' }, root);
 
-    const seatW = spec.seat_pitch * 0.84;
-    const seatH = Math.min(spec.row_depth * 0.62, seatW * 1.05);
+    const seatW = spec.seat_pitch * 0.84 * S;
+    const seatH = Math.min(spec.row_depth * 0.62, spec.seat_pitch * 0.84 * 1.05) * S;
+    const hitW = spec.seat_pitch * S;
+    const hitH = spec.row_depth * S;
     this.seatSize = { w: seatW, h: seatH };
-    const minX = L.columns[0] - seatW / 2;
-    const maxX = L.columns[L.columns.length - 1] + seatW / 2;
+    const minX = L.columns[0] * S - seatW / 2;
+    const maxX = L.columns[L.columns.length - 1] * S + seatW / 2;
     for (const row of L.rows) {
-      for (const x of [minX - 0.75, maxX + 0.75]) {
-        svg('text', { class: 'row-label', x, y: row.z }, root).textContent = row.letter;
+      for (const x of [minX - 0.75 * S, maxX + 0.75 * S]) {
+        svg('text', { class: 'row-label', x, y: row.z * S }, root).textContent = row.letter;
       }
     }
     for (const item of L.furniture || []) {
-      svg('circle', { class: 'table-dot', cx: item.x, cy: item.z, r: 0.2 }, root);
+      svg('circle', { class: 'table-dot', cx: item.x * S, cy: item.z * S, r: 0.2 * S }, root);
     }
 
+    this.clusterLayer = svg('g', { class: 'cluster-highlight-layer' }, root);
     const seatLayer = svg('g', {}, root);
     this.seatGrid = new Map();
     const rowCount = L.rows.length;
@@ -204,6 +245,8 @@ export class Map2DPicker {
     for (const seat of L.seats) {
       const sold = seat.status === 'sold';
       const isSweet = !sold && seat.row_index >= midRowMin && seat.row_index <= midRowMax && Math.abs(seat.x) <= sweetHalfW;
+      const sx = seat.x * S;
+      const sz = seat.z * S;
       const group = svg('g', {
         class: `seat${sold ? ' is-sold' : ''}${isSweet ? ' is-sweet' : ''}`,
         'data-id': seat.id,
@@ -211,17 +254,23 @@ export class Map2DPicker {
         tabindex: '-1',
         'aria-label': `Baris ${seat.row} kursi ${seat.number}, ${sold ? 'terjual' : (isSweet ? 'sweet spot tersedia' : 'tersedia')}`,
       }, seatLayer);
+      // Hitbox statis 1:1 (skala cm) agar pembesaran visual dan kuantisasi SVG tidak pernah menggeser klik kursor.
       svg('rect', {
-        class: 'seat__shape', x: seat.x - seatW / 2, y: seat.z - seatH / 2,
-        width: seatW, height: seatH, rx: seatW * 0.22,
+        class: 'seat__hit', x: sx - hitW / 2, y: sz - hitH / 2,
+        width: hitW, height: hitH, rx: seatW * 0.2,
       }, group);
+      const visual = svg('g', { class: 'seat__visual' }, group);
+      svg('rect', {
+        class: 'seat__shape', x: sx - seatW / 2, y: sz - seatH / 2,
+        width: seatW, height: seatH, rx: seatW * 0.22,
+      }, visual);
       if (sold) {
         svg('line', {
-          class: 'seat__slash', x1: seat.x - seatW * 0.3, y1: seat.z + seatH * 0.3,
-          x2: seat.x + seatW * 0.3, y2: seat.z - seatH * 0.3,
-        }, group);
+          class: 'seat__slash', x1: sx - seatW * 0.3, y1: sz + seatH * 0.3,
+          x2: sx + seatW * 0.3, y2: sz - seatH * 0.3,
+        }, visual);
       }
-      svg('text', { class: 'seat__num', x: seat.x, y: seat.z, style: `font-size:${(seatW * 0.44).toFixed(3)}px` }, group)
+      svg('text', { class: 'seat__num', x: sx, y: sz, style: `font-size:${(seatW * 0.44).toFixed(1)}px` }, visual)
         .textContent = seat.number;
       this.seatNodes.set(seat.id, { node: group, seat });
       this.seatGrid.set(`${seat.row_index}:${seat.number}`, seat.id);
@@ -229,6 +278,8 @@ export class Map2DPicker {
     const first = this.seatNodes.values().next().value;
     if (first) first.node.setAttribute('tabindex', '0');
 
+    this.seatLayer = seatLayer;
+    this.friendLayer = svg('g', { class: 'friend-seat-layer' }, root);
     this.badgeLayer = svg('g', {}, root);
     this.root = root;
     this.host.replaceChildren(root);
@@ -250,6 +301,12 @@ export class Map2DPicker {
       svg('path', { class: 'tier-bg', 'fill-rule': 'evenodd', d: `${ring(tier.outer)} ${ring(tier.inner)}` }, root);
     }
     svg('path', { class: 'pitch', d: ring(bowl.field_edge) }, root);
+    // Lintasan lari 8 lajur: digambar SETELAH latar lantai dan SEBELUM poligon lapangan/panggung,
+    // jadi cincinnya tidak tertutup lantai (bagian dalam ditutup lapangan Festival).
+    svg('path', { class: 'running-track', d: ring(bowl.field_edge) }, root);
+    for (const k of [0.985, 0.97, 0.955, 0.94, 0.925, 0.91, 0.895, 0.88]) {
+      svg('path', { class: 'track-lane', d: ring(bowl.field_edge.map((p) => [p[0] * k, p[1], p[2] * k])) }, root);
+    }
 
     // Area berdiri (Festival & My Universe berbagi lapangan yang sama).
     const festival = L.blocks.find((b) => b.id === 'festival');
@@ -286,7 +343,7 @@ export class Map2DPicker {
     // Panggung, LED, runway, B-Stage, C-Stage.
     const deck = stage.deck;
     svg('rect', { class: 'stage-deck', x: deck.x0, y: deck.z0, width: deck.x1 - deck.x0, height: deck.z1 - deck.z0, rx: 2 }, root);
-    svg('text', { class: 'stage-label', x: 0, y: (deck.z0 + deck.z1) / 2 + 3 }, root).textContent = 'STAGE';
+    svg('text', { class: 'stage-label', x: 0, y: (deck.z0 + deck.z1) / 2 + 3 }, root).textContent = 'PANGGUNG';
     for (const surface of L.targets[0].surfaces) {
       const [cx, , cz] = surface.center;
       const [nx, , nz] = surface.normal;
@@ -384,16 +441,287 @@ export class Map2DPicker {
     });
   }
 
+  _isCoarsePointer() {
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  }
+
+  _isMobileViewport() {
+    return this._isCoarsePointer() && window.matchMedia('(max-width: 640px)').matches;
+  }
+
+  _bindZoomReset() {
+    if (this._resetBound) return;
+    const btn = document.getElementById('btn-map-zoom-reset');
+    if (!btn) return;
+    this._resetBound = true;
+    btn.addEventListener('click', () => this.resetMobileZoom());
+  }
+
+  zoomToPoint(clientX, clientY) {
+    if (!this.root || !this.layout || this.layout.kind !== 'cinema' || !this._isMobileViewport()) return;
+    const rect = this.root.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ox = Math.min(88, Math.max(12, ((clientX - rect.left) / rect.width) * 100));
+    const oy = Math.min(90, Math.max(10, ((clientY - rect.top) / rect.height) * 100));
+    this.root.style.transformOrigin = `${ox.toFixed(1)}% ${oy.toFixed(1)}%`;
+    this.root.style.transform = 'scale(1.92)';
+    this.root.classList.add('is-mobile-zoomed');
+    this.mobileZoomed = true;
+    const btn = document.getElementById('btn-map-zoom-reset');
+    if (btn) btn.hidden = false;
+  }
+
+  resetMobileZoom() {
+    if (this.root) {
+      this.root.style.removeProperty('transform-origin');
+      this.root.style.removeProperty('transform');
+      this.root.classList.remove('is-mobile-zoomed');
+    }
+    this.mobileZoomed = false;
+    const btn = document.getElementById('btn-map-zoom-reset');
+    if (btn) btn.hidden = true;
+  }
+
+  /* •••••••••••• Mobile Loupe Scrubbing (Hanya Perangkat Sentuh <= 768px) •••••••••••• */
+  _isScrubViewport() {
+    return this._isCoarsePointer() && window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  _ensureLoupeBubble() {
+    if (this._loupeEl && document.body.contains(this._loupeEl)) return this._loupeEl;
+    let bubble = document.getElementById('seat-loupe-bubble');
+    if (!bubble) {
+      bubble = h('div', {
+        id: 'seat-loupe-bubble',
+        class: 'seat-loupe-bubble',
+        role: 'status',
+        'aria-live': 'polite',
+        hidden: true,
+      },
+      h('span', { class: 'seat-loupe-bubble__dot', 'aria-hidden': 'true' }),
+      h('span', { class: 'seat-loupe-bubble__text' }));
+      document.body.appendChild(bubble);
+    }
+    this._loupeEl = bubble;
+    return bubble;
+  }
+
+  _findNearestSeatAtClient(clientX, clientY) {
+    if (!this.root || !this.layout || this.layout.kind !== 'cinema') return null;
+    const { seats, spec } = this.layout;
+    if (!Array.isArray(seats) || !seats.length) return null;
+
+    const ctm = typeof this.root.getScreenCTM === 'function' ? this.root.getScreenCTM() : null;
+    if (ctm && typeof this.root.createSVGPoint === 'function') {
+      try {
+        const pt = this.root.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const local = pt.matrixTransform(ctm.inverse());
+        const S = this._cinemaScale;
+        const lx = local.x / S;
+        const ly = local.y / S;
+        const maxDist = Math.max(spec.seat_pitch || 0.65, spec.row_depth || 0.9) * 1.45;
+        let best = null;
+        let bestDist = maxDist;
+        for (const seat of seats) {
+          const d = Math.hypot(seat.x - lx, seat.z - ly);
+          if (d < bestDist) {
+            bestDist = d;
+            best = seat;
+          }
+        }
+        if (best) return best;
+      } catch {
+        // Fallback elementFromPoint di bawah.
+      }
+    }
+
+    const hitEl = document.elementFromPoint(clientX, clientY);
+    const seatGroup = hitEl && hitEl.closest ? hitEl.closest('.seat') : null;
+    if (seatGroup && seatGroup.dataset.id) {
+      const entry = this.seatNodes.get(seatGroup.dataset.id);
+      if (entry) return entry.seat;
+    }
+    return null;
+  }
+
+  _clearScrubVisuals() {
+    if (Array.isArray(this._scrubAffected)) {
+      for (const node of this._scrubAffected) {
+        node.classList.remove('is-loupe-focus', 'is-loupe-near');
+      }
+      this._scrubAffected = [];
+    }
+    if (this.root) this.root.classList.remove('is-scrubbing');
+    const loupe = this._loupeEl || document.getElementById('seat-loupe-bubble');
+    if (loupe) loupe.hidden = true;
+  }
+
+  _updateScrubAt(clientX, clientY) {
+    const loupe = this._ensureLoupeBubble();
+    const target = this._findNearestSeatAtClient(clientX, clientY);
+
+    for (const node of this._scrubAffected) {
+      node.classList.remove('is-loupe-focus', 'is-loupe-near');
+    }
+    this._scrubAffected = [];
+
+    const clampedX = Math.min(window.innerWidth - 20, Math.max(20, clientX));
+    const clampedY = Math.max(44, clientY - 50);
+    loupe.style.left = `${clampedX.toFixed(1)}px`;
+    loupe.style.top = `${clampedY.toFixed(1)}px`;
+
+    if (!target) {
+      this._scrubSeat = null;
+      loupe.hidden = true;
+      return;
+    }
+
+    this._scrubSeat = target;
+    const focusEntry = this.seatNodes.get(target.id);
+    if (focusEntry) {
+      focusEntry.node.classList.add('is-loupe-focus');
+      if (this.seatLayer && focusEntry.node.parentNode === this.seatLayer) {
+        this.seatLayer.appendChild(focusEntry.node);
+      }
+      this._scrubAffected.push(focusEntry.node);
+    }
+
+    for (const seat of this.layout.seats) {
+      if (seat.id === target.id) continue;
+      if (Math.abs(seat.row_index - target.row_index) <= 1 && Math.abs(seat.number - target.number) <= 1) {
+        const entry = this.seatNodes.get(seat.id);
+        if (entry) {
+          entry.node.classList.add('is-loupe-near');
+          this._scrubAffected.push(entry.node);
+        }
+      }
+    }
+
+    const available = target.status !== 'sold' && target.id !== this.friendSeatId;
+    loupe.classList.toggle('is-sold', !available);
+    loupe.classList.toggle('is-available', available);
+    const labelNode = loupe.querySelector('.seat-loupe-bubble__text');
+    if (labelNode) {
+      labelNode.textContent = `Baris ${target.row} · Kursi ${target.number} - ${available ? 'Tersedia' : 'Terisi'}`;
+    }
+    loupe.hidden = false;
+  }
+
+  _startScrubbing(clientX, clientY) {
+    if (!this.root || !this.layout || this.layout.kind !== 'cinema') return;
+    this._scrubActive = true;
+    this.root.classList.add('is-scrubbing');
+    this._hideTooltip();
+    this._updateScrubAt(clientX, clientY);
+  }
+
+  _bindScrubEvents(root) {
+    if (!this.layout || this.layout.kind !== 'cinema' || !this._isCoarsePointer()) return;
+
+    root.addEventListener('touchstart', (event) => {
+      if (!this._isScrubViewport() || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      this._scrubStart = { x: touch.clientX, y: touch.clientY };
+      if (this._scrubTimer) window.clearTimeout(this._scrubTimer);
+      this._scrubTimer = window.setTimeout(() => {
+        this._scrubTimer = null;
+        if (this._scrubStart) {
+          this._startScrubbing(this._scrubStart.x, this._scrubStart.y);
+        }
+      }, 105);
+    }, { passive: true });
+
+    root.addEventListener('touchmove', (event) => {
+      if (!this._isScrubViewport() || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      if (!this._scrubActive && this._scrubStart) {
+        const moved = Math.hypot(touch.clientX - this._scrubStart.x, touch.clientY - this._scrubStart.y);
+        if (moved > 6) {
+          if (this._scrubTimer) {
+            window.clearTimeout(this._scrubTimer);
+            this._scrubTimer = null;
+          }
+          this._startScrubbing(touch.clientX, touch.clientY);
+        }
+      }
+      if (this._scrubActive) {
+        event.preventDefault();
+        this._updateScrubAt(touch.clientX, touch.clientY);
+      }
+    }, { passive: false });
+
+    const finishScrub = (event) => {
+      if (this._scrubTimer) {
+        window.clearTimeout(this._scrubTimer);
+        this._scrubTimer = null;
+      }
+      if (!this._scrubActive) {
+        this._scrubStart = null;
+        return;
+      }
+      const committed = event.type === 'touchend' ? this._scrubSeat : null;
+      this._scrubActive = false;
+      this._scrubStart = null;
+      this._scrubSeat = null;
+      this._suppressClickUntil = Date.now() + 350;
+      this._clearScrubVisuals();
+      if (committed && committed.status !== 'sold' && committed.id !== this.friendSeatId) {
+        this._runNoScroll(() => this.onSelect({ seat_id: committed.id }));
+      }
+    };
+
+    root.addEventListener('touchend', finishScrub, { passive: true });
+    root.addEventListener('touchcancel', finishScrub, { passive: true });
+  }
+
   /* •••••••••••• Interaksi •••••••••••• */
   _bindEvents() {
     const root = this.root;
     const pick = (event) => event.target.closest('.seat, .block, .spot, .landmark');
+    this._bindScrubEvents(root);
+    this._pointerDown = false;
+    this._lastRaisedSeat = null;
 
     root.addEventListener('pointerdown', (event) => {
+      this._pointerDown = true;
       if (pick(event)) event.preventDefault();
     });
+    const releasePointer = () => { this._pointerDown = false; };
+    root.addEventListener('pointerup', releasePointer);
+    root.addEventListener('pointercancel', releasePointer);
+
+    root.addEventListener('pointerover', (event) => {
+      if (event.pointerType === 'touch' || this._pointerDown) return;
+      const seatNode = event.target.closest('.seat:not(.is-sold)');
+      if (seatNode && this.seatLayer && seatNode !== this._lastRaisedSeat && seatNode.parentNode === this.seatLayer) {
+        this._lastRaisedSeat = seatNode;
+        this.seatLayer.appendChild(seatNode);
+      }
+    });
+
     root.addEventListener('click', (event) => {
+      if (Date.now() < this._suppressClickUntil) return;
       const node = pick(event);
+      const isMobileCinema = this.layout && this.layout.kind === 'cinema' && this._isMobileViewport();
+      if (isMobileCinema) {
+        const now = Date.now();
+        const isDoubleTap = (now - this.lastTapTs) < 320;
+        this.lastTapTs = now;
+
+        if (isDoubleTap && !node) {
+          if (this.mobileZoomed) this.resetMobileZoom();
+          else this.zoomToPoint(event.clientX, event.clientY);
+          return;
+        }
+
+        if (!this.mobileZoomed) {
+          this.zoomToPoint(event.clientX, event.clientY);
+          if (!node || node.classList.contains('landmark')) return;
+        }
+      }
+
       if (node && !node.classList.contains('landmark')) {
         this._runNoScroll(() => this._activate(node));
       }
@@ -447,8 +775,9 @@ export class Map2DPicker {
     let detail = '';
     if (node.classList.contains('seat')) {
       const { seat } = this.seatNodes.get(node.dataset.id);
-      title = `Baris ${seat.row} · Kursi ${seat.number}`;
-      detail = `${seat.status === 'sold' ? 'Terisi' : 'Tersedia'} · ${formatRupiahShort(this.layout.price)}`;
+      const isFriend = seat.id === this.friendSeatId;
+      title = isFriend ? `Baris ${seat.row} · Kursi ${seat.number} (Kursi Teman Anda)` : `Baris ${seat.row} · Kursi ${seat.number}`;
+      detail = `${isFriend ? 'Kursi Teman Anda' : (seat.status === 'sold' ? 'Terisi' : 'Tersedia')} · ${formatRupiahShort(this.layout.price)}`;
       const score = this.heat && this.heat.get(seat.id);
       if (score !== undefined && score !== null) detail += ` · skor ${score}`;
     } else if (node.classList.contains('spot')) {
@@ -499,11 +828,19 @@ export class Map2DPicker {
       current.node.classList.add('is-selected');
       current.node.setAttribute('tabindex', '0');
       this.selectedSeat = pov.seat.seat_id;
-      const [x, , z] = pov.seat.floor;
+      const inCluster = this.clusterSeatIds.length >= 2 && this.clusterSeatIds.includes(pov.seat.seat_id) && this.clusterMidpoint;
+      if (!inCluster && this.clusterSeatIds.length) {
+        this.setCluster([], null);
+      }
+      const [x, , z] = inCluster
+        ? [this.clusterMidpoint.x, 0, this.clusterMidpoint.z]
+        : pov.seat.floor;
+      const sx = x * this._cinemaScale;
+      const sz = z * this._cinemaScale;
       const pts = this.screenArcPts || [];
       if (pts.length >= 2) {
-        const arcSegs = pts.map(([ax, az]) => `L${ax.toFixed(3)},${az.toFixed(3)}`).join(' ');
-        this.cone.setAttribute('d', `M${x.toFixed(3)},${z.toFixed(3)} ${arcSegs} Z`);
+        const arcSegs = pts.map(([ax, az]) => `L${ax.toFixed(1)},${az.toFixed(1)}`).join(' ');
+        this.cone.setAttribute('d', `M${sx.toFixed(1)},${sz.toFixed(1)} ${arcSegs} Z`);
       }
       return;
     }
@@ -538,6 +875,60 @@ export class Map2DPicker {
     this._syncCategoryButtons();
   }
 
+  /** Sorot beberapa kursi berdampingan secara serentak di peta 2D + kapsul titik tengah. */
+  setCluster(seatIds = [], midpoint = null) {
+    this.clusterSeatIds = Array.isArray(seatIds) ? [...seatIds] : [];
+    this.clusterMidpoint = midpoint || null;
+    for (const { node } of this.seatNodes.values()) {
+      node.classList.remove('is-cluster');
+    }
+    if (this.clusterLayer) this.clusterLayer.replaceChildren();
+    if (!this.layout || this.layout.kind !== 'cinema' || this.clusterSeatIds.length < 2) return;
+
+    const clusterEntries = this.clusterSeatIds
+      .map((id) => this.seatNodes.get(id))
+      .filter(Boolean);
+    if (!clusterEntries.length) return;
+
+    for (const entry of clusterEntries) {
+      entry.node.classList.add('is-cluster');
+    }
+
+    const S = this._cinemaScale;
+    const xs = clusterEntries.map((e) => e.seat.x * S);
+    const zs = clusterEntries.map((e) => e.seat.z * S);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const z = zs.reduce((acc, v) => acc + v, 0) / zs.length;
+    const midX = midpoint && Number.isFinite(Number(midpoint.x)) ? Number(midpoint.x) * S : (minX + maxX) / 2;
+    const midZ = midpoint && Number.isFinite(Number(midpoint.z)) ? Number(midpoint.z) * S : z;
+    const seatW = (this.seatSize && this.seatSize.w) || 0.48 * S;
+    const seatH = (this.seatSize && this.seatSize.h) || 0.48 * S;
+
+    if (this.clusterLayer) {
+      svg('rect', {
+        class: 'cluster-capsule',
+        x: (minX - seatW * 0.64).toFixed(1),
+        y: (z - seatH * 0.68).toFixed(1),
+        width: ((maxX - minX) + seatW * 1.28).toFixed(1),
+        height: (seatH * 1.36).toFixed(1),
+        rx: (seatH * 0.5).toFixed(1),
+      }, this.clusterLayer);
+      svg('circle', {
+        class: 'cluster-midpoint',
+        cx: midX.toFixed(1),
+        cy: midZ.toFixed(1),
+        r: (seatW * 0.18).toFixed(1),
+      }, this.clusterLayer);
+    }
+
+    const pts = this.screenArcPts || [];
+    if (this.cone && pts.length >= 2) {
+      const arcSegs = pts.map(([ax, az]) => `L${ax.toFixed(1)},${az.toFixed(1)}`).join(' ');
+      this.cone.setAttribute('d', `M${midX.toFixed(1)},${midZ.toFixed(1)} ${arcSegs} Z`);
+    }
+  }
+
   setCart(keys) {
     this.cartKeys = new Set(keys);
     if (!this.layout || this.layout.kind !== 'cinema') return;
@@ -546,17 +937,70 @@ export class Map2DPicker {
     }
   }
 
+  /** Tandai kursi/blok milik teman sebagai terisi dengan badge "Kursi Teman Anda". */
+  setFriendSeat(seatId) {
+    this.friendSeatId = seatId || null;
+    for (const { node, seat } of this.seatNodes.values()) {
+      node.classList.remove('is-friend-seat');
+      if (seat.status !== 'sold') {
+        node.setAttribute('aria-label', `Baris ${seat.row} kursi ${seat.number}, tersedia`);
+      }
+    }
+    for (const node of this.blockNodes.values()) node.classList.remove('is-friend-seat');
+    if (this.friendLayer) this.friendLayer.replaceChildren();
+    if (!seatId || !this.layout) return;
+
+    if (this.layout.kind === 'cinema') {
+      const entry = this.seatNodes.get(seatId);
+      if (!entry || !this.friendLayer) return;
+      const S = this._cinemaScale;
+      const { node, seat } = entry;
+      node.classList.add('is-friend-seat', 'is-sold');
+      node.setAttribute('aria-label', `Baris ${seat.row} kursi ${seat.number}, Kursi Teman Anda`);
+      const seatW = (this.seatSize && this.seatSize.w) || 0.48 * S;
+      const seatH = (this.seatSize && this.seatSize.h) || 0.48 * S;
+      const badgeW = Math.max(seatW * 3.4, 2.35 * S);
+      const badgeH = Math.max(seatH * 0.72, 0.36 * S);
+      const bx = seat.x * S;
+      const by = seat.z * S - seatH * 0.96;
+      const pill = svg('g', { class: 'friend-badge' }, this.friendLayer);
+      svg('rect', {
+        class: 'friend-badge-bg',
+        x: bx - badgeW / 2,
+        y: by - badgeH / 2,
+        width: badgeW,
+        height: badgeH,
+        rx: badgeH / 2,
+      }, pill);
+      svg('text', {
+        class: 'friend-badge-text',
+        x: bx,
+        y: by,
+        style: `font-size:${(badgeH * 0.46).toFixed(1)}px`,
+      }, pill).textContent = 'Kursi Teman Anda';
+      return;
+    }
+
+    const prefix = String(seatId).includes(':') ? String(seatId).split(':')[0] : String(seatId);
+    const blockKey = prefix === 'my_universe' ? 'festival' : prefix;
+    const blockNode = this.blockNodes.get(blockKey);
+    if (blockNode) blockNode.classList.add('is-friend-seat');
+  }
+
   /** Tandai 3 rekomendasi (peringkat 1–3) di peta. */
   setRecommendations(list) {
     if (!this.badgeLayer) return;
     this.badgeLayer.replaceChildren();
     const cinema = this.layout.kind === 'cinema';
+    const S = cinema ? this._cinemaScale : 1;
     for (const rec of list) {
-      const [x, , z] = rec.floor;
+      const [rawX, , rawZ] = rec.floor;
+      const x = rawX * S;
+      const z = rawZ * S;
       const radius = cinema ? this.seatSize.w * 0.5 : 5.2;
       const cy = cinema ? z - this.seatSize.h * 0.95 : z;
       const badge = svg('g', { class: 'reco-badge' }, this.badgeLayer);
-      svg('circle', { cx: x, cy, r: radius, 'stroke-width': cinema ? 0.04 : 0.6 }, badge);
+      svg('circle', { cx: x, cy, r: radius, 'stroke-width': cinema ? 4 : 0.6 }, badge);
       svg('text', { x, y: cy, style: `font-size:${(radius * 1.25).toFixed(2)}px` }, badge).textContent = rec.rank;
     }
   }
@@ -569,8 +1013,12 @@ export class Map2DPicker {
     if (!data) {
       this.heat = null;
       this.heatRange = null;
-      if (cinema) for (const entry of this.seatNodes.values()) clearFill(entry.node.firstChild);
-      else for (const node of this.blockNodes.values()) clearFill(node);
+      if (cinema) {
+        for (const entry of this.seatNodes.values()) {
+          const shape = entry.node.querySelector('.seat__shape');
+          if (shape) clearFill(shape);
+        }
+      } else for (const node of this.blockNodes.values()) clearFill(node);
       this.renderLegend();
       return;
     }
@@ -581,7 +1029,8 @@ export class Map2DPicker {
       for (const cell of data.cells) {
         this.heat.set(cell.seat_id, cell.score);
         const entry = this.seatNodes.get(cell.seat_id);
-        if (entry) entry.node.firstChild.style.fill = heatColor((cell.score - data.min) / span);
+        const shape = entry && entry.node.querySelector('.seat__shape');
+        if (shape) shape.style.fill = heatColor((cell.score - data.min) / span);
       }
     } else {
       const best = new Map();
@@ -631,10 +1080,10 @@ export class Map2DPicker {
         h('span', { class: `legend-swatch ${cls}` }), label);
       host.append(
         swatch('legend-swatch--avail', 'Tersedia'),
-        swatch('legend-swatch--chosen', 'Terpilih'),
+        swatch('legend-swatch--cart', 'Terpilih'),
         swatch('legend-swatch--taken', 'Terisi'),
-        swatch('legend-swatch--sweet', 'Sweet Spot'),
-        swatch('legend-swatch--cart', 'Di keranjang'),
+        swatch('legend-swatch--sweet', 'Rekomendasi POV'),
+        swatch('legend-swatch--chosen', 'Pratinjau 3D'),
         h('span', { class: 'legend-note', text:
           `Semua kursi ${formatRupiahShort(L.price)}. Baris A = paling belakang (konvensi XXI), layar di sisi atas peta.` }),
       );
@@ -692,16 +1141,27 @@ export class SubPositionPicker {
     this.layout = null;
     this.block = null;
     this.choice = { band: 'tengah', side: 'tengah', spot: 3 };
+    this.clusterSeatIds = [];
   }
 
   get isOpen() {
     return !this.root.hidden;
   }
 
+  setClusterSeats(seatIds = []) {
+    this.clusterSeatIds = Array.isArray(seatIds) ? [...seatIds] : [];
+    if (!this.gridHost) return;
+    const set = new Set(this.clusterSeatIds);
+    for (const btn of this.gridHost.querySelectorAll('.mini-seat')) {
+      btn.classList.toggle('is-cluster', set.has(btn.dataset.seat));
+    }
+  }
+
   close() {
     this.root.hidden = true;
     this.root.replaceChildren();
     this.block = null;
+    this.current = null;
   }
 
   /** Buka picker untuk satu blok. Mengembalikan selector bawaan blok tersebut. */
@@ -710,7 +1170,7 @@ export class SubPositionPicker {
     const block = layout.blocks.find((b) => b.id === blockId);
     if (!block) return null;
     this.block = block;
-    this.root.replaceChildren(this._header(block), ...(block.standing ? this._standing(block) : this._seated(block)));
+    this.root.replaceChildren(h('div', { class: 'picker__grabber', 'aria-hidden': 'true' }), this._header(block), ...(block.standing ? this._standing(block) : this._seated(block)));
     this.root.hidden = false;
     return this.currentSelector();
   }
@@ -726,16 +1186,13 @@ export class SubPositionPicker {
     const chips = [h('span', { class: 'chip chip--accent num', text: formatRupiah(block.price) })];
     if (block.restricted) chips.push(h('span', { class: 'chip chip--warning' }, icon('alert', 'icon--sm'), 'Restricted view'));
     chips.push(h('span', { class: 'chip', text: block.standing ? 'Free Standing (Berdiri Bebas)' : 'Duduk Bernomor' }));
-    const detail = block.standing
-      ? block.description
-      : `${block.description} ${block.row_count} baris, ±${block.seats_per_row} kursi per baris.`;
     return h('header', { class: 'panel__head' },
       h('div', {},
         h('div', { class: 'picker__title' },
           h('span', { class: 'picker__swatch', style: `background:${block.color}` }),
-          h('h2', { id: 'picker-title', text: block.standing ? `${block.label} — Pilih Spot Berdiri` : `${block.label} — Pilih Kursi` }),
+          h('h2', { id: 'picker-title', text: block.standing ? `${block.label} — Pilih Spot Berdiri` : block.label }),
           ...chips),
-        h('p', { class: 'panel__hint', text: detail })),
+        block.standing ? h('p', { class: 'panel__hint', text: block.description }) : null),
       h('button', {
         class: 'btn btn--icon btn--ghost', type: 'button', 'aria-label': 'Tutup pemilih posisi',
         onclick: () => this.close(),
@@ -759,8 +1216,56 @@ export class SubPositionPicker {
       Object.assign(this.choice, patch);
       this.onSelect(this.currentSelector());
     };
+    const rowSeats = block.row_seats;                    // jumlah kursi per baris (indeks 0 = baris 1)
+    const searchError = h('p', { class: 'picker__search-error', hidden: true });
+    const field = (iconName, label, attrs) => {
+      const input = h('input', { type: 'number', inputmode: 'numeric', min: 1, step: 1, class: 'picker__search-input num', ...attrs });
+      return [input, h('label', { class: 'picker__field' }, icon(iconName, 'icon--sm'), h('span', { text: label }), input)];
+    };
+    const [rowInput, rowField] = field('ticket', 'Baris', { max: rowSeats.length, placeholder: '14', 'aria-label': 'Nomor baris' });
+    const [seatInput, seatField] = field('seat', 'Nomor Kursi', { max: Math.max(...rowSeats), placeholder: '49', 'aria-label': 'Nomor kursi' });
+    this.rowInput = rowInput;
+    this.seatInput = seatInput;
+
+    // Kursi di baris baru yang paling dekat secara sudut (bearing) = kursi tepat di depan/belakang kursi lama.
+    const snapSeat = (fromRow, fromSeat, toRow) => {
+      const fromCount = rowSeats[fromRow - 1], toCount = rowSeats[toRow - 1];
+      return Math.min(toCount, Math.max(1, Math.round(((fromSeat - 0.5) / fromCount) * toCount + 0.5)));
+    };
+    const apply = (rowChanged) => {
+      const row = Math.round(Number(rowInput.value)), prev = this.current;
+      if (!rowInput.value || row < 1 || row > rowSeats.length) {
+        searchError.textContent = `Baris tersedia: 1–${rowSeats.length}.`;
+        searchError.hidden = false;
+        return;
+      }
+      let seat = Math.round(Number(seatInput.value));
+      if (rowChanged || !seatInput.value) {
+        seat = prev ? snapSeat(prev.row, prev.seat, row) : Math.ceil(rowSeats[row - 1] / 2);
+        seatInput.value = String(seat);
+      }
+      if (seat < 1 || seat > rowSeats[row - 1]) {
+        searchError.textContent = `Baris ${row} punya kursi 1–${rowSeats[row - 1]}.`;
+        searchError.hidden = false;
+        return;
+      }
+      searchError.hidden = true;
+      seatInput.max = String(rowSeats[row - 1]);
+      this.current = { row, seat };
+      this.onSelect({ block_id: block.id, row, seat });
+    };
+    rowInput.addEventListener('change', () => apply(true));
+    seatInput.addEventListener('change', () => apply(false));
+    const searchForm = h('form', {
+      class: 'picker__search-form',
+      onsubmit: (event) => { event.preventDefault(); apply(String(this.current && this.current.row) !== rowInput.value); },
+    }, rowField, seatField, h('button', { type: 'submit', hidden: true }));
+
     this.bandGroup = this._segmented('Posisi baris',
-      block.bands.map((b) => ({ key: b.key, label: b.label, note: `baris ${b.row}` })),
+      block.bands.map((b) => ({
+        key: b.key,
+        label: `${b.label.replace(/^Baris\s+/, '')} (${b.row})`,   // kanvas 08A/B: Depan (1) · Tengah (14) · Belakang (27)
+      })),
       this.choice.band, (band) => pick({ band }));
     this.sideGroup = this._segmented('Sisi blok',
       block.sides.map((s) => ({ key: s.key, label: s.label })),
@@ -768,26 +1273,69 @@ export class SubPositionPicker {
 
     const cols = Math.max(...block.mini_grid.map((row) => row.length));
     this.gridHost = h('div', { class: 'mini-grid', style: `--cols:${cols}` });
+    this.activeRow = null;
     for (const row of block.mini_grid) {
-      const line = h('div', { class: 'mini-grid__row' },
-        h('span', { class: 'mini-grid__label num', text: `Baris ${row[0].row}` }));
+      const rowNo = row[0].row;
+      const line = h('div', { class: 'mini-grid__row', 'data-row': String(rowNo) },
+        h('button', {
+          class: 'mini-grid__label num', type: 'button', 'aria-pressed': 'false',
+          'aria-label': `Pilih baris ${rowNo}`, text: `Baris ${rowNo}`,
+          onclick: () => this._pickRow(rowNo),
+        }));
       for (const cell of row) {
         line.append(h('button', {
           class: 'mini-seat num', type: 'button', 'data-seat': cell.seat_id, 'aria-pressed': 'false',
-          'aria-label': `Baris ${cell.row} kursi ${cell.seat}`,
+          'aria-label': `Baris ${cell.row} kursi ${cell.seat}`, disabled: true,
           onclick: () => this.onSelect({ seat_id: cell.seat_id }),
         }, String(cell.seat)));
       }
       this.gridHost.append(line);
     }
 
+    this.summarySeatEl = h('strong', { class: 'picker-drawer__summary-seat num', text: `${block.label} · Pilih Kursi` });
+    const footer = h('div', { class: 'picker-drawer__footer' },
+      h('div', { class: 'picker-drawer__summary' },
+        this.summarySeatEl,
+        h('span', { class: 'picker-drawer__summary-price num', text: formatRupiah(block.price) })),
+      h('button', {
+        type: 'button',
+        class: 'btn btn--teal-primary liquid-glass-btn-primary',
+        onclick: () => {
+          const vp = document.getElementById('viewport');
+          if (vp && typeof vp.scrollIntoView === 'function') {
+            vp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          this.close();
+        },
+      }, 'Lihat POV 3D Kursi Ini'));
+
     return [
-      h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'Baris' }), this.bandGroup),
+      h('div', { class: 'picker__group' }, searchForm, searchError),
+      h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'BARIS' }), this.bandGroup),
+      h('div', { class: 'picker__group' }, h('span', { class: 'eyebrow', text: 'SISI BLOK' }), this.sideGroup),
       h('div', { class: 'picker__group' },
-        h('span', { class: 'eyebrow', text: 'Sisi blok (dilihat menghadap lapangan)' }), this.sideGroup),
-      h('div', { class: 'picker__group' },
-        h('span', { class: 'eyebrow', text: 'Atau pilih kursi perwakilan' }), this.gridHost),
+        h('div', { class: 'picker__matrix-head' },
+          h('span', { class: 'eyebrow', text: 'Kursi Perwakilan' }),
+          h('span', { class: 'picker__matrix-hint', text: 'Pilih baris dulu, lalu nomor kursi' }),
+          h('div', { class: 'picker__matrix-legend' },
+            h('span', {}, h('i', { class: 'mini-dot mini-dot--avail' }), 'Tersedia'),
+            h('span', {}, h('i', { class: 'mini-dot mini-dot--taken' }), 'Terisi'),
+            h('span', {}, h('i', { class: 'mini-dot mini-dot--picked' }), 'Dipilih'))),
+        this.gridHost),
+      footer,
     ];
+  }
+
+  /** Pilih baris dulu: hanya nomor kursi pada baris aktif yang bisa ditekan. */
+  _pickRow(rowNo) {
+    this.activeRow = rowNo;
+    if (!this.gridHost) return;
+    for (const line of this.gridHost.querySelectorAll('.mini-grid__row')) {
+      const active = Number(line.dataset.row) === Number(rowNo);
+      line.classList.toggle('is-row-active', active);
+      line.querySelector('.mini-grid__label').setAttribute('aria-pressed', String(active));
+      for (const seat of line.querySelectorAll('.mini-seat')) seat.disabled = !active;
+    }
   }
 
   _standing(block) {
@@ -848,5 +1396,16 @@ export class SubPositionPicker {
     press(this.bandGroup, 'data-key', band ? band.key : '');
     press(this.sideGroup, 'data-key', viaBand ? selector.side : '');
     press(this.gridHost, 'data-seat', pov.seat.seat_id);
+    if (frame.row && this.gridHost) this._pickRow(frame.row);   // baris kursi aktif ikut terbuka
+    if (frame.row && frame.seat && this.rowInput) {
+      this.current = { row: frame.row, seat: frame.seat };
+      this.rowInput.value = String(frame.row);
+      this.seatInput.value = String(frame.seat);
+      this.seatInput.max = String(this.block.row_seats[frame.row - 1]);
+    }
+    if (this.summarySeatEl && frame.row && frame.seat) {
+      this.summarySeatEl.textContent = `Baris ${frame.row} · Kursi ${frame.seat}`;
+    }
+    this.setClusterSeats(this.clusterSeatIds);
   }
 }

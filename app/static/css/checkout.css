@@ -4,7 +4,7 @@
   padding: 28px 24px 80px;
   display: grid;
   gap: 24px;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif !important;
+  font-family: "SF Pro Display", "SF Pro Text", "SF Pro", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif !important;
 }
 
 .checkout__head-row {
@@ -31,17 +31,73 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.36);
+  padding: 8px 14px 8px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
   font-size: 0.85rem;
+  white-space: nowrap;
   color: var(--color-foreground);
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.pay-timer-pill strong {
-  color: #F59E0B;
+.pay-timer-pill[hidden] {
+  display: none;
+}
+
+html[data-theme="dark"] .pay-timer-pill {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(30, 41, 59, 0.75);
+}
+
+.pay-timer-pill .icon {
+  width: 16px;
+  height: 16px;
+  color: #C93400;
+}
+
+/* Oranye semantik Apple; merah + pulse lembut pada 2 menit terakhir. */
+.pay-timer-pill strong,
+.seat-lock-pill.is-urgent .seat-lock-pill__clock {
+  color: #C93400;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+html[data-theme="dark"] .pay-timer-pill strong,
+html[data-theme="dark"] .pay-timer-pill .icon,
+html[data-theme="dark"] .seat-lock-pill.is-urgent .seat-lock-pill__clock {
+  color: #FF9F0A;
+}
+
+.pay-timer-pill.is-urgent strong,
+.pay-timer-pill.is-urgent .icon {
+  color: #D70015;
+  animation: payTimerPulse 1.6s ease-in-out infinite;
+}
+
+html[data-theme="dark"] .pay-timer-pill.is-urgent strong,
+html[data-theme="dark"] .pay-timer-pill.is-urgent .icon {
+  color: #FF453A;
+}
+
+.pay-timer-pill.is-urgent {
+  border-color: rgba(215, 0, 21, 0.28);
+}
+
+@keyframes payTimerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pay-timer-pill.is-urgent strong,
+  .pay-timer-pill.is-urgent .icon {
+    animation: none;
+  }
 }
 
 .empty-state,
@@ -119,24 +175,14 @@ html:not([data-theme="dark"]) body[data-step="cart"] .empty-state p {
   color: #475569;
 }
 
+/* Frame 16A/B: pill teal Liquid Glass (gradien + stroke putih), bukan kuning. Warna datang dari .btn--primary. */
 .cart-empty-card__cta,
 .cart-proceed-btn {
   margin-top: 8px;
-  min-height: 46px;
+  min-height: 50px;
   padding: 0 24px;
-  border-radius: 10px;
-  font-weight: 700;
-  background: #FACC15;
-  color: #0F172A;
-  border: 0;
-  box-shadow: 0 4px 14px rgba(250, 204, 21, 0.28);
-}
-
-.cart-empty-card__cta:hover,
-.cart-proceed-btn:hover {
-  background: #EAB308;
-  color: #0F172A;
-  text-decoration: none;
+  border-radius: 9999px;
+  font-weight: 600;
 }
 
 .cart-proceed-btn {
@@ -172,19 +218,22 @@ html:not([data-theme="dark"]) body[data-step="cart"] .checkout__section {
 }
 
 html:not([data-theme="dark"]) body[data-step="cart"] .ticket-row,
+html:not([data-theme="dark"]) body[data-step="checkout"] .ticket-row,
 html:not([data-theme="dark"]) body[data-step="cart"] .pov-meta {
   background: #F8FAFC;
   border-color: #CBD5E1;
   color: #0F172A;
 }
 
-html:not([data-theme="dark"]) body[data-step="cart"] .chip--info {
+html:not([data-theme="dark"]) body[data-step="cart"] .chip--info,
+html:not([data-theme="dark"]) body[data-step="checkout"] .chip--info {
   background: #E6F4F5;
   border-color: #99F6E4;
   color: #006875;
 }
 
-html:not([data-theme="dark"]) body[data-step="cart"] .btn--danger {
+html:not([data-theme="dark"]) body[data-step="cart"] .btn--danger,
+html:not([data-theme="dark"]) body[data-step="checkout"] .btn--danger {
   border-color: rgba(220, 38, 38, 0.45);
   color: #DC2626;
 }
@@ -262,54 +311,10 @@ html[data-theme="dark"] .checkout__section {
   border: 1px solid var(--color-hairline);
 }
 
-/* 5 metrik POV (cart & checkout): susun 3 atas + 2 bawah (atau 5 sejajar di cart desktop lebar), bukan 4+1 */
-.pov-meta:has(> :nth-child(5):last-child) {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-.pov-meta:has(> :nth-child(5):last-child) > div {
-  grid-column: span 2;
-}
-
-.pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4) {
-  grid-column: 2 / span 2;
-}
-
-.pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
-  grid-column: 4 / span 2;
-}
-
-@media (min-width: 980px) {
-  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div,
-  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4),
-  body[data-step="cart"] .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
-    grid-column: auto;
-  }
-}
-
 /* 4 blok jadwal (e-ticket & profile): 4 sejajar saat lebar, 2x2 saat diperkecil, bukan 3+1 */
 @media (min-width: 720px) {
   .pov-meta.eticket__schedule {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 420px) {
-  .pov-meta:has(> :nth-child(5):last-child) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pov-meta:has(> :nth-child(5):last-child) > div,
-  .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(4) {
-    grid-column: auto;
-  }
-
-  .pov-meta:has(> :nth-child(5):last-child) > div:nth-child(5) {
-    grid-column: 1 / -1;
   }
 }
 
@@ -392,21 +397,25 @@ html[data-theme="dark"] .checkout__section {
 .payment-inst__timer {
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.14);
-  border: 1px solid rgba(245, 158, 11, 0.36);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
   font-size: 0.78rem;
+  white-space: nowrap;
   color: var(--color-foreground);
 }
 
-.payment-inst__timer strong {
-  color: #F59E0B;
+html[data-theme="dark"] .payment-inst__timer {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.payment-inst__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  padding-top: 4px;
+.payment-inst__timer strong {
+  color: #C93400;
+}
+
+html[data-theme="dark"] .payment-inst__timer strong {
+  color: #FF9F0A;
 }
 
 .payment-inst__brand {
@@ -619,33 +628,11 @@ html[data-theme="dark"] .checkout__section {
   outline-offset: 1px;
 }
 
-.field__hint {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--color-muted-fg);
-}
-
 .field__error {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 600;
   color: #EF4444;
-}
-
-/* Official 12-Channel Payment Logo Grid */
-.pay-groups {
-  display: grid;
-  gap: 14px;
-}
-
-.pay-group__title {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-muted-fg);
 }
 
 .pay-channel-grid {
@@ -698,12 +685,6 @@ html[data-theme="dark"] .checkout__section {
   border-color: #2563EB;
   background: rgba(37, 99, 235, 0.12);
   box-shadow: 0 0 0 1px #2563EB;
-}
-
-.method-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
 }
 
 .method input {
@@ -865,20 +846,6 @@ html[data-theme="dark"] .checkout__section {
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-}
-
-.eticket__price {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--color-foreground);
-}
-
-.eticket__terms {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: var(--color-muted-fg);
-  line-height: 1.5;
 }
 
 .eticket__code {
@@ -1267,8 +1234,8 @@ html:not([data-theme="dark"]) body[data-step="checkout"] .input {
 }
 
 .order-status-pill--pending {
-  background: #FEF3C7;
-  color: #B45309;
+  background: rgba(255, 149, 0, 0.14);
+  color: #B85C00;
 }
 
 .order-status-pill--paid {
@@ -1339,4 +1306,2753 @@ html:not([data-theme="dark"]) body[data-step="checkout"] .input {
 .eticket-modal__list {
   display: grid;
   gap: 14px;
+}
+
+/* ==========================================================================
+   V2 Checkout: Add-ons + Inline Notes, 4-Tile Payment Accordion,
+   Dark Mode Logo Chips, Split Cart Fulfillment, Apple Wallet Pass & Routes
+   ========================================================================== */
+.fulfillment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.fulfillment-pill--venue {
+  background: rgba(20, 184, 166, 0.14);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  color: #0D9488;
+}
+
+html[data-theme="dark"] .fulfillment-pill--venue {
+  color: #2DD4BF;
+}
+
+.fulfillment-pill--delivery {
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #2563EB;
+}
+
+html[data-theme="dark"] .fulfillment-pill--delivery {
+  color: #60A5FA;
+}
+
+.checkout-preview-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(13, 148, 136, 0.34);
+  background: rgba(13, 148, 136, 0.10);
+  color: #004E58;
+}
+
+html[data-theme="dark"] .checkout-preview-banner {
+  background: rgba(245, 158, 11, 0.14);
+  color: #FEF08A;
+}
+
+.checkout-preview-banner p {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+}
+
+.ticket-row__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Add-on Venue Cards + Inline Note Editor */
+.addon-section__sub {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  color: var(--color-muted-fg);
+}
+
+.addon-quick-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.addon-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+  display: grid;
+  gap: 10px;
+}
+
+.addon-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.addon-card__cat {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-info);
+}
+
+.addon-card__title {
+  margin: 2px 0;
+  font-size: 0.96rem;
+}
+
+.addon-card__desc {
+  margin: 2px 0 4px;
+  font-size: 0.8rem;
+  color: var(--color-muted-fg);
+}
+
+.addon-card__price {
+  font-size: 0.9rem;
+  color: var(--color-foreground);
+}
+
+.addon-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addon-qty-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-card);
+  color: var(--color-foreground);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addon-qty-btn--plus {
+  background: #006875;
+  border-color: #006875;
+  color: #FFFFFF;
+}
+
+.addon-qty-val {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.addon-note-area {
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-hairline-strong);
+  display: grid;
+  gap: 8px;
+}
+
+.addon-note-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-info);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.addon-note-trigger:hover {
+  text-decoration: underline;
+}
+
+.addon-note-display,
+.addon-summary-item__note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--color-muted-fg);
+}
+
+.addon-inline-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.addon-inline-input {
+  flex: 1 1 220px;
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: 0.84rem;
+}
+
+.addon-inline-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.addon-order-summary {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline-strong);
+  display: grid;
+  gap: 10px;
+}
+
+.addon-order-summary__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addon-order-summary__head h3 {
+  margin: 0;
+  font-size: 0.94rem;
+}
+
+.addon-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.addon-summary-item__main {
+  display: grid;
+  gap: 3px;
+}
+
+.addon-summary-item__meta {
+  font-size: 0.8rem;
+  color: var(--color-muted-fg);
+}
+
+.addon-catalog-sheet {
+  width: min(94vw, 640px);
+}
+
+.addon-catalog-sheet__body {
+  display: grid;
+  gap: 14px;
+}
+
+.addon-sheet-search {
+  display: grid;
+  gap: 10px;
+}
+
+.addon-sheet-list {
+  display: grid;
+  gap: 10px;
+  max-height: 44dvh;
+  overflow-y: auto;
+}
+
+.addon-sheet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline-strong);
+}
+
+/* Strict 4-Tile Payment Accordion + Glass Logo Chips */
+.pay-accordion {
+  display: grid;
+  gap: 10px;
+}
+
+.pay-tile {
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-card);
+  overflow: hidden;
+}
+
+.pay-tile.is-open {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px rgba(0, 104, 117, 0.14);
+}
+
+.pay-tile__head,
+.pay-tile__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--color-foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pay-tile__radio-dot {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 9999px;
+  border: 2px solid var(--color-muted-fg);
+}
+
+.pay-tile.is-open .pay-tile__radio-dot {
+  border-color: var(--color-info);
+  background: radial-gradient(circle, var(--color-info) 45%, transparent 50%);
+}
+
+.pay-tile__title {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.pay-tile__title strong {
+  font-size: 0.88rem;
+}
+
+.pay-tile__title small {
+  font-size: 0.76rem;
+  color: var(--color-muted-fg);
+}
+
+.pay-tile__chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pay-tile__body {
+  padding: 0 14px 14px;
+}
+
+.pay-logo-chip img {
+  height: 18px;
+  width: auto;
+  max-width: 52px;
+  object-fit: contain;
+  display: block;
+}
+
+.payment-inst__ewallet-box {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Cart Fulfillment Stack & Address Box */
+.cart-fulfillment-stack {
+  display: grid;
+  gap: 32px;
+}
+
+.cart-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-addon-mini {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.cart-addon-mini h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.cart-addon-mini ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.cart-addon-mini li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shipping-address-box {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+}
+
+.shipping-address-box__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   E-Tiket: parity FigCraft Frame 15A/B (nilai dari tools/inspect_frame.py tree 15A|15B)
+   Stage 3 kolom 388 | 420 | 380, jarak 42 / 50. Warna dari token --fc-* (tokens.css).
+   Dipakai hanya di halaman e-tiket (.eticket-page); riwayat pesanan di profil tidak terpengaruh.
+   ========================================================================== */
+html:root body[data-step="checkout"]:has(.eticket-page) {
+  background: var(--fc-page);
+}
+
+.eticket-page {
+  position: relative;
+  isolation: isolate;
+  padding-top: 28px;
+  padding-bottom: 72px;
+}
+
+.eticket-head {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+/* Success Chip 36px r18: #16A34A@14% + stroke #16A34A@50% */
+.eticket-head .badge-lunas {
+  min-height: 36px;
+  padding: 0 17px;
+  gap: 8px;
+  border-radius: var(--radius-chip);
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(22, 163, 74, 0.5);
+  color: var(--fc-success-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.eticket-head .badge-lunas .icon {
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--fc-success);
+  color: #FFFFFF;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+}
+
+.eticket-head h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: 0.38px;
+  color: var(--fc-text);
+}
+
+.eticket-head p {
+  margin: 0;
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  color: var(--fc-text-muted);
+}
+
+.eticket-head p strong {
+  color: var(--fc-text);
+}
+
+.eticket-stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas: "pass pass" "side route";
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.eticket-stage--has-extra { grid-template-areas: "pass pass" "extra side" "extra route"; }
+.eticket-stage--merch-only { grid-template-areas: "extra side"; }
+.eticket-stage--concert { grid-template-areas: "pass pass" "route crowd" "side side"; }
+.eticket-stage--concert.eticket-stage--has-extra { grid-template-areas: "pass pass" "route crowd" "extra side"; }
+
+.eticket-stage > .eticket-pass-col { grid-area: pass; }
+.eticket-stage > .eticket-extra-col { grid-area: extra; }
+.eticket-stage > .eticket-side-col { grid-area: side; }
+.eticket-stage > .route-guide-card { grid-area: route; width: auto; }
+.eticket-stage > .crowd-estimator-card { grid-area: crowd; width: 100%; min-width: 0; }
+.eticket-stage--concert > .route-guide-card { width: 100%; }
+
+.eticket-pass-col,
+.eticket-extra-col,
+.eticket-side-col {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media screen and (min-width: 761px) {
+  .eticket-stage--concert:not(.eticket-stage--has-extra) > .eticket-side-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media screen and (max-width: 760px) {
+  .eticket-stage,
+  .eticket-stage--has-extra,
+  .eticket-stage--merch-only,
+  .eticket-stage--concert,
+  .eticket-stage--concert.eticket-stage--has-extra {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "pass" "extra" "side" "route";
+  }
+  .eticket-stage--concert,
+  .eticket-stage--concert.eticket-stage--has-extra {
+    grid-template-areas: "pass" "route" "crowd" "extra" "side";
+  }
+}
+
+/* ==========================================================================
+   Boarding Pass horizontal (acuan: reference_assets/images/Gemini_Generated_Image_*.jpeg):
+   [ main: logo + status | hero poster + 4 kolom metadata ] ┆ [ stub: QR / barcode + ID + harga ]
+   Plain Apple Slate: kaca gelap bersih di tema gelap, putih bersih di tema terang. Tanpa gradien, glow, atau
+   titik warna. Pasangan warna selalu dari satu keluarga token (gelap → #F8FAFC, terang → #0F172A / #334155),
+   jadi teks tidak pernah putih di atas putih. Takik tear line = mask (lubang sungguhan).
+   ========================================================================== */
+.boarding-pass {
+  --bp-r: 28px;
+  --bp-n: 14px;
+  --bp-bg: #FFFFFF;
+  --bp-bg-top: #F8FAFC;
+  --bp-edge: rgba(15, 23, 42, 0.12);
+  --bp-text: #0F172A;
+  --bp-muted: #334155;
+  --bp-line: #CBD5E1;
+  --bp-tear: #94A3B8;
+  --bp-chip: rgba(15, 23, 42, 0.06);
+  --bp-chip-edge: rgba(15, 23, 42, 0.16);
+  --bp-ok-bg: #DCFCE7;
+  --bp-ok-edge: #86EFAC;
+  --bp-ok-text: #166534;
+  --bp-shadow: 0 18px 32px rgba(15, 23, 42, 0.16);
+  --cut-tl: radial-gradient(circle var(--bp-n) at 0 0, #0000 calc(100% - 1px), #000 100%);
+  --cut-tr: radial-gradient(circle var(--bp-n) at 100% 0, #0000 calc(100% - 1px), #000 100%);
+  --cut-bl: radial-gradient(circle var(--bp-n) at 0 100%, #0000 calc(100% - 1px), #000 100%);
+  --cut-br: radial-gradient(circle var(--bp-n) at 100% 100%, #0000 calc(100% - 1px), #000 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  list-style: none;
+  color: var(--bp-text);
+  filter: drop-shadow(var(--bp-shadow));
+}
+
+/* Hanya layar: cetak selalu memakai token terang di atas */
+@media screen {
+  html[data-theme="dark"] .boarding-pass {
+    --bp-bg: rgba(15, 23, 42, 0.85);
+    --bp-bg-top: rgba(255, 255, 255, 0.04);
+    --bp-edge: rgba(255, 255, 255, 0.14);
+    --bp-text: #F8FAFC;
+    --bp-muted: rgba(248, 250, 252, 0.72);
+    --bp-line: rgba(255, 255, 255, 0.14);
+    --bp-tear: rgba(248, 250, 252, 0.35);
+    --bp-chip: rgba(255, 255, 255, 0.08);
+    --bp-chip-edge: rgba(255, 255, 255, 0.2);
+    --bp-ok-bg: rgba(34, 197, 94, 0.14);
+    --bp-ok-edge: rgba(34, 197, 94, 0.5);
+    --bp-ok-text: #86EFAC;
+    --bp-shadow: 0 18px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.bp__main,
+.bp__stub {
+  position: relative;
+  min-width: 0;
+  background: var(--bp-bg);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.bp__main {
+  overflow: hidden;
+  border-radius: var(--bp-r) 0 0 var(--bp-r);
+  box-shadow: inset 1px 0 0 var(--bp-edge), inset 0 1px 0 var(--bp-edge), inset 0 -1px 0 var(--bp-edge);
+  -webkit-mask-image: var(--cut-tr), var(--cut-br);
+  mask-image: var(--cut-tr), var(--cut-br);
+}
+
+.bp__top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 18px 32px;
+  background: var(--bp-bg-top);
+  border-bottom: 1px solid var(--bp-line);
+}
+
+/* Menetralkan `.brand-logo` mobile (order: 1, margin-right: auto) dari tokens.css yang ikut aktif di lebar cetak */
+.boarding-pass .bp__logo { order: 0; margin: 0; font-size: 26px; }
+/* Spesifisitas tinggi: aturan logo per tema/halaman di tokens.css (mis. putih di tema gelap) tidak boleh menang saat cetak */
+html body[data-step] .boarding-pass .bp__logo .brand-logo__name,
+html body[data-step] .boarding-pass .bp__logo .brand-logo__tld { color: var(--bp-text); }
+
+.bp__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--bp-ok-edge);
+  border-radius: 999px;
+  background: var(--bp-ok-bg);
+  color: var(--bp-ok-text);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.bp__hero {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 24px 32px 28px;
+  color: var(--bp-text);
+}
+
+/* Poster asli event, di-blur sedang agar artwork & tipografi tetap terbaca jelas */
+.bp__poster {
+  position: absolute;
+  inset: -12px;
+  z-index: 0;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  filter: blur(6px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.bp__hero > :not(.bp__poster) {
+  position: relative;
+  z-index: 1;
+}
+
+.bp__fulfill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bp__fulfill--scan {
+  background: rgba(13, 148, 136, 0.14);
+  color: #0F766E;
+  border: 1px solid rgba(13, 148, 136, 0.32);
+}
+
+.bp__fulfill--wristband {
+  background: rgba(14, 165, 233, 0.14);
+  color: #0369A1;
+  border: 1px solid rgba(14, 165, 233, 0.32);
+}
+
+html[data-theme="dark"] .bp__fulfill--scan {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .bp__fulfill--wristband {
+  color: #7DD3FC;
+}
+
+.pickup-voucher-place {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0F766E;
+}
+
+html[data-theme="dark"] .pickup-voucher-place {
+  color: #2DD4BF;
+}
+
+.bp__hero > :not(.bp__poster) { position: relative; z-index: 1; }
+
+.bp__pill {
+  padding: 5px 14px;
+  border: 1px solid var(--bp-chip-edge);
+  border-radius: 999px;
+  background: var(--bp-chip);
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--bp-text);
+}
+
+.bp__title {
+  margin: 6px 0 0;
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--bp-text);
+  overflow-wrap: anywhere;
+}
+
+.boarding-pass--cinema .bp__title { font-size: 34px; line-height: 40px; }
+
+.bp__sub {
+  margin: 0;
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--bp-text);
+}
+
+.bp__venue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 2px 0 0;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--bp-muted);
+}
+
+.bp__gate {
+  padding: 3px 12px;
+  border: 1px solid var(--bp-chip-edge);
+  border-radius: 999px;
+  background: var(--bp-chip);
+  font-size: 13px;
+  color: var(--bp-text);
+}
+
+.bp__gate small { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--bp-muted); }
+.bp__gate strong { font-weight: 800; }
+
+/* 4 kolom metadata dengan pemisah vertikal tipis */
+.bp__meta {
+  display: grid;
+  grid-template-columns: 1.1fr 0.8fr 1.3fr 1.55fr;
+  width: 100%;
+  margin: 18px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--bp-line);
+}
+
+.bp__meta > div { min-width: 0; padding: 0 18px; border-left: 1px solid var(--bp-line); }
+.bp__meta > div:first-child { padding-left: 0; border-left: 0; }
+
+.bp__meta dt,
+.bp__id dt {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--bp-muted);
+}
+
+.bp__meta dd { display: grid; gap: 2px; margin: 8px 0 0; }
+
+.bp__meta strong {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--bp-text);
+  overflow-wrap: anywhere;
+}
+
+.bp__meta dd span {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--bp-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Stub */
+.boarding-pass > .bp__stub {
+  display: grid;
+  justify-content: center;
+  justify-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 24px 20px;
+  border-radius: 0 var(--bp-r) var(--bp-r) 0;
+  box-shadow: inset -1px 0 0 var(--bp-edge), inset 0 1px 0 var(--bp-edge), inset 0 -1px 0 var(--bp-edge);
+  -webkit-mask-image: var(--cut-tl), var(--cut-bl);
+  mask-image: var(--cut-tl), var(--cut-bl);
+}
+
+/* Tear line: garis putus vertikal di tepi kiri stub, di antara dua takik */
+.bp__stub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(var(--bp-n) + 10px);
+  bottom: calc(var(--bp-n) + 10px);
+  border-left: 2px dashed var(--bp-tear);
+}
+
+/* QR / barcode: selalu hitam di atas plat putih (kontras tertinggi di kedua tema) */
+.bp__stub .eticket__code,
+.bp__stub .eticket__barcode-wrap {
+  width: 176px;
+  height: 176px;
+  padding: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: #FFFFFF;
+}
+
+.bp__stub .eticket__code svg { width: 156px; height: 156px; }
+.bp__stub .eticket__barcode { width: 156px; height: 156px; }
+
+.bp__id { margin: 0; text-align: center; }
+
+.bp__id dd {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--bp-text);
+}
+
+.bp__price {
+  padding: 6px 16px;
+  border: 1px solid var(--bp-chip-edge);
+  border-radius: 999px;
+  background: var(--bp-chip);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--bp-muted);
+  white-space: nowrap;
+}
+
+.bp__price strong { font-weight: 700; color: var(--bp-text); }
+
+/* 2 × 2 saat lebar kartu menyempit */
+@media screen and (max-width: 1040px) {
+  .bp__meta { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+  .bp__meta > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+}
+
+/* Layar sempit (≤ 799px, termasuk semua ponsel ≤ 640px): kartu ditumpuk (main → stub), tear line jadi horizontal
+   dengan takik di tepi kiri/kanan. 799px, bukan 640px: layout horizontal mulai menimpa kolom di bawah ±800px.
+   Sengaja `screen`: tanpa itu Chrome ikut menerapkan layout tumpuk ke hasil cetak PDF. */
+@media screen and (max-width: 799px) {
+  .boarding-pass { grid-template-columns: minmax(0, 1fr); }
+  .bp__main {
+    border-radius: var(--bp-r) var(--bp-r) 0 0;
+    box-shadow: inset 1px 0 0 var(--bp-edge), inset -1px 0 0 var(--bp-edge), inset 0 1px 0 var(--bp-edge);
+    -webkit-mask-image: var(--cut-bl), var(--cut-br);
+    mask-image: var(--cut-bl), var(--cut-br);
+  }
+  .boarding-pass > .bp__stub {
+    border-radius: 0 0 var(--bp-r) var(--bp-r);
+    box-shadow: inset 1px 0 0 var(--bp-edge), inset -1px 0 0 var(--bp-edge), inset 0 -1px 0 var(--bp-edge);
+    -webkit-mask-image: var(--cut-tl), var(--cut-tr);
+    mask-image: var(--cut-tl), var(--cut-tr);
+  }
+  .bp__stub::before {
+    left: calc(var(--bp-n) + 10px);
+    right: calc(var(--bp-n) + 10px);
+    top: 0;
+    bottom: auto;
+    border-left: 0;
+    border-top: 2px dashed var(--bp-tear);
+  }
+  .bp__top { padding: 16px 24px; }
+  .bp__hero { padding: 20px 24px 24px; }
+  .bp__title,
+  .boarding-pass--cinema .bp__title { font-size: 30px; line-height: 36px; }
+}
+
+@media screen and (max-width: 420px) {
+  .bp__meta { grid-template-columns: minmax(0, 1fr); }
+  .bp__meta > div,
+  .bp__meta > div:nth-child(odd) { padding: 0; border-left: 0; }
+}
+
+/* ---- Bukti Pengiriman & Pesanan Merchandise ---- */
+.merch-receipt {
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+  color: var(--fc-text);
+}
+
+.merch-receipt h2 { margin: 0 0 18px; font-size: 18px; line-height: 22px; font-weight: 700; color: var(--fc-text); }
+
+.merch-receipt__info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.merch-receipt__info dt { font-size: 12px; line-height: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--fc-text-muted); }
+.merch-receipt__info dd { display: grid; gap: 2px; margin: 6px 0 0; font-size: 15px; line-height: 20px; color: var(--fc-text); overflow-wrap: anywhere; }
+.merch-receipt__info dd span { font-size: 13px; color: var(--fc-text-muted); }
+
+.merch-receipt__items { width: 100%; border-collapse: collapse; font-size: 15px; color: var(--fc-text); }
+.merch-receipt__items th { padding: 0 0 8px; border-bottom: 1px solid var(--fc-border); font-size: 13px; font-weight: 600; text-align: left; color: var(--fc-text-muted); }
+.merch-receipt__items td { padding: 10px 0; }
+.merch-receipt__items th:last-child,
+.merch-receipt__items td:last-child { text-align: right; }
+
+@media screen and (max-width: 560px) {
+  .merch-receipt__info { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Plat QR / barcode 240x240 r22 */
+.eticket__code,
+.eticket__barcode-wrap {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  width: 240px;
+  height: 240px;
+  padding: 16px;
+  border-radius: var(--radius-qr);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  color: #0F172A;
+}
+
+.eticket__code svg {
+  width: 208px;
+  height: 208px;
+}
+
+.eticket__barcode {
+  width: 208px;
+  height: 128px;
+}
+
+.eticket__barcode-text {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Kolom kanan: Detail Pesanan 380 r24 + aksi ---- */
+.eticket-summary {
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.eticket-summary h2 {
+  margin: 2px 0 21px;
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+html:root .eticket-summary .totals {
+  gap: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.eticket-summary .totals > div {
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 18px;
+}
+
+.eticket-summary .totals dt { color: var(--fc-text-muted); }
+.eticket-summary .totals dd { font-weight: 600; color: var(--fc-text); text-align: right; }
+
+.eticket-summary .totals__grand {
+  padding-top: 0;
+  border-top: 0;
+  font-size: 15px !important;
+}
+
+.eticket-summary .totals__grand dt,
+.eticket-summary .totals__grand dd {
+  font-weight: 600;
+}
+
+.eticket-summary .totals__grand dt { color: var(--fc-text-muted); }
+
+.eticket-side-col .eticket-actions {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+}
+
+.eticket-side-col .eticket-actions .btn {
+  width: 100%;
+  min-height: 52px;
+  padding: 16px 20px;
+  border-radius: 1000px;
+  font-size: 17px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+/* Simpan ke Wallet: tint #006875 (Frame 15 'Tint') */
+html .eticket-side-col .eticket-actions .btn.liquid-glass-btn-primary {
+  background: var(--fc-teal);
+}
+
+/* Unduh PDF, Simpan Kalender & Ajak Teman: Liquid Glass netral berkelas */
+html .eticket-side-col .eticket-actions .btn--secondary,
+.eticket-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: var(--text-primary, var(--fc-text, #F8FAFC)) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html .eticket-side-col .eticket-actions .btn--secondary:hover,
+.eticket-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+html[data-theme="light"] .eticket-side-col .eticket-actions .btn--secondary,
+html[data-theme="light"] .eticket-btn-secondary {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  color: #0F172A !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.92), 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .eticket-side-col .eticket-actions .btn--secondary:hover,
+html[data-theme="light"] .eticket-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(0, 104, 117, 0.38) !important;
+}
+
+.eticket-actions__home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fc-text-muted);
+  text-decoration: none;
+}
+
+.eticket-actions__home:hover { color: var(--fc-text); }
+.eticket-actions__home .icon { width: 18px; height: 18px; }
+
+/* ---- Panduan Rute 388, r24, padding 20 ---- */
+.route-guide-card {
+  box-sizing: border-box;
+  width: 388px;
+  max-width: 100%;
+  padding: 20px 20px 18px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.route-guide-card h2 {
+  margin: 0 0 17px;
+  font-size: 17px;
+  line-height: 21px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.route-guide-card .eyebrow {
+  display: block;
+  font-size: 11px;
+  line-height: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--fc-text-muted);
+}
+
+.route-hub-pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 7px 0 20px;
+}
+
+.route-hub,
+.route-segmented button {
+  min-height: 40px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--fc-chip);
+  color: var(--fc-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-spring), color var(--dur-fast) var(--ease-spring);
+}
+
+.route-hub[aria-pressed="true"],
+.route-segmented button[aria-pressed="true"] {
+  background: var(--fc-teal-mid);
+  color: #FFFFFF;
+}
+
+.route-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 7px 0 16px;
+  padding: 4px;
+  border-radius: var(--radius-input);
+  background: var(--fc-chip);
+}
+
+.route-segmented button {
+  min-height: 32px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fc-text-muted);
+}
+
+.route-modes-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.route-modes-list li {
+  position: relative;
+  min-height: 68px;
+  padding: 14px 14px 0 62px;
+  border-radius: var(--radius-route);
+  background: var(--fc-route-row);
+  transition: opacity var(--dur-base) var(--ease-spring);
+}
+
+.route-modes-list strong {
+  display: block;
+  font-size: 14px;
+  line-height: 17px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.route-modes-list li > span:not(.route-modes-list__icon) {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--fc-text-muted);
+}
+
+/* Ikon rute: lingkaran 36 #0F7A83@14%, badan 18x14 r4 + dua roda 5px */
+.route-modes-list__icon {
+  position: absolute;
+  left: 14px;
+  top: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--fc-teal-tint);
+}
+
+.route-modes-list__icon::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 18px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--fc-teal-mid);
+}
+
+.route-modes-list__icon::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 24px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fc-teal-mid);
+  box-shadow: 9px 0 0 var(--fc-teal-mid);
+}
+
+.route-guide-card[data-route-mode="transit"] li[data-route-mode-row="car"],
+.route-guide-card[data-route-mode="car"] li[data-route-mode-row="transit"] {
+  opacity: 0.45;
+}
+
+.route-guide-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-radius: 26px;
+  background: var(--fc-btn-teal);
+  box-shadow: 0 4px 12px rgba(15, 122, 131, 0.3);
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.route-guide-card__cta:hover { color: #FFFFFF; filter: brightness(1.06); }
+
+.pickup-voucher-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pickup-voucher-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-background);
+  border: 1px solid var(--color-hairline);
+}
+
+.pickup-voucher-note {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted-fg);
+}
+
+.address-book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.address-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-background);
+}
+
+.address-card.is-default {
+  border-color: var(--color-info);
+}
+
+.address-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.address-card__recipient,
+.address-card__street {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--color-muted-fg);
+}
+
+/* ==========================================================================
+   Parity FigCraft Frame 13A/B — kartu Metode Pembayaran tertanam
+   (kartu r=24, baris r=18, radio 22px, badge 64x26 r=6 di sisi kanan)
+   ========================================================================== */
+.pay-methods-card {
+  min-width: 0;
+}
+
+.pay-methods-card .method-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.checkout__legend {
+  margin: 0 0 18px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.pay-methods-card .pay-tile {
+  border-radius: 18px;
+}
+
+.pay-methods-card .pay-tile__head,
+.pay-methods-card .pay-tile__toggle {
+  min-height: 68px;
+  padding: 0 20px;
+  gap: 14px;
+}
+
+.pay-methods-card .pay-tile__title strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pay-tile.is-open {
+  background: #ECF7F7;
+  border-color: #0F7A83;
+}
+
+html[data-theme="dark"] .pay-tile.is-open,
+html.dark .pay-tile.is-open {
+  background: #183939;
+}
+
+.pay-tile__chips {
+  margin-left: auto;
+  gap: 8px;
+  flex: none;
+}
+
+.pay-logo-chip img {
+  max-width: 56px;
+}
+
+/* Radio native pada baris QRIS/Kartu memakai ukuran Figma 22px */
+.pay-methods-card .pay-tile__head input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  flex: none;
+  border: 2px solid #94A3B8;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.pay-methods-card .pay-tile__head input[type="radio"]:checked {
+  border-color: #0F7A83;
+  background: radial-gradient(circle, #0F7A83 0 4.5px, transparent 5px);
+}
+
+html[data-theme="dark"] .pay-methods-card .pay-tile__head input[type="radio"]:checked,
+html.dark .pay-methods-card .pay-tile__head input[type="radio"]:checked {
+  border-color: #2DD4BF;
+}
+
+.pay-methods-card .pay-tile__radio-dot {
+  width: 22px;
+  height: 22px;
+}
+
+@media (max-width: 640px) {
+  .pay-tile__chips {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 144px;
+  }
+}
+
+/* Nilai terukur dari FigCraft Frame 13A/B: kartu r=24, input r=12 / 46px, CTA 52px, judul 28px Bold, stroke #E2E8F0. */
+body[data-step="checkout"] .checkout__section {
+  border-radius: 24px;
+}
+
+body[data-step="checkout"] .input {
+  min-height: 46px;
+  border-radius: 12px;
+}
+
+body[data-step="checkout"] #pay-submit-btn {
+  min-height: 52px;
+}
+
+body[data-step="checkout"] .checkout__head h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.site-header--focus .focus-back {
+  min-height: 40px;
+}
+
+html:not([data-theme="dark"]) body[data-step="checkout"] .checkout__section,
+html:not([data-theme="dark"]) body[data-step="checkout"] .pay-tile:not(.is-open) {
+  border-color: #E2E8F0;
+}
+
+html:not([data-theme="dark"]) body[data-step="checkout"] .input {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+/* Modal QRIS di riwayat pesanan (Pesanan Saya > Menunggu Pembayaran) */
+.qris-modal {
+  width: min(92vw, 380px);
+  padding: 20px;
+}
+
+.qris-modal__body {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.qris-modal__meta {
+  display: grid;
+  gap: 2px;
+  font-size: 0.86rem;
+  color: var(--color-muted-fg);
+}
+
+.qris-modal__meta strong {
+  color: var(--color-foreground);
+}
+
+.qris-modal__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted-fg);
+}
+
+/* ==========================================================================
+   V2 Checkout (Frame 13A/B)
+   Kolom utama : Tiket pilihan, Data Penonton per Kursi, Add-on
+   Panel kanan : Ringkasan Biaya, Metode Pembayaran, tombol Bayar Sekarang (52px)
+   ========================================================================== */
+.checkout__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+}
+
+@media (max-width: 960px) {
+  .checkout__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+html body .checkout .checkout__section {
+  border-radius: 24px;
+}
+
+/* Data Penonton per Kursi */
+.attendee {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.attendee + .attendee {
+  padding-top: 8px;
+}
+
+.attendee__tag {
+  float: none;
+  width: fit-content;
+  margin: 0 0 10px;
+  padding: 4px 14px;
+  border-radius: 18px;
+}
+
+.attendee__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.attendee__email {
+  grid-column: 1 / -1;
+}
+
+.attendee .input {
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+.attendee.is-synced .input {
+  background: rgba(120, 120, 128, 0.10);
+  color: var(--color-muted-fg);
+}
+
+@media (max-width: 640px) {
+  .attendee__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Toggle iOS "Samakan data penonton berikutnya" */
+.ios-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-hairline);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ios-switch__input {
+  position: absolute;
+  right: 0;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ios-switch__track {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 9999px;
+  background: rgba(120, 120, 128, 0.32);
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.ios-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.ios-switch__input:checked + .ios-switch__track {
+  background: #006875;
+}
+
+.ios-switch__input:checked + .ios-switch__track::after {
+  transform: translateX(20px);
+}
+
+.ios-switch__input:active + .ios-switch__track::after {
+  width: 33px;
+}
+
+.ios-switch__input:checked:active + .ios-switch__track::after {
+  transform: translateX(14px);
+}
+
+.ios-switch__input:focus-visible + .ios-switch__track {
+  outline: 2px solid #006875;
+  outline-offset: 3px;
+}
+
+/* Panel kanan: metode pembayaran ringkas di dalam kartu ringkasan */
+.pay-methods-card--aside {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pay-methods-card--aside .pay-tile {
+  border-radius: 18px;
+}
+
+.pay-methods-card--aside .pay-tile__head,
+.pay-methods-card--aside .pay-tile__toggle {
+  min-height: 56px;
+  padding: 0 14px;
+  gap: 10px;
+}
+
+.pay-methods-card--aside .pay-tile__title strong {
+  font-size: 0.92rem;
+}
+
+.pay-methods-card--aside .pay-tile__chips {
+  gap: 4px;
+}
+
+.pay-methods-card--aside .pay-logo-chip img {
+  height: 14px;
+  max-width: 40px;
+}
+
+/* Tombol Bayar Sekarang: 52px, teal liquid glass, status memuat */
+.pay-submit {
+  min-height: 52px;
+  gap: 10px;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pay-submit__spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: paySpin 0.7s linear infinite;
+}
+
+.pay-submit.is-loading {
+  pointer-events: none;
+  cursor: progress;
+  opacity: 0.92;
+}
+
+.pay-submit.is-loading .pay-submit__spinner {
+  display: inline-block;
+}
+
+@keyframes paySpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-switch__track,
+  .ios-switch__track::after {
+    transition: none;
+  }
+
+  .pay-submit__spinner {
+    animation-duration: 1.6s;
+  }
+}
+
+.pay-methods-card--aside .pay-tile__title {
+  flex: 0 0 auto;
+}
+
+.pay-methods-card--aside .pay-tile__title strong {
+  white-space: nowrap;
+}
+
+.pay-methods-card--aside .pay-tile__chips {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.pay-methods-card--aside .pay-logo-chip {
+  padding: 3px 5px;
+  min-width: 0;
+}
+
+.pay-methods-card--aside .pay-logo-chip {
+  width: 46px;
+  height: 24px;
+  padding: 3px 4px;
+}
+
+
+/* ==========================================================================
+   Checkout: parity FigCraft Frame 13A/B (tools/inspect_frame.py tree 13A|13B)
+   Kolom 860 | 452, jarak 32, kartu r24 padding 24, input 46px r12, ringkasan 452.
+   Metode pembayaran tetap di panel ringkasan kanan (tes test_checkout_v2 + arahan);
+   di kanvas kartu itu berada di kolom kiri, selisih ini sengaja.
+   ========================================================================== */
+html:root .checkout:has(.checkout__grid) {
+  max-width: 1440px;
+  padding: 28px 48px 80px;
+}
+
+.checkout:has(.checkout__grid) .checkout__head .eyebrow {
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fc-gate-key);
+}
+
+.checkout:has(.checkout__grid) .checkout__head h1 {
+  margin: 8px 0 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: 0.38px;
+  color: var(--fc-text);
+}
+
+html:root .checkout:has(.checkout__grid) .checkout__grid {
+  grid-template-columns: minmax(0, 860px) minmax(340px, 452px);
+  gap: 24px;
+  align-items: start;
+  justify-content: center;
+}
+
+.checkout:has(.checkout__grid) .checkout__main-col {
+  gap: 16px;
+}
+
+@media (min-width: 961px) {
+  .checkout:has(.checkout__grid) .checkout__grid > .summary {
+    position: sticky;
+    top: 92px;
+    max-height: calc(100dvh - 108px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 960px) {
+  html:root .checkout:has(.checkout__grid) .checkout__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html:root .checkout:has(.checkout__grid) {
+    padding-inline: 16px;
+  }
+}
+
+html:root .checkout:has(.checkout__grid) .checkout__section,
+html:root .checkout:has(.checkout__grid) .summary {
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+/* Data Penonton: badge 28px r14, input 46px r12 (isi 17px, padding 16px), grid 388 | 400 */
+.checkout:has(.checkout__grid) .attendee__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fc-gate-fill);
+  color: var(--fc-gate-key);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.checkout:has(.checkout__grid) .attendee__grid {
+  grid-template-columns: minmax(0, 388fr) minmax(0, 400fr);
+  gap: 14px 24px;
+}
+
+.checkout:has(.checkout__grid) .attendee__grid .field {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.checkout:has(.checkout__grid) .attendee .field__label {
+  font-size: 15px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+html:root .checkout:has(.checkout__grid) .attendee .input {
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--fc-border);
+  background: var(--fc-input);
+  color: var(--fc-text);
+  font-size: 17px;
+}
+
+.checkout:has(.checkout__grid) .attendee .input::placeholder {
+  color: var(--fc-text-muted);
+}
+
+@media (max-width: 640px) {
+  .checkout:has(.checkout__grid) .attendee__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Ringkasan: baris 15px berjarak 36, pembatas 1px, total 28px bold */
+.checkout:has(.checkout__grid) .summary {
+  gap: 20px;
+}
+
+.checkout:has(.checkout__grid) .summary h2 {
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+html:root .checkout:has(.checkout__grid) .summary-breakdown {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 0;
+}
+
+.checkout:has(.checkout__grid) .summary-breakdown__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+html:root .checkout:has(.checkout__grid) .summary .totals {
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.checkout:has(.checkout__grid) .pay-methods-card--aside {
+  margin-top: 4px;
+}
+
+.checkout:has(.checkout__grid) .summary .totals > div {
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 18px;
+}
+
+.checkout:has(.checkout__grid) .summary .totals dt {
+  color: var(--fc-text-muted);
+}
+
+.checkout:has(.checkout__grid) .summary .totals dd {
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.checkout:has(.checkout__grid) .summary .totals__grand {
+  margin-top: 4px;
+  padding-top: 22px;
+  border-top: 1px solid var(--fc-border);
+  align-items: center;
+}
+
+.checkout:has(.checkout__grid) .summary .totals__grand dt {
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.checkout:has(.checkout__grid) .summary .totals__grand dd {
+  font-size: 28px;
+  line-height: 33px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+/* CTA Bayar Sekarang 52px: tint #006875 (Frame 13 'Tint'), 17px medium */
+html .checkout .pay-submit.liquid-glass-btn-primary {
+  background: var(--fc-teal);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+/* Unduh E-Tiket PDF (Frame 15B): teks terang di mode gelap agar kontras >= 4.5:1 */
+html[data-theme="dark"] .eticket-side-col .eticket-actions .btn--secondary,
+html.dark .eticket-side-col .eticket-actions .btn--secondary {
+  color: var(--fc-text);
+}
+
+
+/* Pesanan Kamu (Frame 13A/B): poster event 64x88 r8, judul, venue, tombol Pilih Ulang */
+.order-summary-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 0;
+}
+
+.order-summary-card__thumb,
+.checkout-hero__poster {
+  grid-row: 1 / span 1;
+  width: 64px;
+  height: 88px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.checkout-hero__poster img,
+.order-summary-card__thumb img {
+  width: 64px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.order-summary-card__info {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 0;
+}
+
+.order-summary-card__info h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.order-summary-card__venue,
+.order-summary-card__seats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 18px;
+  color: var(--fc-text-muted);
+}
+
+.order-summary-card__seats strong {
+  min-width: 0;
+  font-weight: 600;
+  color: var(--fc-text);
+  overflow-wrap: anywhere;
+}
+
+.order-summary-card__pov {
+  padding: 2px 12px;
+  border: 1px solid var(--fc-seat-picked);
+  border-radius: 11px;
+  background: rgba(197, 155, 39, 0.2);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.order-summary-card__change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 40px;
+  border: 1px solid var(--fc-border);
+  border-radius: 20px;
+  background: var(--fc-chip);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fc-text);
+  text-decoration: none;
+}
+
+.order-summary-card__change:hover { background: var(--fc-border); }
+
+@media (max-width: 640px) {
+  .order-summary-card { grid-template-columns: 64px minmax(0, 1fr); }
+  .order-summary-card__thumb,
+  .checkout-hero__poster { width: 64px; height: 88px; }
+  .order-summary-card__change { grid-column: 1 / -1; width: 100%; margin-top: 12px; }
+}
+
+/* Add-on Liquid Glass (Frame 13A/B): kartu gradien + tile 276 yang digeser horizontal.
+   Catatan inline dan stepper tetap dipakai (checkout_ui.js memakai atribut data-addon-*). */
+html:root .checkout:has(.checkout__grid) .addon-section {
+  border: 1.5px solid var(--fc-addon-border);
+  background: linear-gradient(180deg, var(--fc-addon-from) 0%, var(--fc-addon-to) 100%);
+}
+
+.addon-section .checkout__section-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.addon-section .liquid-glass-pill--secondary {
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 17px;
+  background: rgba(15, 122, 131, 0.12);
+  color: var(--fc-price);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.addon-quick-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.addon-quick-grid > .addon-card {
+  flex: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-areas: "tile head stepper" "note note note";
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 0;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--fc-addon-tile-border);
+  border-radius: 16px;
+  background: var(--fc-addon-tile);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.071);
+}
+
+.addon-card__tile {
+  grid-area: tile;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.addon-card__tile--food { background: linear-gradient(180deg, #F59E0B 0%, #EF4444 100%); }
+.addon-card__tile--drink { background: linear-gradient(180deg, #0EA5E9 0%, #2563EB 100%); }
+.addon-card__tile--merch { background: linear-gradient(180deg, #8B5CF6 0%, #EC4899 100%); }
+
+/* Baris horizontal kompak: ikon 38px kiri, metadata tengah, tombol/stepper kanan */
+.addon-quick-grid .addon-card__head {
+  display: contents;
+}
+
+.addon-quick-grid .addon-card__head > div:first-child {
+  grid-area: head;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  align-content: center;
+}
+
+.addon-quick-grid .addon-card__cat {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--fc-text-muted);
+}
+
+.addon-quick-grid .addon-card__title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.addon-quick-grid .addon-card__price {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 700;
+  color: var(--fc-price);
+}
+
+.addon-quick-grid .addon-stepper {
+  grid-area: stepper;
+  grid-column: auto;
+  justify-self: end;
+}
+
+.addon-quick-grid .addon-note-area {
+  grid-area: note;
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+/* Apple Stepper: pil 34px, minus | jumlah | plus */
+.addon-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  border-radius: 17px;
+  background: var(--fc-chip);
+  overflow: hidden;
+}
+
+.addon-stepper .addon-qty-btn {
+  width: 36px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fc-text);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.addon-stepper .addon-qty-val {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+/* Jumlah 0 (area catatan masih hidden): tampil sebagai tombol "+ Tambah" 96x34 #0F7A83 */
+.addon-card:has(> .addon-note-area[hidden]) .addon-stepper {
+  background: var(--fc-teal-mid);
+}
+
+.addon-card:has(> .addon-note-area[hidden]) .addon-qty-btn:not(.addon-qty-btn--plus),
+.addon-card:has(> .addon-note-area[hidden]) .addon-qty-val {
+  display: none;
+}
+
+.addon-card:has(> .addon-note-area[hidden]) .addon-qty-btn--plus {
+  width: 96px;
+  background: transparent;
+  color: #FFFFFF;
+  font-size: 0;
+}
+
+.addon-card:has(> .addon-note-area[hidden]) .addon-qty-btn--plus::after {
+  content: "+ Tambah";
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* ==========================================================================
+   Frame 12A/B: Sheet Katalog Add-on (Apple Liquid Glass Sheet)
+   680 r32, fill slate @96% + blur 24px, header sticky + tombol tutup bulat 30px,
+   filter sebagai segmented control, item r20 dengan tile 64 dan Apple Stepper.
+   ========================================================================== */
+html body .auth-modal__panel.addon-catalog-sheet {
+  width: min(94vw, 680px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: 0 28px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: var(--radius-pass);
+  background: color-mix(in srgb, var(--fc-card) 96%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.2);
+}
+
+html[data-theme="dark"] body .auth-modal__panel.addon-catalog-sheet {
+  background: color-mix(in srgb, var(--fc-surface-slate) 96%, transparent);
+}
+
+.addon-catalog-sheet .auth-modal__head--sheet {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 26px 0 12px;
+  background: var(--fc-card);
+}
+
+html[data-theme="dark"] .addon-catalog-sheet .auth-modal__head--sheet {
+  background: var(--fc-surface-slate);
+}
+
+.addon-catalog-sheet .auth-modal__head--sheet h2 {
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.addon-catalog-sheet .auth-modal__close--circle {
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fc-chip);
+  color: var(--fc-text-muted);
+}
+
+.addon-sheet-search .input {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--fc-border);
+  background: var(--fc-chip);
+  color: var(--fc-text);
+}
+
+.addon-sheet-search .filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 4px;
+  border-radius: var(--radius-input);
+  background: var(--fc-chip);
+}
+
+.addon-sheet-search .filter-chip {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--fc-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.addon-sheet-search .filter-chip[aria-pressed="true"] {
+  background: var(--fc-teal-mid);
+  color: #FFFFFF;
+}
+
+.addon-sheet-search .filter-chip::before,
+.addon-sheet-search .filter-chip::after { display: none; }
+
+.addon-sheet-list {
+  max-height: none;
+  overflow: visible;
+  gap: 12px;
+}
+
+.addon-sheet-list .addon-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-areas: "tile head" "note note";
+  align-items: center;
+  gap: 6px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--fc-border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--fc-surface-slate) 70%, transparent);
+}
+
+html[data-theme="light"] .addon-sheet-list .addon-card {
+  background: var(--fc-card);
+}
+
+.addon-sheet-list .addon-card__tile {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.addon-sheet-list .addon-card__head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.addon-sheet-list .addon-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.addon-sheet-list .addon-card__cat,
+.addon-sheet-list .addon-card__desc {
+  font-size: 12px;
+  color: var(--fc-text-muted);
+}
+
+.addon-sheet-list .addon-card__price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fc-price);
+}
+
+.addon-sheet-list .addon-note-area {
+  grid-area: note;
+  padding: 8px 0 2px 78px;
+}
+
+.addon-sheet-footer .btn--primary {
+  min-height: 48px;
+  padding-inline: 22px;
+  border-radius: 1000px;
+  background: var(--fc-teal);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   Frame 16A/B: Keranjang Belanja. Kelompok 1 (tiket, "Ambil di Venue") bergaris teal 2px,
+   kelompok 2 (merchandise, "Dikirim ke Rumah") 1px; strip fulfillment 34px r12; CTA 50px r25.
+   ========================================================================== */
+.cart-page .cart-fulfillment-stack .checkout__section {
+  border-radius: 22px;
+  background: var(--fc-chip);
+  border: 1px solid var(--fc-border);
+  box-shadow: none;
+}
+
+.cart-page .cart-fulfillment-stack > .checkout__grid:first-child .checkout__main-col .checkout__section {
+  border: 2px solid var(--fc-teal-mid);
+}
+
+.cart-page .fulfillment-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--fc-chip);
+  color: var(--fc-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cart-page .fulfillment-pill .icon { color: var(--fc-teal-neon); }
+
+html body .cart-page #proceed-to-checkout-btn {
+  min-height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 25px;
+  background: var(--fc-btn-teal);
+  box-shadow: 0 4px 12px rgba(15, 122, 131, 0.3);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+
+/* ==========================================================================
+   Cetak PDF e-tiket: satu halaman A4 landscape, konten dipusatkan (horizontal + vertikal).
+   Pesanan bertiket: boarding pass di atas, Detail Pesanan di bawahnya.
+   Pesanan merchandise saja: bukti pengiriman | Detail Pesanan berdampingan, tanpa header kosong di atasnya.
+   Token boarding pass cetak = terang (token gelap hanya di @media screen), jadi tidak ada teks putih di kertas putih.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  header,
+  footer,
+  .site-header,
+  .official-footer,
+  .navbar,
+  .route-guide-card,
+  .crowd-estimator-card,
+  .eticket-actions,
+  .toast-region,
+  .pickup-voucher-card { display: none !important; }
+
+  /* Pass + ringkasan dipusatkan di area cetak (A4 landscape 297 × 210 mm dikurangi margin 10 mm). */
+  .eticket-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 188mm;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .eticket-stage,
+  .eticket-stage--has-extra,
+  .eticket-stage--merch-only,
+  .eticket-stage--concert,
+  .eticket-stage--concert.eticket-stage--has-extra {
+    display: grid;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "pass pass" "side side";
+  }
+
+  .eticket-stage--has-extra,
+  .eticket-stage--concert.eticket-stage--has-extra { grid-template-areas: "pass pass" "extra side"; }
+  .eticket-stage--merch-only { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-areas: "extra side"; }
+
+  .eticket-pass-col,
+  .eticket-extra-col,
+  .eticket-side-col { gap: 14px; }
+
+  .boarding-pass {
+    grid-template-columns: minmax(0, 1fr) 248px !important;   /* selalu horizontal, apa pun lebar layar */
+    filter: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .eticket-summary,
+  .merch-receipt {
+    padding: 14px 18px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #CBD5E1 !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+    color: #0F172A !important;
+  }
+
+  .eticket-summary h2 { margin-bottom: 8px; }
+  .eticket-summary h2,
+  .eticket-summary .totals dt,
+  .eticket-summary .totals dd,
+  .merch-receipt h2,
+  .merch-receipt dd,
+  .merch-receipt td { color: #0F172A !important; }
+  .merch-receipt dt,
+  .merch-receipt th,
+  .merch-receipt dd span { color: #334155 !important; }
+  .eticket-stage:not(.eticket-stage--merch-only):not(.eticket-stage--has-extra) .eticket-summary .totals {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 32px;
+  }
+}
+
+
+/* Teks panduan rute mengikuti moda aktif (transportasi umum / kendaraan pribadi) */
+.route-guide-card__hint {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--fc-teal-tint);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+/* ==========================================================================
+   Fitur 3: Estimasi Alur Kedatangan & Kepadatan Pintu (E-Tiket Konser GBK)
+   ========================================================================== */
+.crowd-estimator-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 20px 20px 18px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--fc-border);
+  background: var(--fc-card);
+  box-shadow: var(--fc-shadow-card);
+  display: grid;
+  gap: 14px;
+}
+
+.crowd-estimator__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+}
+
+.crowd-estimator__title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.crowd-estimator__title-wrap svg {
+  color: #006875;
+  flex-shrink: 0;
+}
+
+html[data-theme="dark"] .crowd-estimator__title-wrap svg {
+  color: #2DD4BF;
+}
+
+.crowd-estimator__head h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 21px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.crowd-estimator__gate {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.crowd-estimator__sub {
+  margin: -6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fc-text-muted);
+}
+
+.crowd-slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.crowd-slot {
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--fc-border);
+  background: var(--fc-chip);
+}
+
+.crowd-slot.is-recommended {
+  border-color: rgba(13, 148, 136, 0.48);
+  background: var(--fc-teal-tint);
+}
+
+.crowd-slot__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 8px;
+}
+
+.crowd-slot__time {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.crowd-slot__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.crowd-slot--low .crowd-slot__status {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.crowd-slot--ideal .crowd-slot__status {
+  background: rgba(13, 148, 136, 0.2);
+  color: #006875;
+}
+
+.crowd-slot--high .crowd-slot__status {
+  background: rgba(239, 68, 68, 0.16);
+  color: #DC2626;
+}
+
+html[data-theme="dark"] .crowd-slot--low .crowd-slot__status {
+  color: #34D399;
+}
+
+html[data-theme="dark"] .crowd-slot--ideal .crowd-slot__status {
+  color: #2DD4BF;
+}
+
+html[data-theme="dark"] .crowd-slot--high .crowd-slot__status {
+  color: #F87171;
+}
+
+.crowd-slot__track {
+  position: relative;
+  height: 7px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.24);
+}
+
+.crowd-slot__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.crowd-slot--low .crowd-slot__fill {
+  background: linear-gradient(90deg, #10B981, #34D399);
+}
+
+.crowd-slot--ideal .crowd-slot__fill {
+  background: linear-gradient(90deg, #006875, #14B8A6);
+}
+
+.crowd-slot--high .crowd-slot__fill {
+  background: linear-gradient(90deg, #F97316, #EF4444);
+}
+
+.crowd-slot__detail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--fc-text-muted);
+}
+
+.crowd-check-tip {
+  display: grid;
+  gap: 8px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 148, 136, 0.34);
+  background: var(--fc-teal-tint);
+}
+
+.crowd-check-tip__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  font-size: 12.5px;
+  color: var(--fc-text);
+}
+
+.crowd-check-tip__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.crowd-check-tip__title svg {
+  color: #0D9488;
+  flex-shrink: 0;
+}
+
+.crowd-check-tip__lane {
+  float: none;
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #0F766E;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.crowd-check-tip p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fc-text-muted);
+}
+
+.route-guide-card__actions {
+  display: grid;
+  gap: 10px;
+}
+
+.route-guide-card__spatial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(13, 148, 136, 0.38);
+  background: rgba(13, 148, 136, 0.1);
+  color: #006875;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.route-guide-card__spatial:hover {
+  background: rgba(13, 148, 136, 0.18);
+  border-color: #0D9488;
+  color: #006875;
+  text-decoration: none;
+}
+
+html[data-theme="dark"] .route-guide-card__spatial {
+  background: rgba(20, 184, 166, 0.14);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .route-guide-card__spatial:hover {
+  background: rgba(20, 184, 166, 0.24);
+  color: #99F6E4;
+}
+
+@media screen {
+  .eticket-page {
+    padding-bottom: 92px;
+  }
 }

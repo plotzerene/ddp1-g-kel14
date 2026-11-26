@@ -50,7 +50,7 @@ class LiquidGlassTests(unittest.TestCase):
         self.assertIn('detail__cta-secondary liquid-glass-pill" id="trailer-open"', movie)
 
     def test_landing_parallax_showcase_and_assets(self):
-        intro_html = self.get_text("/")
+        intro_html = self.get_text("/intro")
         self.assertIn('id="intro-stage"', intro_html)
         self.assertIn("data-parallax-stage", intro_html)
         self.assertEqual(intro_html.count("data-parallax-layer"), 3)
@@ -72,10 +72,11 @@ class LiquidGlassTests(unittest.TestCase):
         self.assertIn('id="catalog-section"', home_html)
         self.assertEqual(self.client.get("/static/reference_assets/images/bioskopbg.jpg").status_code, 200)
         self.assertEqual(self.client.get("/static/reference_assets/person_silhouette_clean.png").status_code, 200)
-        for icon in ("projector.svg", "music.svg", "clapperboard.svg", "food.svg", "building.svg"):
-            with self.subTest(category_svg=icon):
-                self.assertIn(f"images/icons/categories/{icon}", home_html)
-                self.assertEqual(self.client.get(f"/static/images/icons/categories/{icon}").status_code, 200)
+        # V2: hero memakai globe Cobe dengan pin 3D yang mengikuti rotasi bola (kartu kategori lama dihapus).
+        self.assertIn('data-cobe-globe="hero"', home_html)
+        for stop in ("tokyo", "kaohsiung", "jakarta", "singapore"):
+            with self.subTest(globe_pin=stop):
+                self.assertIn(f'data-globe-pin="{stop}"', home_html)
 
     def test_parallax_uses_extracted_lerp_formula(self):
         js = (STATIC / "js/parallax.js").read_text(encoding="utf-8")

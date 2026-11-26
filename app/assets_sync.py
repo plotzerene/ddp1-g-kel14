@@ -23,6 +23,8 @@ SOURCE_DIR = APP_DIR.parent / "reference_assets"
 STATIC_ASSET_DIR = APP_DIR / "static" / "reference_assets"
 ASSET_URL_PREFIX = "/static/reference_assets"
 ALLOWED_SUFFIXES = {".jpg", ".png", ".webp", ".mp4", ".webm"}
+# Ekspor kanvas desain (4 MB) hanya acuan visual; tidak dilayani web.
+DESIGN_ONLY = {"page1_final_canvas.png"}
 
 # Nama baku yang diminta brief proyek; varian bernama lebih panjang dipetakan ke sini.
 CANONICAL_NAMES: tuple[str, ...] = (
@@ -71,7 +73,7 @@ def plan_sync(source_dir: Path = SOURCE_DIR) -> dict[Path, str]:
     # File langsung di root (mis. person_silhouette_clean.png) ikut disalin ke root static.
     for path in sorted(p for p in source_dir.iterdir() if p.is_file() and not p.name.startswith(".")):
         name = normalize_name(path.name)
-        if Path(name).suffix in ALLOWED_SUFFIXES:
+        if Path(name).suffix in ALLOWED_SUFFIXES and name not in DESIGN_ONLY:
             plan[path] = name
     for folder in sorted(p for p in source_dir.iterdir() if p.is_dir()):
         files = sorted(p for p in folder.iterdir() if p.is_file() and not p.name.startswith("."))

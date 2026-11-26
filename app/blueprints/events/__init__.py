@@ -9,7 +9,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from flask import Blueprint, abort, render_template, url_for
+from flask import Blueprint, abort, redirect, render_template, url_for
 
 from ...assets_sync import asset_url
 from ...shared_state import EVENTS, price_for_film_venue
@@ -26,8 +26,61 @@ COLDPLAY_INFO = {
 }
 COLDPLAY_TABS = (
     ("overview", "Ringkasan", "events.coldplay_overview"),
-    ("tickets", "Tiket", "events.coldplay_tickets"),
     ("terms", "Syarat & Ketentuan", "events.coldplay_terms"),
+)
+
+COLDPLAY_FUN_FACTS: tuple[dict, ...] = (
+    {
+        "title": "Tur Stadion Ramah Lingkungan Pertama",
+        "detail": "Emisi karbon dipangkas 59%, lantai kinetik pembangkit daya, dan sepeda listrik penonton.",
+    },
+    {
+        "title": "Gelang LED Xylobands",
+        "detail": "Berbahan nabati ramah lingkungan yang berpendar sinkron mengikuti musik dan tata cahaya.",
+    },
+    {
+        "title": "Setlist 24+ Lagu",
+        "detail": "Lintas album ikonik Coldplay dari Parachutes hingga Music of the Spheres.",
+    },
+)
+
+COLDPLAY_TOUR_STOPS: tuple[dict, ...] = (
+    {
+        "index": 0,
+        "city": "Tokyo",
+        "country": "Jepang",
+        "venue": "Tokyo Dome",
+        "date": "6–7 Nov 2026",
+        "status": "Selesai",
+        "state": "done",
+    },
+    {
+        "index": 1,
+        "city": "Kaohsiung",
+        "country": "Taiwan",
+        "venue": "Kaohsiung National Stadium",
+        "date": "11–12 Nov 2026",
+        "status": "Selesai",
+        "state": "done",
+    },
+    {
+        "index": 2,
+        "city": "Jakarta",
+        "country": "Indonesia",
+        "venue": "Stadion Utama Gelora Bung Karno",
+        "date": "19 Des 2026",
+        "status": "Tiket Tersedia",
+        "state": "active",
+    },
+    {
+        "index": 3,
+        "city": "Singapore",
+        "country": "Singapura",
+        "venue": "National Stadium Singapore",
+        "date": "23–24 Jan 2027",
+        "status": "Mendatang",
+        "state": "upcoming",
+    },
 )
 
 
@@ -47,10 +100,10 @@ MOVIE_PRODUCTION: dict[str, dict] = {
         "director": "Yandy Laurens",
         "writer": "Yandy Laurens",
         "producer": "Suryana Paramita",
-        "studio": "Cerita Films",
+        "studio": "Visinema Pictures",
         "origin": "Indonesia",
-        "cast": ["Sheila Dara Aisha", "Dion Wiyoko", "Goran Bogdan", "Lara Nekic"],
-        "trivia": "Salah satu film Indonesia pertama yang mengambil lokasi syuting di Kroasia; lagu tema utamanya berjudul 'Forget Jakarta' karya Adhitia Sofyan.",
+        "cast": ["Sheila Dara Aisha", "Dion Wiyoko"],
+        "trivia": "Special Classic Screening menghadirkan salinan restorasi 4K dengan tata suara yang disegarkan, agar filmnya bisa dinikmati ulang di layar lebar.",
         "language": "Indonesia",
         "subtitles": "Bahasa Indonesia",
     },
@@ -523,6 +576,8 @@ def _render_coldplay(tab: str):
         info=COLDPLAY_INFO,
         stage_zones=COLDPLAY_STAGE_ZONES,
         rules=COLDPLAY_OFFICIAL_RULES,
+        fun_facts=COLDPLAY_FUN_FACTS,
+        tour_stops=COLDPLAY_TOUR_STOPS,
     )
 
 
@@ -533,7 +588,7 @@ def coldplay_overview():
 
 @events_bp.get("/event/coldplay/tickets")
 def coldplay_tickets():
-    return _render_coldplay("tickets")
+    return redirect(url_for("events.coldplay_overview") + "#harga-tiket")
 
 
 @events_bp.get("/event/coldplay/terms")

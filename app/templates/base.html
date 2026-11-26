@@ -1,14 +1,6 @@
 {#
-  base.html — LAYOUT BERSAMA untuk landing, visualizer, dan checkout.
+  base.html — LAYOUT BERSAMA untuk landing, detail, visualizer, dan checkout.
   Tiap halaman cukup: {% extends "base.html" %} lalu isi block di bawah.
-
-    title       judul tab browser
-    head_extra  <link> CSS khusus halaman
-    content     isi halaman
-    scripts     <script> khusus halaman
-
-  Untuk menyorot langkah di header, tulis tepat di bawah extends:
-    {% set step = "landing" %}     (atau "visualizer" / "checkout")
 #}
 <!DOCTYPE html>
 <html lang="id">
@@ -16,22 +8,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  {# Warna toolbar browser di ponsel; halaman terang menimpanya dengan {% set theme_color = "#FFFFFF" %}. #}
   <meta name="theme-color" content="{{ theme_color | default('#0F0F23') }}">
   <title>{% block title %}Tiket{% endblock %} · titiket.com</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23006875'/%3E%3Cpath d='M5 16s4-7.5 11-7.5S27 16 27 16s-4 7.5-11 7.5S5 16 5 16z' fill='none' stroke='%23F8FAFC' stroke-width='2.2'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23FACC15'/%3E%3C/svg%3E">
   <script>
-    /* Tema yang disimpan dipasang sebelum CSS dimuat, supaya halaman tidak berkedip. */
-    try {
-      var savedTheme = localStorage.getItem("titiket-theme");
-      if (savedTheme === "light" || savedTheme === "dark") {
+    /* Tema yang disimpan dipasang sebelum CSS dimuat, supaya halaman tidak berkedip dan konsisten di seluruh sesi. */
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem("titiket-theme") || "dark";
+        if (savedTheme !== "light" && savedTheme !== "dark") savedTheme = "dark";
         document.documentElement.setAttribute("data-theme", savedTheme);
+        document.documentElement.classList.toggle("dark", savedTheme === "dark");
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "dark");
+        document.documentElement.classList.add("dark");
       }
-      if (sessionStorage.getItem("titiket-fade-in") === "1") {
-        sessionStorage.removeItem("titiket-fade-in");
-        document.documentElement.classList.add("is-page-fading-in");
-      }
-    } catch (e) { /* penyimpanan diblokir: pakai tema bawaan halaman */ }
+      try {
+        if (sessionStorage.getItem("titiket-fade-in") === "1") {
+          sessionStorage.removeItem("titiket-fade-in");
+          document.documentElement.classList.add("is-page-fading-in");
+        }
+      } catch (e) { /* abaikan bila penyimpanan sesi diblokir */ }
+    })();
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-light.css') }}">
@@ -39,10 +37,47 @@
   {% block head_extra %}{% endblock %}
   {# Liquid Glass dimuat terakhir: kelas utilitasnya menang atas gaya komponen halaman. #}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid_glass.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/assistant.css') }}">
 </head>
 {% set current_step = step | default("") %}
-<body data-step="{{ current_step }}"
+{% set focused = focused_header | default(current_step in ("visualizer", "checkout")) %}
+{% set stepper_key = stepper_active | default(current_step if current_step in ("visualizer", "checkout") else "") %}
+{% set stepper_nav %}{% if stepper_key %}
+      <nav aria-label="Langkah pemesanan">
+        <ol class="stepper">
+          {% set viz_step_href = stepper_viz_href | default(url_for("visualizer.index")) %}
+          {% set step2_label = "Pilih Posisi & POV 3D" if (is_standing_only | default(false)) else "Pilih Kursi & POV 3D" %}
+          {% set steps = [
+            ("landing", "Pilih Acara", url_for("landing.index")),
+            ("visualizer", step2_label, viz_step_href),
+            ("checkout", "Checkout", url_for("checkout.index")),
+          ] %}
+          {% set active_idx = ["landing", "visualizer", "checkout"].index(stepper_key) %}
+          {% for key, label, href in steps %}
+          {% set step_locked = (current_step == "visualizer" and key == "checkout") %}
+          <li class="stepper__item{% if loop.index0 < active_idx %} is-done{% endif %}" {% if key == stepper_key %}aria-current="step"{% endif %}>
+            {% if step_locked %}
+            <span class="stepper__link is-disabled" aria-disabled="true" title="Pilih posisi lalu tekan tombol Lanjut ke Checkout">
+              <span class="stepper__dot num">{% if loop.index0 < active_idx %}&#10003;{% else %}{{ loop.index }}{% endif %}</span>
+              {% if key == "visualizer" %}<span id="stepper-viz-label">{{ label }}</span>{% else %}{{ label }}{% endif %}
+            </span>
+            {% else %}
+            <a class="stepper__link" href="{{ href }}">
+              <span class="stepper__dot num">{% if loop.index0 < active_idx %}&#10003;{% else %}{{ loop.index }}{% endif %}</span>
+              {% if key == "visualizer" %}<span id="stepper-viz-label">{{ label }}</span>{% else %}{{ label }}{% endif %}
+            </a>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </nav>
+{% endif %}{% endset %}
+{% set user_display = current_user.name if current_user else '' %}
+{% set user_initials = (user_display[:1] ~ (user_display.split(' ')[1][:1] if ' ' in user_display else (user_display[1:2] if user_display|length > 1 else ''))) | upper %}
+<body{% if body_class is defined and body_class %} class="{{ body_class }}"{% endif %} data-step="{{ current_step }}"
       data-authenticated="{{ '1' if is_authenticated else '0' }}"
+      data-guest="0"
+      data-auth-gate="{{ 'required' if (not is_authenticated and current_step == 'checkout') else 'open' }}"
       data-user-name="{{ current_user.name if current_user else '' }}"
       data-user-email="{{ current_user.email if current_user else '' }}"
       data-user-ui="{{ '1' if (current_user and current_user.is_ui_student) else '0' }}">
@@ -50,6 +85,23 @@
   <a class="skip-link" href="#konten">Lompat ke konten utama</a>
 
   {% block header %}
+  {% if focused %}
+  <header class="site-header site-header--focus">
+    <div class="container site-header__inner">
+      <a class="btn focus-back" href="{{ back_href | default(url_for('landing.index')) }}">
+        <span aria-hidden="true">&larr;</span> {{ back_label | default('Kembali ke Detail') }}
+      </a>
+      <div class="focus-stepper">{{ stepper_nav }}</div>
+      <div class="header-actions focus-actions">
+        {% block header_right %}{% endblock %}
+        <div class="auth-profile-wrap">
+          {% include "components/profile_menu.html" %}
+        </div>
+        {% include "_theme_toggle.html" %}
+      </div>
+    </div>
+  </header>
+  {% else %}
   <header class="site-header">
     <div class="container site-header__inner">
       <div class="header-left">
@@ -58,15 +110,22 @@
           <span class="brand-logo__dot" aria-hidden="true"></span>
           <span class="brand-logo__tld">com</span>
         </a>
-        <label class="nav-location" aria-label="Pilih lokasi kota">
-          <svg class="icon icon--sm nav-location__pin" aria-hidden="true"><use href="#i-pin"/></svg>
-          <select id="city-selector" aria-label="Lokasi">
-            <option value="JABODETABEK">JABODETABEK</option>
-            <option value="BANDUNG">BANDUNG</option>
-            <option value="SURABAYA">SURABAYA</option>
-            <option value="YOGYAKARTA">YOGYAKARTA</option>
-          </select>
-        </label>
+        <div class="nav-location-wrap">
+          <label class="nav-location" aria-label="Pilih lokasi kota">
+            <svg class="icon icon--sm nav-location__pin" aria-hidden="true"><use href="#i-pin"/></svg>
+            <select id="city-selector" aria-label="Lokasi">
+              <option value="JABODETABEK">JABODETABEK</option>
+              <option value="BANDUNG">BANDUNG</option>
+              <option value="SURABAYA">SURABAYA</option>
+              <option value="YOGYAKARTA">YOGYAKARTA</option>
+              <option value="BALI">BALI</option>
+              <option value="MEDAN">MEDAN</option>
+            </select>
+          </label>
+          <button type="button" class="nav-location-sheet-btn" data-open-location-sheet aria-label="Atur wilayah lokasi" title="Atur Wilayah Lokasi">
+            <svg class="icon icon--xs" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="nav-search-wrap">
@@ -78,29 +137,20 @@
         </form>
       </div>
 
-      <nav class="nav-links" aria-label="Kategori hiburan">
-        <a class="nav-cat-link{% if request.path.startswith('/concerts') or (request.path == '/events' and request.args.get('type') == 'concert') %} is-active{% endif %}"
-           href="{{ url_for('events.concerts') }}">Konser Musik</a>
-      </nav>
-
       <div class="header-actions">
-        {% include "_theme_toggle.html" %}
         <a class="btn nav-profile-btn" href="{{ url_for('checkout.profile') }}" aria-label="Pesanan Saya" title="Pesanan Saya" {% if current_step == 'profile' %}aria-current="page"{% endif %}>
           <svg class="icon icon--sm" aria-hidden="true"><use href="#i-ticket"/></svg>
           <span>Pesanan Saya</span>
         </a>
+        {% include "_theme_toggle.html" %}
         <div class="nav-auth-group">
           <button type="button" class="btn auth-entry nav-auth-btn" data-auth-open="login" data-auth-guest {% if is_authenticated %}hidden{% endif %}>Masuk</button>
           <button type="button" class="btn auth-entry nav-auth-btn nav-auth-btn--register" data-auth-open="register" data-auth-guest {% if is_authenticated %}hidden{% endif %}>Daftar</button>
-          <div class="auth-member-pill" data-auth-member {% if not is_authenticated %}hidden{% endif %}>
-            <svg class="icon icon--sm" aria-hidden="true"><use href="#i-user"/></svg>
-            <a class="auth-member-link" href="{{ url_for('checkout.profile') }}" data-auth-member-name>{{ current_user.name if current_user else 'Member' }}</a>
-            <button type="button" class="auth-member-logout" data-auth-logout aria-label="Keluar akun" title="Keluar akun">
-              <svg class="icon icon--xs" aria-hidden="true"><use href="#i-x"/></svg>
-            </button>
+          <div class="auth-profile-wrap" data-auth-member {% if not is_authenticated %}hidden{% endif %}>
+            {% include "components/profile_menu.html" %}
           </div>
         </div>
-        <a class="btn nav-cart-btn" href="{{ url_for('checkout.cart') }}" aria-label="Keranjang, {{ cart_count }} tiket" {% if current_step == 'cart' %}aria-current="page"{% endif %}>
+        <a class="btn nav-cart-btn" href="{{ url_for('checkout.cart') }}" aria-label="Keranjang, {{ cart_count }} item" {% if current_step == 'cart' %}aria-current="page"{% endif %}>
           <svg class="icon" aria-hidden="true"><use href="#i-cart"/></svg>
           <span class="visually-hidden">Keranjang</span>
           <span class="badge-count num liquid-glass-badge" data-cart-count {% if not cart_count %}hidden{% endif %}>{{ cart_count }}</span>
@@ -110,40 +160,15 @@
   </header>
 
   {% block sub_header %}
-  {% if current_step in ("visualizer", "checkout") %}
+  {% if stepper_key %}
   <div class="stepper-bar">
     <div class="container stepper-bar__inner">
-      <nav aria-label="Langkah pemesanan">
-        <ol class="stepper">
-          {# Di visualizer label langkah 2 diganti JS (duduk vs berdiri). Di halaman lain dipakai kata netral "Posisi". #}
-          {% set viz_step_href = stepper_viz_href | default(url_for("visualizer.index")) %}
-          {% set steps = [
-            ("landing", "Pilih Acara", url_for("landing.index")),
-            ("visualizer", "Pilih Kursi & POV 3D" if current_step == "visualizer" else "Pilih Posisi & POV 3D", viz_step_href),
-            ("checkout", "Checkout", url_for("checkout.index")),
-          ] %}
-          {% for key, label, href in steps %}
-          {% set step_locked = (current_step == "visualizer" and key == "checkout") %}
-          <li class="stepper__item" {% if key == current_step %}aria-current="step"{% endif %}>
-            {% if step_locked %}
-            <span class="stepper__link is-disabled" aria-disabled="true" title="Pilih posisi lalu tekan tombol Lanjut ke Checkout">
-              <span class="stepper__dot num">{{ loop.index }}</span>
-              {% if key == "visualizer" %}<span id="stepper-viz-label">{{ label }}</span>{% else %}{{ label }}{% endif %}
-            </span>
-            {% else %}
-            <a class="stepper__link" href="{{ href }}">
-              <span class="stepper__dot num">{{ loop.index }}</span>
-              {% if key == "visualizer" %}<span id="stepper-viz-label">{{ label }}</span>{% else %}{{ label }}{% endif %}
-            </a>
-            {% endif %}
-          </li>
-          {% endfor %}
-        </ol>
-      </nav>
+      {{ stepper_nav }}
     </div>
   </div>
   {% endif %}
   {% endblock %}
+  {% endif %}
   {% endblock %}
 
   <main id="konten" tabindex="-1">
@@ -156,15 +181,23 @@
 
   {% set makara_url = asset_url("makara_ui.png") %}
   <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+
+  {# Modal Autentikasi (Apple Liquid Glass Sheet) #}
   <div class="auth-modal" id="auth-modal" data-mode="login" hidden>
     <div class="auth-modal__scrim" data-auth-close></div>
-    <div class="auth-modal__panel liquid-glass-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-      <div class="auth-modal__head">
+    <div class="auth-modal__panel liquid-glass-modal auth-sheet" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="auth-modal__head auth-modal__head--sheet">
+        <div class="auth-modal__sheet-brand" aria-hidden="true">
+          <span class="brand-logo">
+            <span class="brand-logo__name">titiket</span>
+            <span class="brand-logo__dot"></span>
+            <span class="brand-logo__tld">com</span>
+          </span>
+        </div>
         <div class="auth-modal__title-wrap">
-          <span class="auth-modal__badge" id="auth-modal-eyebrow">Akun Member titiket.com</span>
           <h2 id="auth-modal-title">Masuk</h2>
         </div>
-        <button type="button" class="auth-modal__close" data-auth-close aria-label="Tutup modal">
+        <button type="button" class="auth-modal__close auth-modal__close--circle" data-auth-close aria-label="Tutup modal">
           <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
         </button>
       </div>
@@ -173,12 +206,14 @@
         <div class="auth-guard-notice" id="auth-guard-notice" role="status" hidden></div>
         <p class="auth-feedback" id="auth-feedback" role="status" hidden></p>
 
-        {# View 1: Login (00D Light & Dark) #}
+        {# View 1: Login #}
         <div class="auth-view" data-auth-view="login">
           <div class="auth-social-stack">
             <a class="auth-modal__sso" href="{{ sso_ui_login_url }}" rel="noopener">
-              {% if makara_url %}<img class="auth-sso-logo" src="{{ makara_url }}" alt="" width="22" height="22">{% else %}<svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>{% endif %}
-              <span>Masuk dengan SSO UI</span>
+              <span class="auth-sso-center">
+                {% if makara_url %}<img class="auth-sso-logo" src="{{ makara_url }}" alt="" width="22" height="22">{% else %}<svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>{% endif %}
+                <span>Masuk dengan SSO UI</span>
+              </span>
               <span class="auth-sso-tag">Diskon 15%</span>
             </a>
             <button type="button" class="auth-oauth-btn auth-oauth-btn--block" data-oauth-provider="Google">
@@ -221,12 +256,14 @@
           <p class="auth-switch">Belum memiliki akun? <button type="button" class="auth-text-link" data-auth-open="register">Daftar di sini</button></p>
         </div>
 
-        {# View 2: Register (00C Light & Dark) #}
+        {# View 2: Register #}
         <div class="auth-view" data-auth-view="register" hidden>
           <div class="auth-social-stack">
             <a class="auth-modal__sso" href="{{ sso_ui_login_url }}" rel="noopener">
-              {% if makara_url %}<img class="auth-sso-logo" src="{{ makara_url }}" alt="" width="22" height="22">{% else %}<svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>{% endif %}
-              <span>Daftar / Aktivasi Mahasiswa via SSO UI</span>
+              <span class="auth-sso-center">
+                {% if makara_url %}<img class="auth-sso-logo" src="{{ makara_url }}" alt="" width="22" height="22">{% else %}<svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>{% endif %}
+                <span>Daftar dengan SSO UI</span>
+              </span>
               <span class="auth-sso-tag">Diskon 15%</span>
             </a>
             <button type="button" class="auth-oauth-btn auth-oauth-btn--block" data-oauth-provider="Google">
@@ -284,7 +321,7 @@
           <p class="auth-switch">Sudah memiliki akun? <button type="button" class="auth-text-link" data-auth-open="login">Masuk di sini</button></p>
         </div>
 
-        {# View 3: Forgot Password (Modal_Forgot_Password Light & Dark) #}
+        {# View 3: Forgot Password #}
         <div class="auth-view" data-auth-view="forgot" hidden>
           <div class="auth-forgot-intro">
             <span class="auth-lock-badge"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg></span>
@@ -303,7 +340,7 @@
           <p class="auth-switch"><button type="button" class="auth-text-link" data-auth-open="login">Kembali ke Halaman Masuk</button></p>
         </div>
 
-        {# View 5: Forgot Password Sent + Reset Kata Sandi Micro-State #}
+        {# View 4: Forgot Password Sent + Reset #}
         <div class="auth-view" data-auth-view="forgot-sent" hidden>
           <div class="auth-success-box">
             <span class="auth-success-icon"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
@@ -327,11 +364,58 @@
       </div>
     </div>
   </div>
+
+  {# Sheet Modal: Onboarding & Ganti Lokasi (Frame 02A/B) #}
+  <div class="auth-modal" id="location-sheet-modal" hidden>
+    <div class="auth-modal__scrim" data-location-close></div>
+    <div class="auth-modal__panel liquid-glass-modal location-sheet" role="dialog" aria-modal="true" aria-labelledby="location-sheet-title">
+      <div class="auth-modal__head auth-modal__head--sheet">
+        <div class="auth-modal__title-wrap">
+          <h2 id="location-sheet-title">Lokasi Kamu</h2>
+        </div>
+        <button type="button" class="auth-modal__close auth-modal__close--circle" data-location-close aria-label="Tutup pemilih lokasi">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </div>
+      <div class="location-sheet__body">
+        <p class="location-sheet__lead">Tetapkan Wilayahmu untuk Rekomendasi Event Terdekat</p>
+        <div class="location-sheet__status">
+          <span class="location-sheet__dot" aria-hidden="true"></span>
+          <span>Lokasi Terdeteksi: Indonesia (Jabodetabek / GBK Area)</span>
+        </div>
+        <div class="location-sheet__grid" role="radiogroup" aria-label="Pilih kota">
+          {% for code, desc in [
+            ('JABODETABEK', 'Jakarta · Bogor · Depok · Tangerang · Bekasi'),
+            ('BANDUNG', 'Kota Bandung & sekitarnya'),
+            ('SURABAYA', 'Kota Surabaya & Sidoarjo'),
+            ('YOGYAKARTA', 'DIY & Sleman'),
+            ('BALI', 'Denpasar · Badung · Gianyar'),
+            ('MEDAN', 'Kota Medan & Deli Serdang'),
+          ] %}
+          <button type="button" class="location-choice{% if loop.first %} is-selected{% endif %}" data-location-choice="{{ code }}">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#i-pin"/></svg>
+            <span class="location-choice__text">
+              <strong>{{ code }}</strong>
+              <small>{{ desc }}</small>
+            </span>
+          </button>
+          {% endfor %}
+        </div>
+        <div class="location-sheet__actions">
+          <button type="button" class="auth-btn-primary" id="location-confirm-btn">Tetapkan Lokasi Ini</button>
+          <button type="button" class="auth-guest-link" data-location-close>Nanti saja</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="top-toast-banner" class="top-toast" role="alert" aria-live="assertive" hidden></div>
   <div id="reservation-expired-root"></div>
   <div class="page-fade-curtain" id="page-fade-curtain" aria-hidden="true"></div>
+  {% block assistant %}{% include "components/assistant.html" %}{% endblock %}
   <script src="{{ url_for('static', filename='js/auth_modal.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/assistant.js') }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

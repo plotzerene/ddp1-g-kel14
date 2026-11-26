@@ -124,8 +124,7 @@ html[data-theme="dark"] .hero-stage::before {
   max-width: 100%;
 }
 
-.hero-heading,
-.quick-categories {
+.hero-heading {
   min-width: 0;
   max-width: 100%;
 }
@@ -163,14 +162,6 @@ html[data-theme="dark"] .hero-subhead {
   color: #CBD5E1;
 }
 
-.quick-categories {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 118px));
-  justify-content: center;
-  gap: 18px;
-  margin-top: 8px;
-}
-
 /* Susunan simetris 3 atas + 2 bawah (cegah baris 4+1 atau 2+2+1 timpang) saat layar diperkecil */
 @media (max-width: 739px) {
   .quick-categories {
@@ -196,9 +187,6 @@ html[data-theme="dark"] .hero-subhead {
 }
 
 @media (max-width: 479px) {
-  .quick-categories {
-    gap: 8px;
-  }
 
   .quick-cat {
     height: 82px;
@@ -240,41 +228,6 @@ html[data-theme="dark"] .quick-cat {
     0 6px 20px rgba(0, 0, 0, 0.28);
 }
 
-.quick-cat__icon {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  color: #0F172A;
-}
-
-.quick-cat__svg {
-  display: block;
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-html[data-theme="dark"] .quick-cat__svg {
-  filter: brightness(0) invert(1);
-}
-
-.quick-cat--gold {
-  border-color: rgba(202, 138, 4, 0.45);
-}
-
-html[data-theme="dark"] .quick-cat--gold {
-  border-color: rgba(250, 204, 21, 0.55);
-}
-
-.quick-cat--teal {
-  border-color: rgba(0, 104, 117, 0.45);
-}
-
-html[data-theme="dark"] .quick-cat--teal {
-  border-color: rgba(20, 184, 166, 0.55);
-}
-
 .quick-cat:hover {
   transform: translateY(-3px);
   background: rgba(255, 255, 255, 0.94);
@@ -295,10 +248,6 @@ html[data-theme="dark"] .quick-cat:hover {
 html[data-theme="dark"] .quick-cat[aria-pressed="true"] {
   border-color: #14B8A6;
   background: rgba(15, 45, 51, 0.92);
-}
-
-.quick-cat__label {
-  white-space: nowrap;
 }
 
 /* 3. Featured Mini Slider / Carousel Row */
@@ -537,13 +486,15 @@ html[data-theme="dark"] .promo__dot[aria-current="true"]::before {
   gap: 16px;
   padding: 14px 20px;
   border-radius: 16px;
-  border: 1px solid #FEF08A;
-  background: #FEFCE8;
-  box-shadow: 0 4px 16px -4px rgba(113, 63, 18, 0.08);
+  border: 1px solid rgba(13, 148, 136, 0.32);
+  background: rgba(13, 148, 136, 0.08);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
 }
 
 html[data-theme="dark"] .sso-strip {
-  border-color: rgba(250, 204, 21, 0.45);
+  border-color: rgba(45, 212, 191, 0.38);
   background: #161F30;
 }
 
@@ -565,17 +516,17 @@ html[data-theme="dark"] .sso-strip {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.45;
-  color: #713F12;
+  color: #004E58;
 }
 
 .sso-strip__text strong {
   font-weight: 700;
-  color: #713F12;
+  color: #004E58;
 }
 
 html[data-theme="dark"] .sso-strip__text,
 html[data-theme="dark"] .sso-strip__text strong {
-  color: #FEF08A;
+  color: #99F6E4;
 }
 
 .sso-strip__right {
@@ -854,14 +805,6 @@ html[data-theme="dark"] .poster-card__media {
   display: block;
 }
 
-.poster-card__missing {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  color: #64748B;
-}
-
 .poster-card__fab {
   position: absolute;
   top: 10px;
@@ -996,15 +939,15 @@ html[data-theme="dark"] .poster-card__title a:hover {
 }
 
 .age-badge--gold {
-  border: 1px solid #C59B27;
-  background: #FEF8E7;
-  color: #8A6A12;
+  border: 1px solid rgba(13, 148, 136, 0.38);
+  background: rgba(13, 148, 136, 0.12);
+  color: #006875;
 }
 
 html[data-theme="dark"] .age-badge--gold {
-  border-color: #FACC15;
-  background: #2A2210;
-  color: #FACC15;
+  border-color: rgba(45, 212, 191, 0.5);
+  background: rgba(20, 184, 166, 0.14);
+  color: #2DD4BF;
 }
 
 .age-badge--teal {
@@ -1100,8 +1043,7 @@ html[data-theme="dark"] .remind-btn[aria-pressed="true"] {
 }
 
 /* Modals */
-.trailer-dialog,
-.quick-info-dialog {
+.trailer-dialog {
   width: min(92vw, 880px);
   max-height: 90vh;
   max-height: 90dvh;
@@ -1116,26 +1058,19 @@ html[data-theme="dark"] .remind-btn[aria-pressed="true"] {
   box-shadow: 0 24px 64px rgba(2, 6, 23, 0.45);
 }
 
-.quick-info-dialog {
-  width: min(92vw, 540px);
-}
-
-html[data-theme="dark"] .trailer-dialog,
-html[data-theme="dark"] .quick-info-dialog {
+html[data-theme="dark"] .trailer-dialog {
   background: #161F30;
   color: #F8FAFC;
   border-color: #334155;
 }
 
-.trailer-dialog::backdrop,
-.quick-info-dialog::backdrop {
+.trailer-dialog::backdrop {
   background: rgba(2, 6, 23, 0.72);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 
-.trailer-dialog__head,
-.quick-info-dialog__head {
+.trailer-dialog__head {
   position: sticky;
   top: 0;
   z-index: 5;
@@ -1148,8 +1083,7 @@ html[data-theme="dark"] .quick-info-dialog {
   border-bottom: 1px solid var(--color-hairline);
 }
 
-.trailer-dialog__head h2,
-.quick-info-dialog__head h2 {
+.trailer-dialog__head h2 {
   margin: 0;
   font-size: 1rem;
 }
@@ -1160,75 +1094,6 @@ html[data-theme="dark"] .quick-info-dialog {
   aspect-ratio: 16 / 9;
   background: #000000;
   display: block;
-}
-
-.quick-info-dialog__body {
-  padding: 16px;
-  display: grid;
-  gap: 12px;
-}
-
-.quick-info-sub {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted-fg);
-}
-
-.quick-info-list {
-  display: grid;
-  gap: 10px;
-}
-
-.quick-info-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--color-hairline-strong);
-  background: #F8FAFC;
-}
-
-html[data-theme="dark"] .quick-info-item {
-  background: #1E293B;
-}
-
-.quick-info-item strong {
-  display: block;
-  font-size: 0.9rem;
-}
-
-.quick-info-item p {
-  margin: 2px 0 0;
-  font-size: 0.78rem;
-  color: var(--color-muted-fg);
-}
-
-.quick-info-price {
-  font-weight: 700;
-  color: #006875;
-  white-space: nowrap;
-}
-
-html[data-theme="dark"] .quick-info-price {
-  color: #2DD4BF;
-}
-
-.quick-info-link {
-  padding: 6px 12px;
-  border-radius: 9999px;
-  background: #006875;
-  color: #FFFFFF;
-  font-size: 0.78rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.quick-info-link:hover {
-  background: #0891B2;
-  color: #FFFFFF;
-  text-decoration: none;
 }
 
 /* ==========================================================================
@@ -1291,18 +1156,18 @@ html[data-theme="dark"] .poster-card__price {
 .poster-card__status-tag {
   padding: 2px 8px;
   border-radius: 9999px;
-  background: #FEF8E7;
-  border: 1px solid #C59B27;
-  color: #8A6A12;
+  background: rgba(13, 148, 136, 0.12);
+  border: 1px solid rgba(13, 148, 136, 0.38);
+  color: #006875;
   font-size: 0.68rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 html[data-theme="dark"] .poster-card__status-tag {
-  background: rgba(250, 204, 21, 0.14);
-  border-color: rgba(250, 204, 21, 0.45);
-  color: #FACC15;
+  background: rgba(20, 184, 166, 0.14);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: #2DD4BF;
 }
 
 .trailer-dialog__embed {
@@ -1317,4 +1182,607 @@ html[data-theme="dark"] .poster-card__status-tag {
 .trailer-dialog__embed[hidden],
 .trailer-dialog video[hidden] {
   display: none;
+}
+
+/* ==========================================================================
+   V2 Split Hero + Cobe 3D Globe (520x520) + Soft Yellow SSO + Official Merch
+   ========================================================================== */
+body[data-step="landing"] .promo-carousel-section > .container,
+body[data-step="landing"] .merch-section > .container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hero-stage__split {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-stage__split {
+    grid-template-columns: minmax(0, 1.05fr) 520px;
+    gap: 44px;
+  }
+}
+
+.hero-left {
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(20, 184, 166, 0.14);
+  border: 1px solid rgba(20, 184, 166, 0.42);
+  color: #006875;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+html[data-theme="dark"] .hero-eyebrow {
+  color: #2DD4BF;
+}
+
+.hero-eyebrow__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #14B8A6;
+}
+
+.hero-left h1 {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(2rem, 3.6vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: #0F172A;
+}
+
+html[data-theme="dark"] .hero-left h1 {
+  color: #F8FAFC;
+}
+
+.hero-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.hero-location-box {
+  display: grid;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--color-hairline-strong);
+  background: rgba(255, 255, 255, 0.76);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  min-width: 185px;
+}
+
+html[data-theme="dark"] .hero-location-box {
+  background: rgba(22, 31, 48, 0.78);
+}
+
+.hero-location-box__lbl {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-fg);
+}
+
+.hero-location-box__inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #006875;
+}
+
+html[data-theme="dark"] .hero-location-box__inner {
+  color: #2DD4BF;
+}
+
+.hero-location-box select {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-foreground);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hero-quick-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 250px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--color-hairline-strong);
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  color: var(--color-muted-fg);
+}
+
+html[data-theme="dark"] .hero-quick-search {
+  background: rgba(22, 31, 48, 0.78);
+}
+
+.hero-quick-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-foreground);
+  font-size: 0.9rem;
+}
+
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-cta-primary,
+.hero-cta-glass {
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hero-cta-primary {
+  background: #006875;
+  color: #FFFFFF;
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin: 4px 0 0;
+}
+
+.hero-stats div {
+  display: grid;
+  gap: 2px;
+}
+
+.hero-stats dt {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-foreground);
+}
+
+.hero-stats dd {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted-fg);
+}
+
+.hero-right {
+  display: flex;
+  justify-content: center;
+}
+
+/* Cobe 3D Globe Stage (520x520) */
+.hero-globe-stage {
+  position: relative;
+  width: min(100%, 520px);
+  min-height: 520px;
+  padding: 16px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.56);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 44px -12px rgba(15, 23, 42, 0.14);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+}
+
+html[data-theme="dark"] .hero-globe-stage {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.66);
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.52);
+}
+
+.hero-globe-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 3;
+}
+
+.hero-globe-meta {
+  display: grid;
+  gap: 2px;
+}
+
+.hero-globe-meta strong {
+  font-size: 0.9rem;
+  color: var(--color-foreground);
+}
+
+.hero-globe-sub {
+  font-size: 0.75rem;
+  color: var(--color-muted-fg);
+}
+
+.hero-globe-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.globe-nav-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cobe-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 488px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.cobe-canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+  max-width: 520px;
+  max-height: 520px;
+  display: block;
+}
+
+/* Pin bendera 3D: tiang tipis menancap di koordinat kota, lencana bendera (gambar SVG lokal) di ujung atas tiang,
+   label di samping lencana. JS menulis --px/--py (ujung tiang, px dalam .cobe-canvas-wrap), opacity (0 di belahan
+   belakang bola) dan data-side. */
+.cobe-canvas-wrap .globe-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  display: grid;
+  justify-items: center;
+  width: 27px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0) translate(-50%, -100%);
+  /* Tanpa transisi transform/opacity: posisi diperbarui tiap frame oleh JS. */
+  transition: filter 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.cobe-canvas-wrap .globe-pin__flag {
+  display: block;
+  width: 27px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  object-fit: cover;
+  background: #FFFFFF;
+}
+
+.cobe-canvas-wrap .globe-pin__pole {
+  position: relative;
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+  background: linear-gradient(#F1F5F9, #64748B);
+  box-shadow: 0 0 0 0.5px rgba(15, 23, 42, 0.25);
+}
+
+/* Ujung tiang = titik koordinat (warna sesuai status tur) */
+.cobe-canvas-wrap .globe-pin__pole::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: #94A3B8;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
+}
+
+.cobe-canvas-wrap .globe-pin--active .globe-pin__pole::after { background: #0D9488; animation: globePulse 1.8s infinite; }
+.cobe-canvas-wrap .globe-pin--upcoming .globe-pin__pole::after { background: #006875; }
+
+.cobe-canvas-wrap .globe-pin__label {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 9px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  /* Hanya kota terfokus / di-hover yang berlabel: empat label sekaligus saling menimpa di globe 520px */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.cobe-canvas-wrap .globe-pin.is-focused .globe-pin__label,
+.cobe-canvas-wrap .globe-pin:hover .globe-pin__label,
+.cobe-canvas-wrap .globe-pin:focus-visible .globe-pin__label { opacity: 1; }
+
+/* Label ke kiri jika titik berada di separuh kanan globe (agar tidak keluar panel). */
+.cobe-canvas-wrap .globe-pin[data-side="left"] .globe-pin__label {
+  left: auto;
+  right: calc(100% + 8px);
+}
+
+/* Hover/tekan tidak boleh menggeser pin (sistem tap global memakai properti translate/scale) */
+html body .cobe-canvas-wrap .globe-pin:not(svg *):not(:disabled):not([aria-disabled="true"]):hover,
+html body .cobe-canvas-wrap .globe-pin:not(svg *):not(:disabled):not([aria-disabled="true"]):active {
+  scale: none;
+  translate: none;
+}
+
+.cobe-canvas-wrap .globe-pin:hover .globe-pin__flag,
+.cobe-canvas-wrap .globe-pin.is-focused .globe-pin__flag {
+  border-color: #14B8A6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.globe-active-card {
+  position: absolute;
+  left: 4px;
+  bottom: 10px;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  max-width: 268px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.globe-active-card__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.globe-pulse-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 9999px;
+  background: #14B8A6;
+  box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
+  animation: globePulse 1.8s infinite;
+}
+
+@keyframes globePulse {
+  0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7); }
+  70% { box-shadow: 0 0 0 9px rgba(20, 184, 166, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+}
+
+.globe-active-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: #006875;
+  color: #FFFFFF;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero-globe-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.74rem;
+  color: var(--color-muted-fg);
+}
+
+.hero-globe-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.legend-dot--done { background: #94A3B8; }
+.legend-dot--active { background: #14B8A6; }
+.legend-dot--upcoming { background: #E2E8F0; border: 1px solid #64748B; }
+
+.sso-strip--soft-yellow {
+  background: rgba(13, 148, 136, 0.10);
+  border-color: rgba(13, 148, 136, 0.32);
+}
+
+html[data-theme="dark"] .sso-strip--soft-yellow {
+  background: rgba(20, 184, 166, 0.14);
+  border-color: rgba(45, 212, 191, 0.38);
+}
+
+.promo-carousel-section {
+  padding-top: 16px;
+}
+
+/* Official Merchandise Grid */
+.merch-section__sub {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: var(--color-muted-fg);
+}
+
+.merch-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .merch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .merch-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.merch-card {
+  display: grid;
+  grid-template-rows: 170px 1fr;
+  border-radius: 18px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-card);
+  overflow: hidden;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.merch-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+
+.merch-card__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.merch-card__visual--blue { background: linear-gradient(135deg, #0284C7, #1E3A8A); }
+.merch-card__visual--purple { background: linear-gradient(135deg, #7C3AED, #4C1D95); }
+.merch-card__visual--amber { background: linear-gradient(135deg, #F59E0B, #B85C00); }
+.merch-card__visual--teal { background: linear-gradient(135deg, #0D9488, #115E59); }
+
+.merch-delivery-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #F8FAFC;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.merch-card__icon-art {
+  font-size: 3.1rem;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25));
+}
+
+.merch-card__body {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.merch-card__cat {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-info);
+}
+
+.merch-card__title {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.merch-card__desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted-fg);
+  line-height: 1.45;
+}
+
+.merch-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.merch-card__price {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--color-info);
+}
+
+.merch-add-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background: #006875;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
 }

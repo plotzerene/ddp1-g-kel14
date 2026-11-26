@@ -1,5 +1,9 @@
 /* visualizer.css: halaman peta 2D dan POV 3D (split-screen responsif). */
 
+:root {
+  --teal-glow: rgba(20, 184, 166, 0.72);
+}
+
 .container.viz,
 .viz {
   max-width: 1360px;
@@ -75,10 +79,10 @@
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-3);
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--color-muted-fg);
+  border: 1px solid var(--fc-border);
+  border-radius: 22px;
+  background: var(--fc-chip);
+  color: var(--fc-text);
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-out),
@@ -150,11 +154,14 @@
   transform: scale(0.97);
 }
 
+.venue-tab[aria-selected="true"] .venue-tab__price {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .venue-tab[aria-selected="true"] {
-  border-color: #14B8A6;
-  background: linear-gradient(180deg, rgba(0, 104, 117, 0.36), rgba(0, 78, 88, 0.28));
-  color: var(--color-foreground);
-  box-shadow: var(--glow-info);
+  border-color: transparent;
+  background: var(--fc-teal);
+  color: #FFFFFF;
 }
 
 .venue-tab__label {
@@ -165,7 +172,7 @@
 
 .venue-tab__price {
   font-size: var(--text-xs);
-  color: #FACC15;
+  color: var(--fc-text-muted);
   white-space: nowrap;
 }
 
@@ -196,13 +203,13 @@
   order: -1;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (min-height: 481px) {
   .viz-grid {
-    grid-template-columns: minmax(0, 1.42fr) minmax(380px, 430px);
+    grid-template-columns: minmax(0, 1.35fr) minmax(350px, 415px);
   }
 
   .viz[data-kind="concert"] .viz-grid {
-    grid-template-columns: minmax(420px, 1fr) minmax(460px, 1.15fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(360px, 420px);
   }
 
   .viz-right,
@@ -211,9 +218,6 @@
     position: sticky;
     top: 88px;
     align-self: start;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-    scrollbar-width: thin;
   }
 }
 
@@ -279,12 +283,16 @@
   order: 1;
 }
 
-.viz[data-kind="cinema"] .map-legend {
+.viz[data-kind="cinema"] .seat-cluster-bar {
   order: 2;
 }
 
-.viz[data-kind="cinema"] .map-wrap {
+.viz[data-kind="cinema"] .map-legend {
   order: 3;
+}
+
+.viz[data-kind="cinema"] .map-wrap {
+  order: 4;
 }
 
 .panel__head {
@@ -388,34 +396,27 @@
 .room {
   fill: rgba(15, 23, 42, 0.78);
   stroke: var(--color-hairline-strong);
-  stroke-width: 0.05;
+  stroke-width: 5;
 }
 
 .screen-glow {
   fill: none;
-  stroke: rgba(250, 204, 21, 0.34);
-  stroke-width: 1.05;
+  stroke: var(--fc-teal-glow);
+  stroke-width: 60;
   stroke-linecap: round;
-  filter: blur(0.45px);
-}
-
-.screen-housing {
-  fill: none;
-  stroke: rgba(250, 204, 21, 0.14);
-  stroke-width: 0.48;
-  stroke-linecap: round;
+  filter: blur(43px);
 }
 
 .screen-line {
   fill: none;
-  stroke: #FACC15;
-  stroke-width: 0.24;
+  stroke: var(--fc-screen);
+  stroke-width: 22;
   stroke-linecap: round;
 }
 
 .screen-label {
-  fill: rgba(253, 230, 138, 0.92);
-  font-weight: 700;
+  fill: var(--fc-text-muted);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   pointer-events: none;
@@ -424,15 +425,15 @@
 
 .map-label {
   fill: var(--color-muted-fg);
-  font-size: 0.5px;
+  font-size: 50px;
   font-weight: 600;
-  letter-spacing: 0.12px;
+  letter-spacing: 12px;
   text-anchor: middle;
 }
 
 .row-label {
   fill: var(--color-muted-fg);
-  font-size: 0.42px;
+  font-size: 42px;
   font-weight: 600;
   text-anchor: middle;
   dominant-baseline: central;
@@ -441,7 +442,7 @@
 .sight-cone {
   fill: rgba(20, 184, 166, 0.15);
   stroke: rgba(20, 184, 166, 0.55);
-  stroke-width: 0.04;
+  stroke-width: 4;
   pointer-events: none;
 }
 
@@ -451,9 +452,9 @@
 }
 
 .seat__shape {
-  fill: #16242F;
-  stroke: rgba(20, 184, 166, 0.55);
-  stroke-width: 0.045;
+  fill: var(--fc-seat-free-fill);
+  stroke: var(--fc-seat-free-stroke);
+  stroke-width: 4.5;
   transform-box: fill-box;
   transform-origin: center;
   transition: fill var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -467,27 +468,45 @@
 }
 
 .seat.is-sweet .seat__shape {
-  fill: #2A2210;
-  stroke: #FACC15;
-  stroke-width: 0.055;
+  fill: var(--fc-seat-free-fill);
+  stroke: var(--fc-seat-reco);
+  stroke-width: 6;
 }
 
 .seat.is-sweet .seat__num {
-  fill: #FACC15;
+  fill: var(--fc-seat-reco);
 }
 
 .seat__slash {
   stroke: rgba(148, 163, 184, 0.55);
-  stroke-width: 0.05;
+  stroke-width: 5;
   stroke-linecap: round;
   pointer-events: none;
+}
+
+.seat__visual {
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.seat:not(.is-sold):hover,
+.seat:not(.is-sold):focus-visible {
+  z-index: 20;
 }
 
 .seat:hover .seat__shape,
 .seat:focus-visible .seat__shape {
   fill: #0891B2;
   stroke: #FFFFFF;
-  transform: scale(1.12);
+}
+
+.seat:not(.is-sold):hover .seat__visual,
+.seat:not(.is-sold):focus-visible .seat__visual {
+  transform: scale(1.85);
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 0 18px var(--teal-glow));
 }
 
 .seat:hover .seat__num,
@@ -497,12 +516,12 @@
 
 .seat:focus-visible .seat__shape {
   stroke: #FFFFFF;
-  stroke-width: 0.09;
+  stroke-width: 9;
 }
 
 .seat.is-sold .seat__shape {
-  fill: #334155;
-  stroke: rgba(148, 163, 184, 0.22);
+  fill: var(--fc-seat-taken-fill);
+  stroke: none;
 }
 
 .seat.is-sold .seat__num {
@@ -510,8 +529,9 @@
 }
 
 .seat.is-cart .seat__shape {
-  fill: #C59B27;
-  stroke: #FDE68A;
+  fill: var(--fc-seat-picked);
+  stroke: var(--fc-seat-picked);
+  stroke-width: 6;
 }
 
 .seat.is-cart .seat__num {
@@ -521,8 +541,8 @@
 .seat.is-selected .seat__shape {
   fill: #006875;
   stroke: #14B8A6;
-  stroke-width: 0.09;
-  filter: drop-shadow(0 0 0.25px rgba(20, 184, 166, 0.9));
+  stroke-width: 9;
+  filter: drop-shadow(0 0 25px rgba(20, 184, 166, 0.9));
 }
 
 .seat.is-selected .seat__num {
@@ -623,7 +643,7 @@
 
 .stage-part--c_stage {
   fill: #FDE68A;
-  stroke: #B45309;
+  stroke: #B85C00;
   stroke-width: 0.6;
 }
 
@@ -777,8 +797,8 @@
 }
 
 .legend-swatch--avail {
-  background: #16242F;
-  border-color: #14B8A6;
+  background: var(--fc-seat-free-fill);
+  border-color: var(--fc-seat-free-stroke);
 }
 
 .legend-swatch--chosen {
@@ -787,18 +807,30 @@
 }
 
 .legend-swatch--taken {
-  background: #334155;
-  border-color: #64748B;
+  background: var(--fc-seat-taken-fill);
+  border-color: transparent;
 }
 
 .legend-swatch--sweet {
-  background: #2A2210;
-  border-color: #FACC15;
+  background: var(--fc-seat-free-fill);
+  border-color: var(--fc-seat-reco);
 }
 
 .legend-swatch--cart {
-  background: #C59B27;
-  border-color: #FDE68A;
+  background: var(--fc-seat-picked);
+  border-color: var(--fc-seat-picked);
+}
+
+/* Swatch legenda denah kursi: 26x24, r7, stroke 1.4px (Frame 06A/B 'Swatch *') */
+.legend-swatch--avail,
+.legend-swatch--chosen,
+.legend-swatch--taken,
+.legend-swatch--sweet,
+.legend-swatch--cart {
+  width: 26px;
+  height: 24px;
+  border-width: 1.4px;
+  border-radius: var(--radius-seat);
 }
 
 .legend-note {
@@ -1416,20 +1448,32 @@
   white-space: nowrap;
 }
 
-/* Fullscreen Theater Mode Overlay */
+/* Fullscreen Theater Mode Overlay
+   Halaman di belakang dikunci total: tidak bisa di-scroll (html + body), dan header sticky disembunyikan
+   supaya tidak tembus di atas viewport 3D (viewport berada di dalam stacking context ancestor, jadi z-index
+   saja tidak cukup mengalahkan header). */
+html.is-theater-open,
 body.is-theater-open {
-  overflow: hidden;
+  overflow: hidden !important;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+body.is-theater-open .site-header {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .viewport.is-fullscreen-theater {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
   max-height: none;
   overflow: hidden;
+  touch-action: none;
   background: #000000;
   border: 0;
   border-radius: 0;
@@ -1719,13 +1763,13 @@ body.is-theater-open {
   inset: 0;
   width: 100%;
   height: 100%;
-  cursor: grab;
+  cursor: default;
   touch-action: none;
   outline-offset: -3px;
 }
 
 #pov-canvas.is-dragging {
-  cursor: grabbing;
+  cursor: default;
 }
 
 .viewport:fullscreen {
@@ -2387,16 +2431,17 @@ html[data-theme="light"] .seat-chip {
 
 .btn--teal-primary {
   min-height: 44px;
-  border: 1px solid rgba(202, 138, 4, 0.55);
-  background: linear-gradient(180deg, rgba(254, 240, 138, 0.96) 0%, rgba(250, 204, 21, 0.94) 100%);
-  color: #0F172A;
-  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #14919B 0%, #0F7A83 52%, #006875 100%);
+  color: #FFFFFF;
+  font-weight: 600;
 }
 
 .btn--teal-primary:hover:not([aria-disabled="true"]) {
-  background: linear-gradient(180deg, rgba(254, 249, 195, 0.98) 0%, rgba(250, 204, 21, 0.98) 100%);
-  border-color: rgba(202, 138, 4, 0.8);
-  color: #0F172A;
+  background: linear-gradient(180deg, #0891B2 0%, #006875 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #FFFFFF;
 }
 
 /* Mode Fokus Spotlight Peta Kursi 2D */
@@ -2512,7 +2557,7 @@ html[data-theme="light"] .seat-chip {
 
 .seat.is-collision .seat__shape {
   stroke: #DC2626 !important;
-  stroke-width: 0.14 !important;
+  stroke-width: 14 !important;
   fill: #FEE2E2 !important;
   animation: collisionOutlinePulse 600ms ease-in-out 3;
 }
@@ -2526,4 +2571,2887 @@ html[data-theme="light"] .seat-chip {
   stroke: #DC2626 !important;
   stroke-width: 1.4 !important;
   animation: collisionOutlinePulse 600ms ease-in-out 3;
+}
+
+/* SUGBK Apple Liquid Glass Drawer Sheet (.picker--sheet) */
+.picker--sheet {
+  border-radius: 22px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.84);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="light"] .picker--sheet {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0F172A;
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.14);
+}
+
+.picker__search-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.picker__search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline-strong);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-foreground);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+html[data-theme="light"] .picker__search-input {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+.picker__search-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #006875;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.picker__search-error {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #EF4444;
+}
+
+.picker__matrix-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.picker__matrix-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  color: var(--color-muted-fg);
+}
+
+.picker__matrix-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mini-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.mini-dot--avail { background: rgba(148, 163, 184, 0.45); border: 1px solid rgba(148, 163, 184, 0.7); }
+.mini-dot--taken { background: #475569; opacity: 0.45; }
+.mini-dot--picked { background: #14B8A6; }
+
+.picker-drawer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-hairline-strong);
+}
+
+.picker-drawer__summary {
+  display: grid;
+  gap: 2px;
+}
+
+.picker-drawer__summary-seat {
+  font-size: 0.94rem;
+  color: var(--color-foreground);
+}
+
+.picker-drawer__summary-price {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #14B8A6;
+}
+
+html[data-theme="light"] .picker-drawer__summary-price {
+  color: #006875;
+}
+
+/* ==========================================================================
+   V2 Booking: pil tinggi badan iOS + bilah aksi Liquid Glass terpadu (Frame 06A/B)
+   ========================================================================== */
+html body .viz .panel.height-pill-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.height-pill {
+  position: relative;
+  display: inline-flex;
+}
+
+.height-pill__main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: 9999px;
+  background: var(--lg-fill, rgba(255, 255, 255, 0.65));
+  -webkit-backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+  color: var(--lg-text, var(--color-foreground));
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.height-pill__main:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7), 0 16px 36px -6px rgba(15, 23, 42, 0.18);
+}
+
+.height-pill__main:active {
+  transform: scale(0.985);
+  transition-duration: 0.12s;
+}
+
+.height-pill__caret {
+  font-size: 0.8rem;
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.height-pill__main[aria-expanded="true"] .height-pill__caret {
+  transform: rotate(180deg);
+}
+
+.height-pill__pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  gap: 12px;
+  width: max-content;
+  min-width: 280px;
+  max-width: min(92vw, 340px);
+  padding: 14px;
+  border-radius: 20px;
+}
+
+.height-pill__pop[hidden] {
+  display: none;
+}
+
+.height-pill__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.height-pill__preset {
+  padding: 6px 12px;
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: 18px;
+  background: rgba(120, 120, 128, 0.12);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.height-pill__preset:active {
+  transform: scale(0.985);
+  transition-duration: 0.12s;
+}
+
+.height-pill__preset.is-active {
+  border-color: transparent;
+  background: #006875;
+  color: #FFFFFF;
+}
+
+.height-pill__fine,
+.height-pill__front {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+/* Bilah aksi terpadu: kaca mengambang, sekunder di atas, aksi utama teal selebar penuh. */
+html body .viz .cta-bar.cta-bar--glass {
+  position: sticky;
+  bottom: 16px;
+  z-index: var(--z-sticky);
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--lg-border, rgba(255, 255, 255, 0.45));
+  border-radius: 24px;
+  background: var(--lg-fill, rgba(255, 255, 255, 0.65));
+  -webkit-backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  backdrop-filter: var(--lg-filter, blur(24px) saturate(190%));
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 12px 32px -4px rgba(0, 0, 0, 0.12);
+  color: var(--lg-text, var(--color-foreground));
+}
+
+.cta-bar--glass .cta-bar__actions {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.cta-bar--glass .cta-bar__actions .btn {
+  padding-inline: 12px;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.cta-bar--glass #btn-checkout {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+
+.btn--glass-secondary {
+  min-height: 44px;
+  gap: 8px;
+  border: 1px solid rgba(15, 122, 131, 0.40);
+  border-radius: 9999px;
+  background: rgba(15, 122, 131, 0.12);
+  color: #0F7A83;
+  font-weight: 600;
+  transition: all 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html[data-theme="dark"] .btn--glass-secondary {
+  color: #2DD4BF;
+}
+
+.btn--glass-secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(15, 122, 131, 0.20);
+}
+
+.btn--glass-secondary:active:not(:disabled) {
+  transform: scale(0.985);
+  transition-duration: 0.12s;
+}
+
+.btn--glass-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .height-pill__main,
+  .height-pill__caret,
+  .height-pill__preset,
+  .btn--glass-secondary {
+    transition: none;
+  }
+}
+
+
+/* ==========================================================================
+   Theater HUD: parity FigCraft Frame 07A/B (tools/inspect_frame.py tree 07A|07B)
+   Chip 38px r19, kontrol 44px, dock 520x64 r32, Seat Insight 380x188 r24,
+   mini-map 172x134 r22, CTA bar 80px r24. Kaca HUD sama di mode terang & gelap.
+   ========================================================================== */
+.viewport-media-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewport-media-bar__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #F8FAFC;
+  cursor: pointer;
+  background:
+    linear-gradient(rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)),
+    linear-gradient(rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)),
+    linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)),
+    linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.viewport-media-bar__btn:active { transform: scale(0.94); }
+.viewport-media-bar__btn .icon { width: 18px; height: 18px; }
+
+.viewport-media-bar .range--volume {
+  width: 108px;
+  height: 44px;
+  padding: 0 14px;
+  box-sizing: content-box;
+  border-radius: 22px;
+  background-color: var(--fc-hud-card);
+}
+
+.fullscreen-hud__top {
+  align-items: flex-start;
+  padding: max(24px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) 16px max(28px, env(safe-area-inset-left));
+}
+
+.fullscreen-hud__tip { display: none; }
+
+.theater-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.theater-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 19px;
+  background: var(--fc-hud-glass);
+  border: 1px solid var(--fc-hud-border);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.theater-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  pointer-events: auto;
+}
+
+.theater-controls #btn-maximize-video { display: none; }
+
+/* Tombol keluar: ikon minimize 44px (label tetap ada untuk pembaca layar) */
+.fullscreen-hud .fullscreen-hud__exit {
+  width: 44px;
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  color: #F8FAFC;
+  background:
+    linear-gradient(rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)),
+    linear-gradient(rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)),
+    linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)),
+    linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+}
+
+.fullscreen-hud .fullscreen-hud__exit .fs-exit-full,
+.fullscreen-hud .fullscreen-hud__exit .fs-exit-short {
+  display: none !important;
+}
+
+/* Chip & skor lama digantikan chip, gauge, dan CTA bar baru di mode theater */
+.viewport.is-fullscreen-theater .hud--tl,
+.viewport.is-fullscreen-theater .hud--tr {
+  display: none;
+}
+
+.theater-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 124px;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: min(520px, calc(100vw - 32px));
+  height: 64px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 32px;
+  background: var(--fc-hud-dock);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+/* Tepi specular 1.3px bergradien (#FFFFFF@65% ke @10%), di-mask agar hanya cincinnya yang terlihat */
+.theater-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1.3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.1));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.theater-dock__nav {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.theater-dock .height-pill__main {
+  gap: 6px;
+  width: 172px;
+  white-space: nowrap;
+}
+
+.theater-dock__nav,
+.theater-dock .height-pill__main {
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-spring), transform var(--dur-base) var(--ease-spring);
+}
+
+.theater-dock .height-pill__main { background: rgba(255, 255, 255, 0.22); }
+.theater-dock__nav:hover { background: rgba(255, 255, 255, 0.12); }
+.theater-dock__nav:active,
+.theater-dock .height-pill__main:active { transform: scale(0.97); }
+.theater-dock__nav[hidden] { display: none; }
+
+.height-pill__label-compact { display: none; }
+.theater-dock .height-pill__label-full { display: none; }
+.theater-dock .height-pill__label-compact { display: inline; }
+
+.theater-dock .height-pill__pop {
+  top: auto;
+  bottom: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.theater-insight {
+  position: fixed;
+  left: 28px;
+  bottom: 124px;
+  z-index: 10001;
+  width: 380px;
+  height: 188px;
+  box-sizing: border-box;
+  border-radius: 24px;
+  background: var(--fc-hud-card);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  color: #FFFFFF;
+}
+
+.theater-insight__title {
+  position: absolute;
+  left: 22px;
+  top: 16px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 13px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #94A3B8;
+}
+
+.theater-insight__gauge {
+  position: absolute;
+  left: 22px;
+  top: 50px;
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+}
+
+.theater-insight__gauge svg {
+  position: absolute;
+  inset: 0;
+  width: 100px;
+  height: 100px;
+}
+
+.theater-insight__track,
+.theater-insight__bar {
+  fill: none;
+  stroke-width: 11.6;
+}
+
+.theater-insight__track { stroke: rgba(255, 255, 255, 0.149); }
+
+.theater-insight__bar {
+  stroke: #22C55E;
+  transition: stroke-dashoffset var(--dur-slow) var(--ease-spring);
+}
+
+.theater-insight__gauge strong {
+  position: relative;
+  font-size: 30px;
+  line-height: 35px;
+  font-weight: 700;
+}
+
+.theater-insight__grade {
+  position: absolute;
+  left: 22px;
+  top: 152px;
+  width: 100px;
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: #86EFAC;
+}
+
+.theater-insight__metrics {
+  position: absolute;
+  left: 146px;
+  top: 22px;
+  width: 212px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.theater-insight__metrics li { display: grid; gap: 4px; }
+
+.ti-metric__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  line-height: 14px;
+  font-weight: 500;
+  color: #CBD5E1;
+}
+
+.ti-metric__row strong { font-weight: 700; color: #FFFFFF; }
+
+.ti-metric__track {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.149);
+  overflow: hidden;
+}
+
+.ti-metric__fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--fc-teal-neon);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.theater-minimap {
+  position: fixed;
+  right: 28px;
+  bottom: 124px;
+  z-index: 10001;
+  width: 172px;
+  height: 134px;
+  border-radius: 22px;
+  background: var(--fc-hud-glass);
+  border: 1px solid var(--fc-hud-border);
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+}
+
+.theater-minimap svg {
+  position: absolute;
+  inset: -1px;
+  width: 172px;
+  height: 134px;
+}
+
+.tm-screen { fill: #22D3EE; }
+.tm-seat { fill: rgba(255, 255, 255, 0.35); }
+.tm-caption { fill: rgba(255, 255, 255, 0.7); font-size: 12px; }
+.tm-dot { fill: #22C55E; }
+.tm-halo { fill: rgba(34, 197, 94, 0.35); animation: tmHalo 2s var(--ease-spring) infinite; transform-box: fill-box; transform-origin: center; }
+
+@keyframes tmHalo {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.35); opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-halo { animation: none; }
+  .theater-insight__bar,
+  .ti-metric__fill { transition: none; }
+}
+
+.theater-cta {
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 80px;
+  padding: 0 28px;
+  box-sizing: border-box;
+  border-radius: var(--radius-card);
+  background: var(--fc-hud-cta-bg);
+  border: 1px solid var(--fc-hud-cta-border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.theater-cta__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.theater-cta__info strong {
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--fc-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theater-cta__info span {
+  font-size: 15px;
+  line-height: 18px;
+  color: var(--fc-text-muted);
+}
+
+.theater-cta__actions {
+  display: flex;
+  gap: 16px;
+  flex: none;
+}
+
+.theater-cta__btn {
+  height: 52px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 1000px;
+  font-size: 17px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform var(--dur-base) var(--ease-spring), opacity var(--dur-base) var(--ease-spring);
+}
+
+.theater-cta__btn:active { transform: scale(0.985); }
+.theater-cta__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.theater-cta__btn--glass {
+  min-width: 190px;
+  color: var(--fc-text);
+  background:
+    linear-gradient(rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)),
+    linear-gradient(rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)),
+    linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)),
+    linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+}
+
+.theater-cta__btn--primary {
+  min-width: 220px;
+  color: #FFFFFF;
+  background: var(--fc-cta-cyan);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.55), 0 8px 18px rgba(8, 145, 178, 0.28);
+}
+
+@media (max-width: 900px) {
+  .theater-insight,
+  .theater-minimap { display: none; }
+  .theater-dock { bottom: 112px; }
+  .theater-cta { left: 12px; right: 12px; bottom: 12px; padding: 0 16px; }
+  .theater-cta__info span { display: none; }
+  .theater-cta__btn { padding: 0 16px; min-width: 0; font-size: 15px; }
+  .theater-cta__actions { gap: 8px; }
+}
+
+
+/* ---- HUD theater stadion (Frame 09A/B): dock dengan toggle Duduk/Berdiri, mini-map tribun ---- */
+.theater-dock--stadium {
+  width: min(600px, calc(100vw - 32px));
+}
+
+/* Layar sempit: kartu insight & mini-map naik di atas dock agar tidak bertabrakan */
+@media (max-width: 1280px) {
+  .theater-insight,
+  .theater-minimap { bottom: 216px; }
+}
+
+.theater-dock--stadium .theater-dock__slot {
+  flex: none;
+}
+
+.posture-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.posture-toggle button {
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-spring), transform var(--dur-base) var(--ease-spring);
+}
+
+.posture-toggle button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.22); }
+.posture-toggle button:active { transform: scale(0.97); }
+
+.theater-minimap[data-kind="concert"] {
+  width: 150px;
+  height: 184px;
+}
+
+.theater-minimap[data-kind="concert"] svg {
+  width: 148px;
+  height: 182px;
+  inset: 0;
+}
+
+.tm-tier { fill: rgba(255, 255, 255, 0.06); }
+.tm-pitch { fill: rgba(20, 83, 45, 0.7); stroke: rgba(255, 255, 255, 0.3); stroke-width: 0.8; }
+.tm-block { opacity: 0.55; stroke: rgba(11, 15, 23, 0.9); stroke-width: 0.8; }
+.tm-block.is-active { opacity: 1; stroke: #FFFFFF; stroke-width: 1.4; }
+.tm-stage { fill: #EAB308; }
+.theater-minimap[data-kind="concert"] .tm-dot { fill: #FDE047; stroke: #0B0F17; stroke-width: 1; }
+.theater-minimap[data-kind="concert"] .tm-halo { fill: rgba(253, 224, 71, 0.4); }
+
+/* ==========================================================================
+   Drawer pilih kursi GBK (Frame 08A/B): Apple Sheet 620 r32, scrim #000@55%.
+   Desktop: sheet melayang di tengah; layar sempit: sheet dari bawah.
+   ========================================================================== */
+html:root body .picker.picker--sheet:not([hidden]) {
+  position: fixed;
+  z-index: var(--z-modal);
+  top: 50%;
+  left: 50%;
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 12px 28px 28px;
+  border: 0;
+  border-radius: 32px;
+  background: var(--fc-card);
+  color: var(--fc-text);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35), 0 0 0 100vmax rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+  animation: pickerSheetIn var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes pickerSheetIn {
+  from { opacity: 0; transform: translate(-50%, -47%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@media (max-width: 720px) {
+  html:root body .picker.picker--sheet:not([hidden]) {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 90dvh;
+    padding: 12px 16px 24px;
+    border-radius: 32px 32px 0 0;
+    transform: none;
+    animation: none;
+  }
+}
+
+.picker--sheet .picker__grabber {
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 14px;
+  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.picker--sheet .panel__head {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.picker--sheet .picker__swatch { display: none; }
+
+.picker--sheet .picker__title h2 {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.picker--sheet .picker__title .chip--accent {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 24px;
+  line-height: 29px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.picker--sheet .picker__title .chip:not(.chip--accent) {
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fc-chip);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fc-text-muted);
+}
+
+.picker--sheet .panel__hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--fc-text-muted);
+}
+
+.picker--sheet .panel__head > .btn--icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fc-chip);
+  color: var(--fc-text-muted);
+}
+
+.picker--sheet .picker__search-form {
+  gap: 8px;
+}
+
+html:root .picker--sheet .picker__search-input {
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--fc-border);
+  border-radius: 14px;
+  background: var(--fc-chip);
+  color: var(--fc-text);
+  font-size: 14px;
+}
+
+.picker--sheet .picker__search-input::placeholder { color: var(--fc-text-muted); }
+
+.picker--sheet .picker__group > .eyebrow {
+  font-size: 11px;
+  line-height: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--fc-text-muted);
+}
+
+.picker--sheet .segmented {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--fc-chip);
+}
+
+.picker--sheet .segmented__btn {
+  min-height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fc-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.picker--sheet .segmented__btn[aria-pressed="true"] {
+  background: var(--fc-teal-mid);
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.picker--sheet .picker__matrix-head .eyebrow {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fc-text);
+}
+
+.picker--sheet .mini-dot { width: 14px; height: 14px; border-radius: 4px; }
+.picker--sheet .mini-dot--avail { background: transparent; border: 1px solid var(--fc-border); }
+.picker--sheet .mini-dot--taken { background: var(--fc-chip); opacity: 1; }
+.picker--sheet .mini-dot--picked { background: var(--fc-teal-mid); }
+
+.picker--sheet .mini-grid { gap: 8px; }
+
+.picker--sheet .mini-grid__row {
+  grid-template-columns: 56px repeat(var(--cols, 10), minmax(0, 62px));
+  gap: 8px;
+}
+
+.picker--sheet .mini-grid__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fc-text-muted);
+}
+
+.picker--sheet .mini-seat {
+  min-height: 42px;
+  border: 1px solid var(--fc-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fc-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.picker--sheet .mini-seat:hover { background: var(--fc-chip); }
+
+.picker--sheet .mini-seat[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--fc-teal-mid);
+  color: #FFFFFF;
+}
+
+html.is-theater-open .picker.picker--sheet {
+  display: none !important;
+}
+
+
+/* ==========================================================================
+   Material Liquid Glass HUD theater (Frame 07A/B & 09A/B): kontrol kanan atas dan dock bawah
+   ========================================================================== */
+.theater-dock,
+.viewport-media-bar .range--volume,
+.theater-controls .viewport-media-bar__btn,
+.fullscreen-hud .fullscreen-hud__exit {
+  background: rgba(15, 23, 42, 0.65);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.theater-dock::before { display: none; }
+
+/* Mini-map interaktif: sel kursi / blok bisa diklik, penanda tidak menghalangi klik */
+.theater-minimap { pointer-events: auto; }
+.tm-halo, .tm-dot { pointer-events: none; }
+
+.tm-seat {
+  cursor: pointer;
+  stroke: transparent;
+  stroke-width: 2;
+  transition: fill var(--dur-fast) var(--ease-out);
+}
+
+.tm-seat:hover { fill: rgba(255, 255, 255, 0.85); }
+.tm-seat.is-active { fill: #FDE047; }
+.tm-seat.is-sold { fill: rgba(255, 255, 255, 0.12); cursor: not-allowed; }
+.tm-block { cursor: pointer; }
+.tm-block:hover { opacity: 0.9; }
+.theater-minimap[data-kind="cinema"] .tm-dot { fill: #FDE047; stroke: #0B0F17; stroke-width: 1; }
+.theater-minimap[data-kind="cinema"] .tm-halo { fill: rgba(253, 224, 71, 0.4); }
+
+
+/* ==========================================================================
+   Denah kursi V2 (Frame 06A/B & 08A/B): header sejajar, panel kanan bersih
+   (Pratinjau 3D, Seat Insight, Ringkasan + 2 tombol utama), tanpa widget V1.
+   ========================================================================== */
+@media (min-width: 900px) {
+  .viz-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4) var(--space-5);
+  }
+}
+
+.viz-head .eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fc-gate-key);
+}
+
+.viz-head h1 {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: 0.38px;
+  color: var(--fc-text);
+}
+
+/* Peta kursi: kartu r28 + legenda horizontal di bawah denah */
+.viz-map-card {
+  border-radius: var(--radius-sheet);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.viz-map-card .map-legend {
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* "Perbesar Peta" menjadi tombol ikon 36px (teks tetap ada untuk pembaca layar) */
+.map-spotlight-btn {
+  width: 36px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+  border-color: var(--fc-border);
+  background: var(--fc-chip);
+  color: var(--fc-text);
+}
+
+.map-spotlight-btn span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Panel kanan: Pratinjau 3D, Seat Insight, lalu Ringkasan (urutan kanvas; DOM menjaga urutan lama) */
+.viz-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.viz-right > .viz-event-card { order: 1; }
+.viz-right > .viz-pov-card { order: 2; }
+.viz-right > .insight { order: 3; }
+.viz-right > #cta-bar { order: 4; }
+
+#cta-bar .cta-bar__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+#cta-bar .cta-bar__util {
+  min-height: 40px;
+  padding-inline: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  justify-content: center;
+}
+
+#cta-bar #btn-checkout,
+#cta-bar .cta-bar__pov {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  border-radius: 1000px;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+#cta-bar #btn-checkout { background: var(--fc-teal); }
+
+/* Metrik telemetri lama pindah ke HUD theater (tidak lagi menempel di bawah pratinjau) */
+.fullscreen-hud .pov-hud-metrics {
+  position: fixed;
+  top: 76px;
+  left: 28px;
+  z-index: 10001;
+  display: flex;
+  gap: 24px;
+  width: auto;
+  padding: 10px 20px;
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.65);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 900px) {
+  .fullscreen-hud .pov-hud-metrics { display: none; }
+}
+
+/* Pil tinggi badan hidup di HUD theater: stadion menaruhnya di bar atas, bioskop di dock */
+.theater-height-slot {
+  position: relative;
+  margin-left: auto;
+  pointer-events: auto;
+}
+
+.theater-height-slot + .theater-controls { margin-left: 8px; }
+
+.theater-height-slot .height-pill__label-full { display: none; }
+.theater-height-slot .height-pill__label-compact { display: inline; }
+
+.theater-height-slot .height-pill__main {
+  height: 44px;
+  color: #FFFFFF;
+  background: rgba(15, 23, 42, 0.65);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.theater-height-slot .height-pill__pop { left: auto; right: 0; }
+
+
+/* Legenda di bawah denah (kanvas 06A/B); kontrol video pratinjau kecil di dasar viewport */
+.viz[data-kind="cinema"] .map-legend { order: 4; }
+
+.viewport:not(.is-fullscreen-theater) .viewport-media-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 18px;
+  background: rgba(11, 18, 32, 0.784);
+}
+
+.viewport:not(.is-fullscreen-theater) .viewport-media-bar__btn {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 0;
+  box-shadow: none;
+}
+
+.viewport:not(.is-fullscreen-theater) .viewport-media-bar .range--volume {
+  flex: 1 1 auto;
+  width: auto;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Seat Insight: kolom label cukup lebar agar nama metrik tidak patah */
+.viz-right > .insight .insight__body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.viz-right > .insight .bars li {
+  grid-template-columns: minmax(124px, 1.3fr) minmax(48px, 1fr) 48px;
+}
+
+/* Petunjuk "Seret untuk melihat sekeliling" naik di atas bar kontrol video pratinjau */
+.viewport:not(.is-fullscreen-theater) .hud--hint {
+  bottom: 52px;
+}
+
+
+/* ==========================================================================
+   HUD theater mengikuti tema (token --hud-*, lihat tokens.css). Tanpa warna statis.
+   ========================================================================== */
+.theater-chip,
+.theater-dock,
+.theater-minimap,
+.theater-insight,
+.theater-cta,
+.theater-spec,
+.fullscreen-hud .pov-hud-metrics,
+.viewport-media-bar .range--volume,
+.theater-controls .viewport-media-bar__btn,
+.fullscreen-hud .fullscreen-hud__exit,
+.theater-height-slot .height-pill__main {
+  background: var(--hud-surface);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid var(--hud-border);
+  box-shadow: var(--hud-shadow);
+  color: var(--hud-text);
+}
+
+.theater-chip { color: var(--hud-text); }
+
+.theater-controls .viewport-media-bar__btn,
+.fullscreen-hud .fullscreen-hud__exit,
+.theater-controls .viewport-media-bar__btn .icon,
+.fullscreen-hud .fullscreen-hud__exit .icon {
+  color: var(--hud-icon);
+  stroke: currentColor;
+}
+
+.theater-dock__nav,
+.posture-toggle button,
+.theater-dock .height-pill__main,
+.theater-height-slot .height-pill__main { color: var(--hud-text); }
+
+.theater-dock .height-pill__main,
+.posture-toggle button[aria-pressed="true"] { background: var(--hud-chip-active); }
+
+.theater-dock .height-pill__main { border: 0; box-shadow: none; }
+.theater-dock__nav:hover,
+.posture-toggle { background: var(--hud-chip-active); }
+.posture-toggle { border: 0; }
+
+.theater-insight__title,
+.ti-metric__row,
+.tm-caption { color: var(--hud-muted); fill: var(--hud-muted); }
+
+.theater-insight__gauge strong,
+.ti-metric__row strong,
+.theater-cta__info strong { color: var(--hud-text); }
+
+.theater-cta__info span { color: var(--hud-muted); }
+.theater-insight__grade { color: var(--hud-ok); }
+.theater-insight__track { stroke: var(--hud-track); }
+.ti-metric__track { background: var(--hud-track); }
+
+.theater-cta__btn--glass { color: var(--hud-text); }
+
+.tm-seat { fill: var(--hud-seat); }
+.tm-seat:hover { fill: var(--hud-seat-hover); }
+.tm-seat.is-sold { fill: var(--hud-seat-sold); }
+
+.fullscreen-hud .pov-metric__label { color: var(--hud-muted); }
+.fullscreen-hud .pov-metric__value:not(.pov-metric__value--teal) { color: var(--hud-text); }
+
+.theater-spec {
+  position: fixed;
+  top: 150px;
+  left: 28px;
+  z-index: 10001;
+  max-width: 320px;
+  max-height: 40dvh;
+  overflow-y: auto;
+  padding: 10px 16px;
+  border-radius: 18px;
+  pointer-events: auto;
+  font-size: 13px;
+}
+
+.theater-spec summary { cursor: pointer; font-weight: 600; color: var(--hud-text); }
+.theater-spec dl { display: grid; grid-template-columns: auto auto; gap: 4px 14px; margin: 10px 0 0; }
+.theater-spec dt { color: var(--hud-muted); }
+.theater-spec dd { margin: 0; text-align: right; color: var(--hud-text); }
+
+@media (max-width: 900px) {
+  .theater-spec { display: none; }
+}
+
+/* ==========================================================================
+   Seat Insight (Frame 06A/B): judul, cincin skor 96px di kiri, 4 bar metrik di kanan,
+   pemisah 1px, lalu "Kursi terpilih" + nomor kursi aktif.
+   ========================================================================== */
+.viz-right > .insight {
+  gap: 0;
+  padding: 20px 24px;
+  border-radius: var(--radius-card);
+  background: var(--fc-card);
+  border: 1px solid var(--fc-border);
+  box-shadow: var(--fc-shadow-card);
+}
+
+.viz-right > .insight h2 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 18px;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+.viz-right > .insight .insight__body {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+}
+
+.viz-right > .insight .score-ring {
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.viz-right > .insight .score-ring__track { stroke: var(--fc-border); stroke-width: 12; }
+.viz-right > .insight .score-ring__bar { stroke-width: 12; }
+
+.viz-right > .insight .score-ring__text { gap: 2px; }
+
+.viz-right > .insight .score-ring__text strong {
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.viz-right > .insight .score-badge {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 11px;
+  line-height: 13px;
+  font-weight: 600;
+}
+
+.viz-right > .insight .bars {
+  gap: 10px;
+}
+
+.viz-right > .insight .bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "label num" "track track";
+  gap: 4px 8px;
+  font-size: 12px;
+}
+
+.viz-right > .insight .bars li[hidden] { display: none; }
+.viz-right > .insight .bars li > span:first-child { grid-area: label; font-weight: 500; color: var(--fc-text-muted); }
+.viz-right > .insight .bars__num { grid-area: num; font-weight: 700; color: var(--fc-text); }
+.viz-right > .insight .bars__track { grid-area: track; height: 6px; background: var(--fc-border); }
+.viz-right > .insight .bars__fill { background: var(--fc-teal-mid); }
+
+.viz-right > .insight .summary-seats-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--fc-border);
+  font-size: 15px;
+}
+
+.selected-seat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.selected-seat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.viz-right > .insight .summary-seats-row .cta-summary__label { color: var(--fc-text-muted); font-weight: 400; }
+.viz-right > .insight .summary-seats-row .cta-bar__seat { font-weight: 600; text-align: left; color: var(--fc-text); }
+
+/* Label metrik HUD tidak dipotong elipsis */
+.fullscreen-hud .pov-metric__label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* HUD minimize (chip kursi, skor, petunjuk, tombol layar penuh): teks ikut tema, tanpa hex statis */
+.hud__sub,
+.score-pill span,
+.hud--hint { color: var(--hud-muted); }
+
+.hud__title { color: var(--hud-text); }
+.score-pill strong { color: var(--hud-ok); text-shadow: none; }
+
+.viewport__expand-btn,
+.viewport__expand-btn .icon { color: var(--hud-icon); }
+
+
+/* HUD metrik (maximize): jarak antar metrik 20px, kontainer lega, kaca netral var(--hud-bg) */
+.fullscreen-hud .pov-hud-metrics {
+  gap: 20px;
+  padding: 14px 24px;
+  background: var(--hud-bg);
+}
+
+.fullscreen-hud .pov-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Gauge Seat Insight di HUD = kartu Seat Insight di luar: 96px, stroke 12, angka 28 bold, warna status sama */
+.theater-insight__gauge {
+  top: 56px;
+  width: 96px;
+  height: 96px;
+}
+
+.theater-insight__gauge svg { width: 96px; height: 96px; }
+.theater-insight__track,
+.theater-insight__bar { stroke-width: 12; }
+.theater-insight__bar { stroke: var(--score-accent, #15803D); }
+html[data-theme="dark"] .theater-insight__bar { stroke: var(--score-border, #22C55E); }
+
+.theater-insight__gauge strong {
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--score-accent, #15803D);
+}
+
+html[data-theme="dark"] .theater-insight__gauge strong { color: var(--score-border, #22C55E); }
+
+.theater-insight__grade {
+  top: 156px;
+  left: 22px;
+  width: 96px;
+  font-size: 11px;
+  color: var(--score-accent, #15803D);
+}
+
+html[data-theme="dark"] .theater-insight__grade { color: var(--score-border, #22C55E); }
+
+
+/* Lintasan lari GBK: di atas latar lantai (urutan SVG diatur di map_2d_picker.js) */
+.running-track {
+  fill: rgba(124, 45, 18, 0.85);
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 0.3;
+  pointer-events: none;
+}
+
+.track-lane {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 0.12;
+  pointer-events: none;
+}
+
+/* Drawer berjenjang: baris dulu, lalu nomor kursi */
+.picker--sheet .mini-grid__label {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--fc-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.picker--sheet .mini-grid__row.is-row-active .mini-grid__label { color: var(--fc-teal-neon); }
+
+.picker--sheet .mini-seat:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.picker--sheet .mini-grid__row.is-row-active .mini-seat { border-color: var(--fc-teal-mid); }
+
+.picker__matrix-hint {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--fc-text-muted);
+}
+
+/* Tombol Lanjut ke Checkout tetap bisa diklik saat belum ada kursi (JS menampilkan toast validasi) */
+#btn-checkout[aria-disabled="true"] {
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+
+/* Header pratinjau: judul rata tengah; catatan peta di atas legenda, rata tengah */
+.viz-pov-card__head { justify-content: center; }
+.map-legend .legend-note { order: -1; flex-basis: 100%; text-align: center; }
+
+/* ===== Drawer kursi stadion: dua kolom pencarian (Baris | Nomor Kursi) ===== */
+.picker__search-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.picker__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--fc-border, var(--color-hairline-strong));
+  border-radius: 14px;
+  background: var(--fc-chip, rgba(255, 255, 255, 0.08));
+  color: var(--fc-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.picker__field:focus-within {
+  border-color: var(--teal-400, #2DD4BF);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.25);
+}
+
+html:root .picker--sheet .picker__field .picker__search-input {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fc-text);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.picker__field .picker__search-input::-webkit-outer-spin-button,
+.picker__field .picker__search-input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.picker__search-form + .picker__search-error { grid-column: 1 / -1; }
+
+/* Fallback tanpa JavaScript: daftar kategori tiket konser di header */
+.viz-noscript-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.viz-noscript-cats li {
+  padding: 6px 12px;
+  border: 1px solid var(--fc-border, var(--color-hairline-strong));
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fc-text, var(--color-foreground));
+}
+
+/* ==========================================================================
+   3D maksimal: bar rekomendasi hanya untuk peta 2D. `.viz-right` (sticky) membuat stacking context, jadi bar
+   yang datang belakangan di DOM tergambar DI ATAS viewport fixed dan menimpa CTA bar bila halaman di-scroll.
+   ========================================================================== */
+body.is-theater-open #reco-bar { display: none !important; }
+
+/* Kotak telemetri kiri atas + akordeon spesifikasi: Liquid Glass netral di kedua tema
+   (token --hud-*: gelap rgba(15,23,42,.70); terang putih 75%). Mengalahkan override solid #F8FAFC di theme-light.css. */
+.fullscreen-hud .pov-hud-metrics,
+.theater-spec {
+  background: var(--hud-bg) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid var(--hud-border) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 16px !important;
+}
+
+/* Label #94A3B8 / #64748B dan nilai #F8FAFC / #0F172A = --hud-muted / --hud-text (gelap / terang) */
+.fullscreen-hud .pov-metric__label { color: var(--hud-muted); }
+
+/* CTA bar 3D maksimal: Tambah ke Keranjang = teal #0D9488 */
+.theater-cta__btn--primary {
+  background: #0D9488;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), 0 8px 18px rgba(13, 148, 136, 0.32);
+}
+
+/* Bagikan Posisi (Deep Link URL) */
+.summary-seats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn--share-pos {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--fc-border, rgba(255, 255, 255, 0.22));
+  background: color-mix(in srgb, var(--fc-text, #F8FAFC) 8%, transparent);
+  color: var(--fc-text, #F8FAFC);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn--share-pos:hover {
+  border-color: #0D9488;
+  background: rgba(13, 148, 136, 0.16);
+}
+
+/* Timelapse Suasana Konser GBK */
+.concert-timelapse-bar {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.concert-timelapse__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.concert-timelapse__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--fc-text-muted, var(--color-muted-fg));
+}
+
+.concert-timelapse__weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: color-mix(in srgb, var(--fc-text, #F8FAFC) 6%, transparent);
+  color: var(--fc-text, var(--color-foreground));
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.concert-timelapse__weather svg {
+  color: #38BDF8;
+  flex-shrink: 0;
+}
+
+.concert-timelapse__pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fc-text, #F8FAFC) 7%, transparent);
+}
+
+.concert-timelapse__btn {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fc-text-muted, var(--color-muted-fg));
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Metrik Perlindungan Atap di Kartu Spot Insight GBK */
+.roof-telemetry {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--fc-border, rgba(148, 163, 184, 0.25)) 90%, transparent);
+  background: color-mix(in srgb, var(--fc-text, #F8FAFC) 4%, transparent);
+  display: grid;
+  gap: 5px;
+}
+
+.roof-telemetry[hidden] {
+  display: none !important;
+}
+
+.roof-telemetry__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.roof-telemetry__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fc-text-muted, var(--color-muted-fg));
+}
+
+.roof-telemetry__label svg {
+  color: #14B8A6;
+  flex-shrink: 0;
+}
+
+.roof-telemetry__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.16);
+  color: #10B981;
+}
+
+.roof-telemetry[data-level="splash"] .roof-telemetry__badge {
+  background: rgba(245, 158, 11, 0.16);
+  color: #D97706;
+}
+
+.roof-telemetry[data-level="open"] .roof-telemetry__badge {
+  background: rgba(14, 165, 233, 0.16);
+  color: #0284C7;
+}
+
+html[data-theme="dark"] .roof-telemetry[data-level="splash"] .roof-telemetry__badge {
+  color: #FBBF24;
+}
+
+html[data-theme="dark"] .roof-telemetry[data-level="open"] .roof-telemetry__badge {
+  color: #38BDF8;
+}
+
+.roof-telemetry__note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--fc-text-muted, var(--color-muted-fg));
+}
+
+.concert-timelapse__btn:hover {
+  color: var(--fc-text, #F8FAFC);
+}
+
+.concert-timelapse__btn[aria-pressed="true"] {
+  background: #0D9488;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
+/* ==========================================================================
+   Task 1, 2 & 7: Mobile Sticky Bottom CTA, Seatmap Zoom/Hitbox & Friend Seat
+   ========================================================================== */
+.site-header--focus {
+  z-index: 110;
+}
+
+.map-wrap {
+  position: relative;
+}
+
+.seat__hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.seat {
+  pointer-events: all;
+}
+
+.map-svg--cinema {
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.map-zoom-reset {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(15, 23, 42, 0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(185%);
+  backdrop-filter: blur(18px) saturate(185%);
+  color: #F8FAFC;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.map-zoom-reset[hidden] {
+  display: none !important;
+}
+
+html[data-theme="light"] .map-zoom-reset {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0F172A;
+}
+
+.seat.is-friend-seat .seat__shape {
+  fill: rgba(20, 184, 166, 0.26);
+  stroke: #14B8A6;
+  stroke-width: 8.5;
+}
+
+.seat.is-friend-seat .seat__num {
+  fill: #99F6E4;
+}
+
+.friend-badge-bg {
+  fill: #0D9488;
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 4;
+}
+
+.friend-badge-text {
+  fill: #FFFFFF;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.block.is-friend-seat {
+  stroke: #14B8A6;
+  stroke-width: 2.2;
+}
+
+.friend-reco-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(13, 148, 136, 0.14);
+  border: 1px solid rgba(20, 184, 166, 0.38);
+  color: var(--fc-text, #F8FAFC);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.friend-reco-chip[hidden] {
+  display: none !important;
+}
+
+.friend-reco-chip__meta {
+  margin-left: auto;
+  color: #2DD4BF;
+  font-weight: 700;
+}
+
+html[data-theme="light"] .friend-reco-chip {
+  background: rgba(13, 148, 136, 0.1);
+  color: #0F172A;
+}
+
+html[data-theme="light"] .friend-reco-chip__meta {
+  color: #006875;
+}
+
+@media (max-width: 640px) {
+  .map-wrap {
+    overflow: hidden;
+  }
+  .seat-map-scroll {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .seat__shape {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.4;
+  }
+}
+
+@media (min-width: 769px) and (min-height: 481px) {
+  .container.viz,
+  .viz {
+    padding-bottom: 88px;
+  }
+
+  html body .viz .cta-bar.cta-bar--glass {
+    position: static;
+  }
+}
+
+@media (max-width: 768px), (max-height: 480px) {
+  .container.viz,
+  .viz {
+    padding-inline: 14px;
+    padding-bottom: 112px;
+  }
+
+  .viz-right,
+  .viz-sidebar {
+    position: static;
+  }
+
+  html body .viz .cta-bar.cta-bar--glass {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+    border-top: 1px solid var(--lg-border, rgba(255, 255, 255, 0.22));
+    background: var(--lg-fill, rgba(15, 23, 42, 0.85));
+    -webkit-backdrop-filter: blur(20px) saturate(185%);
+    backdrop-filter: blur(20px) saturate(185%);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  body.is-theater-open #cta-bar {
+    display: none !important;
+  }
+
+  #cta-bar .cta-summary {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  #cta-bar .cta-summary__row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    margin: 0;
+  }
+
+  #cta-bar .cta-summary__label {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #cta-bar #cta-price {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  #cta-bar .cta-bar__actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    width: auto;
+  }
+
+  #cta-bar #btn-clear {
+    display: none;
+  }
+
+  #cta-bar #btn-cart {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  #cta-bar #btn-checkout {
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 14px;
+    white-space: nowrap;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  #cta-bar #btn-cart-label {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .viz[data-kind="cinema"] .format-pill {
+    padding: 6px 8px;
+    gap: 5px;
+    font-size: 0.7rem;
+  }
+  .viz[data-kind="cinema"] .venue-tab__price {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-height: 480px) {
+  .container.viz,
+  .viz {
+    padding-bottom: 84px;
+  }
+
+  html body .viz .cta-bar.cta-bar--glass {
+    padding: 8px 14px;
+  }
+
+  #cta-bar #btn-cart,
+  #cta-bar #btn-checkout {
+    min-height: 38px;
+  }
+
+  /* 3D Maximized HUD pada HP Landscape tinggi sempit (375px–430px) */
+  .fullscreen-hud .pov-hud-metrics,
+  .theater-spec,
+  .theater-insight,
+  .theater-minimap {
+    display: none !important;
+  }
+
+  .fullscreen-hud__top {
+    padding: 6px 12px !important;
+    gap: 6px !important;
+  }
+
+  .theater-chip {
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+  }
+
+  .theater-cta {
+    height: 50px !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 8px !important;
+    padding: 0 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .theater-cta__info span {
+    display: none !important;
+  }
+
+  .theater-cta__btn {
+    height: 34px !important;
+    padding: 0 12px !important;
+    min-width: 0 !important;
+    font-size: 13px !important;
+  }
+
+  .theater-dock {
+    bottom: 64px !important;
+    height: 42px !important;
+    padding: 0 10px !important;
+  }
+
+  .theater-dock__nav,
+  .posture-toggle button,
+  .theater-dock .height-pill__main {
+    height: 32px !important;
+    font-size: 12px !important;
+    padding: 0 10px !important;
+  }
+
+  /* Drawer pilih kursi GBK dapat digulir penuh saat layar landscape pendek */
+  html:root body .picker.picker--sheet:not([hidden]) {
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+    padding: 10px 16px 18px;
+    border-radius: 20px;
+  }
+}
+
+/* ==========================================================================
+   macOS Dock / iOS Loupe Scrubbing pada Denah Bioskop (Mobile <= 768px)
+   ========================================================================== */
+.seat {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.map-svg--cinema.is-scrubbing {
+  touch-action: none;
+}
+
+.map-svg--cinema.is-scrubbing .seat.is-loupe-near .seat__visual {
+  transform: scale(1.4);
+}
+
+.map-svg--cinema.is-scrubbing .seat.is-loupe-focus .seat__visual {
+  transform: scale(2.0);
+}
+
+.map-svg--cinema.is-scrubbing .seat.is-loupe-focus .seat__shape {
+  stroke: #2DD4BF;
+  stroke-width: 8;
+}
+
+.map-svg--cinema.is-scrubbing .seat.is-loupe-focus.is-sold .seat__shape {
+  stroke: #94A3B8;
+}
+
+.seat-loupe-bubble {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 150;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  -webkit-backdrop-filter: blur(22px) saturate(190%);
+  backdrop-filter: blur(22px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 12px 30px rgba(0, 0, 0, 0.38);
+  color: #F8FAFC;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.seat-loupe-bubble[hidden] {
+  display: none !important;
+}
+
+html[data-theme="light"] .seat-loupe-bubble {
+  background: rgba(255, 255, 255, 0.92);
+  color: #0F172A;
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.92), 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.seat-loupe-bubble__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #14B8A6;
+}
+
+.seat-loupe-bubble.is-sold .seat-loupe-bubble__dot {
+  background: #94A3B8;
+}
+
+/* ==========================================================================
+   Fitur 1: Smart Adjacent Cluster (Seat Finder Berdampingan)
+   ========================================================================== */
+.seat-cluster-bar {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.seat-cluster-bar__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+}
+
+.seat-cluster-bar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fc-text, var(--color-foreground));
+  white-space: nowrap;
+}
+
+.seat-cluster-bar__label svg {
+  color: #14B8A6;
+  flex-shrink: 0;
+}
+
+.seat-cluster-bar__pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fc-text, #F8FAFC) 7%, transparent);
+}
+
+.seat-cluster-pill {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fc-text-muted, var(--color-muted-fg));
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.seat-cluster-pill:hover {
+  color: var(--fc-text, var(--color-foreground));
+}
+
+.seat-cluster-pill[aria-checked="true"] {
+  background: #0D9488;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.34);
+}
+
+.seat-cluster-bar__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--fc-border, rgba(148, 163, 184, 0.25)) 80%, transparent);
+}
+
+.seat-cluster-bar__result[hidden] {
+  display: none !important;
+}
+
+.seat-cluster-bar__summary {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2DD4BF;
+}
+
+html[data-theme="light"] .seat-cluster-bar__summary {
+  color: #006875;
+}
+
+.seat-cluster-bar__add {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.cluster-highlight-layer {
+  pointer-events: none;
+}
+
+.cluster-capsule {
+  fill: rgba(20, 184, 166, 0.2);
+  stroke: #2DD4BF;
+  stroke-width: 7.5;
+}
+
+.cluster-midpoint {
+  fill: #5EEAD4;
+  stroke: #0F172A;
+  stroke-width: 4;
+}
+
+.seat.is-cluster .seat__shape {
+  fill: #0D9488;
+  stroke: #5EEAD4;
+  stroke-width: 8.5;
+}
+
+.seat.is-cluster .seat__num {
+  fill: #FFFFFF;
+  font-weight: 700;
+}
+
+.mini-seat.is-cluster {
+  border-color: #14B8A6;
+  background: rgba(13, 148, 136, 0.28);
+  color: #FFFFFF;
+}
+
+@media (max-width: 520px) {
+  .seat-cluster-bar__pills {
+    width: 100%;
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .seat-cluster-pill {
+    padding: 0 8px;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Spatial Route 3D HUD (Titik 1 -> Titik 2 -> Titik 3) */
+.spatial-route-hud {
+  position: fixed;
+  left: 50%;
+  bottom: 204px;
+  transform: translateX(-50%);
+  z-index: 10002;
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 9px 12px;
+  border-radius: 18px;
+}
+
+.spatial-route-hud[hidden] {
+  display: none !important;
+}
+
+.spatial-route-hud__steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.spatial-step-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: #CBD5E1;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.spatial-step-dot.is-active {
+  background: #0D9488;
+  border-color: #5EEAD4;
+  color: #FFFFFF;
+}
+
+.spatial-step-dot.is-done {
+  background: #16A34A;
+  border-color: #86EFAC;
+  color: #FFFFFF;
+}
+
+.spatial-step-line {
+  width: 14px;
+  height: 2px;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.spatial-route-hud__copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.spatial-route-hud__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #5EEAD4;
+}
+
+.spatial-route-hud__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #F8FAFC;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spatial-route-hud__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.spatial-route-hud__btn {
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: #F8FAFC;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.spatial-route-hud__btn--primary {
+  background: #0D9488;
+  border-color: rgba(94, 234, 212, 0.45);
+  color: #FFFFFF;
+}
+
+@media (max-height: 480px) {
+  .spatial-route-hud {
+    top: max(60px, calc(env(safe-area-inset-top) + 52px));
+    bottom: auto;
+    padding: 7px 10px;
+    gap: 6px 10px;
+  }
+}
+
+/* ==========================================================================
+   Mode wayfinding (?mode=wayfinding): tur 3 langkah mandiri di GLB eksterior GBK.
+   Elemen komersial (keranjang, checkout, harga, pemilih kluster, hitung mundur) disembunyikan;
+   dock Liquid Glass mengambang di dasar layar. Token warna/kaca dipakai dari liquid_glass.css.
+   ========================================================================== */
+body.is-wayfinding-mode #seat-cluster-bar,
+body.is-wayfinding-mode #seat-lock-timer,
+body.is-wayfinding-mode #cta-bar,
+body.is-wayfinding-mode #theater-cta,
+body.is-wayfinding-mode #theater-dock,
+body.is-wayfinding-mode #theater-insight,
+body.is-wayfinding-mode #theater-minimap,
+body.is-wayfinding-mode .theater-spec,
+body.is-wayfinding-mode #theater-height-slot,
+body.is-wayfinding-mode #theater-controls-slot,
+body.is-wayfinding-mode #pov-hud-metrics,
+body.is-wayfinding-mode #btn-exit-fullscreen,
+body.is-wayfinding-mode #concert-timelapse-bar,
+body.is-wayfinding-mode #spatial-route-hud,
+body.is-wayfinding-mode #tour-bar,
+body.is-wayfinding-mode #tikbuddy-root,
+body.is-wayfinding-mode #reservation-expired-root,
+body.is-wayfinding-mode #reservation-timeout-modal,
+body.is-wayfinding-mode .reservation-modal,
+body.is-wayfinding-mode .resv-expired-backdrop {
+  display: none !important;
+}
+
+body.is-wayfinding-mode #pov-canvas,
+body.is-wayfinding-mode #pov-canvas.is-dragging {
+  cursor: default !important;
+}
+
+body.is-wayfinding-mode .fullscreen-hud__top {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.wayfinding-back {
+  position: static;
+  margin-left: auto;
+  flex-shrink: 0;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  color: var(--lg-text, #F8FAFC);
+  font: 600 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wayfinding-back:focus-visible {
+  outline: 2px solid #FFD60A;
+  outline-offset: 2px;
+}
+
+.wayfinding-dock {
+  position: fixed;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 10002;
+  display: grid;
+  gap: 10px;
+  width: min(600px, calc(100vw - 32px));
+  padding: 14px 18px;
+  background: rgba(10, 15, 29, 0.94) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 20px !important;
+  corner-shape: round !important;
+  overflow: hidden !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.wayfinding-dock::before,
+.wayfinding-dock::after {
+  display: none !important;
+}
+
+.wayfinding-dock__header {
+  display: grid;
+  gap: 4px;
+}
+
+.wayfinding-title,
+.wayfinding-dock__label {
+  margin: 0;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 700 !important;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9) !important;
+  text-wrap: balance;
+}
+
+.wayfinding-desc {
+  margin: 0;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  text-wrap: balance;
+}
+
+.wayfinding-dock__controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 10px;
+}
+
+.wayfinding-dock__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font: 600 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.wf-arrow-btn {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #f8fafc;
+}
+
+.wf-arrow-btn--double {
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.wf-arrow-btn:hover:not(:disabled),
+.wf-arrow-btn:active:not(:disabled) {
+  background: rgba(30, 41, 59, 1);
+  border-color: rgba(255, 214, 10, 0.75);
+  color: #FFD60A;
+}
+
+.wayfinding-dock__btn[hidden] {
+  display: none !important;
+}
+
+.wayfinding-dock__btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.wayfinding-dock__btn:focus-visible {
+  outline: 2px solid #FFD60A;
+  outline-offset: 2px;
+}
+
+.wayfinding-btn-finish,
+.wayfinding-dock__btn--accent,
+#wf-finish,
+#wf-finish:link,
+#wf-finish:visited,
+#wf-finish span {
+  color: #0B1120 !important;
+  font-weight: 700;
+}
+
+.wayfinding-btn-finish,
+.wayfinding-dock__btn--accent,
+#wf-finish {
+  min-height: 38px;
+  padding: 0 16px;
+  background: #FFD60A;
+  color: #0B1120 !important;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 0 16px rgba(255, 214, 10, 0.45);
+}
+
+#wf-finish svg {
+  stroke: #0B1120 !important;
+}
+
+.wayfinding-btn-finish:hover,
+.wayfinding-dock__btn--accent:hover,
+#wf-finish:hover {
+  background: #fde047;
+  color: #0B1120 !important;
+  box-shadow: 0 0 20px rgba(255, 214, 10, 0.65);
+}
+
+.wayfinding-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.wayfinding-dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lg-text-muted, #CBD5E1);
+  opacity: 0.45;
+  transition: width 0.24s ease, opacity 0.24s ease, background 0.24s ease;
+}
+
+.wayfinding-dot.is-done {
+  background: #FFD60A;
+  opacity: 0.68;
+}
+
+.wayfinding-dot.is-active {
+  width: 18px;
+  border-radius: 3px;
+  background: #FFD60A;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wayfinding-dot {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   2D Interactive Spatial Minimap Radar HUD (?mode=wayfinding)
+   ========================================================================== */
+body:not(.is-wayfinding-mode) #minimapContainer {
+  display: none !important;
+}
+
+.minimap-glass-card {
+  position: fixed;
+  right: 20px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 10002;
+  display: grid;
+  gap: 8px;
+  width: 204px;
+  padding: 12px;
+  background: rgba(10, 15, 29, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.minimap-glass-card[hidden] {
+  display: none !important;
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.minimap-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #E2E8F0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.minimap-label svg {
+  color: #FFD60A;
+  flex-shrink: 0;
+}
+
+#spatialMinimap {
+  display: block;
+  width: 180px;
+  height: 180px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 10, 20, 0.9);
+  touch-action: none;
+  pointer-events: none;
+}
+
+.minimap-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #CBD5E1;
+}
+
+#minimapGateTag {
+  color: #FFD60A;
+}
+
+@media (max-width: 1120px) {
+  .minimap-glass-card {
+    top: 72px;
+    right: 16px;
+    bottom: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .minimap-glass-card {
+    top: 66px;
+    right: 12px;
+    width: 156px;
+    padding: 9px;
+  }
+
+  #spatialMinimap {
+    width: 138px;
+    height: 138px;
+  }
+}
+
+/* Performa wayfinding: HUD di atas canvas WebGL tanpa backdrop-filter (blur memaksa re-sample canvas tiap frame).
+   Diganti latar gelap semi-transparan; hanya aktif di mode wayfinding (HUD-nya selalu gelap/obsidian). */
+body.is-wayfinding-mode .theater-chip,
+body.is-wayfinding-mode .wayfinding-back,
+body.is-wayfinding-mode .wayfinding-dock,
+body.is-wayfinding-mode .minimap-glass-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: rgba(16, 18, 24, 0.90) !important;
+}
+
+/* Latar HUD dipaksa gelap, jadi teks chip/tombol kembali harus terang di tema apa pun. */
+body.is-wayfinding-mode .theater-chip,
+body.is-wayfinding-mode .theater-chip *,
+body.is-wayfinding-mode .wayfinding-back,
+body.is-wayfinding-mode .wayfinding-back * {
+  color: #F5F5F7 !important;
+}
+body.is-wayfinding-mode .theater-chip,
+body.is-wayfinding-mode .wayfinding-back {
+  border-color: rgba(255, 255, 255, 0.18) !important;
 }
